@@ -85,6 +85,8 @@ export const RunsPage: React.FC = () => {
   }, [selectedRun?.runId, activeTab])
 
   const filteredRuns = runs.filter((r) => {
+    if ((r.state as string) === "SUPERSEDED") return false
+
     const matchesFilter =
       filterState === "ALL" ||
       (filterState === "REVIEW" && (r.state === "REVIEW" || r.state === "RETROSPECTIVE")) ||
