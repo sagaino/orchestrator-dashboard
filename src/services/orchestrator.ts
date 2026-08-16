@@ -235,7 +235,27 @@ export interface DevServerStatus {
   logTail: string[]
 }
 
+export interface RtkAnalytics {
+  available: boolean
+  service: string
+  summary: {
+    totalCommands: number
+    totalInputTokens: number
+    totalOutputTokens: number
+    totalSavedTokens: number
+    savingsPercentage: number
+    totalTimeMs: number
+    avgTimeMs: number
+  }
+  generatedAt: string
+}
+
 export const OrchestratorApi = {
+  // RTK & Telemetry
+  async getRtkTelemetry() {
+    const res = await axios.get<{ success: boolean; data: RtkAnalytics }>("/api/telemetry/rtk")
+    return res.data.data
+  },
   // Diff & Dev Server
   async getRunDiff(runId: string) {
     const res = await axios.get<{ success: boolean; data: RunDiffData }>(`/api/runs/${runId}/diff`)
