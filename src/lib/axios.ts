@@ -7,7 +7,7 @@ import { getData, removeData } from "@/hooks/useLocalStorage"
 import type { ApiError } from "./error-utils"
 import { ROUTES } from "./constant/routes"
 
-const API_URL = import.meta.env.VITE_API_URL || "/api"
+const API_URL = import.meta.env.VITE_API_URL || ""
 
 export const axios = Axios.create({
   baseURL: API_URL,
