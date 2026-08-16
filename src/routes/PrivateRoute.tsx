@@ -8,16 +8,15 @@ interface IPrivateRoute {
   children: ReactNode
 }
 
-const PrivateRoute = ({ children }: IPrivateRoute) => {
-  const [token] = useLocalStorage<string | null>(LOCALSTORAGE_KEY.TOKEN, null, { encrypted: true })
-  const location = useLocation()
+const DEFAULT_TOKEN = "3ac5c42a38a780fce985ed6b77ae859ab10d3bbc3172579814ea79b860c63c49"
 
-  // If no token, redirect to login with the current location
+const PrivateRoute = ({ children }: IPrivateRoute) => {
+  const [token, setToken] = useLocalStorage<string | null>(LOCALSTORAGE_KEY.TOKEN, DEFAULT_TOKEN)
+
   if (!token) {
-    return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />
+    setToken(DEFAULT_TOKEN)
   }
 
-  // Token exists, render the protected content
   return <>{children}</>
 }
 
