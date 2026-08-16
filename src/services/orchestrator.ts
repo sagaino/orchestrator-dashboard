@@ -206,7 +206,56 @@ export interface TelemetryReport {
   }>
 }
 
+export interface DiffFile {
+  file: string
+  status: "modified" | "added" | "deleted"
+  additions: number
+  deletions: number
+  patch: string
+}
+
+export interface RunDiffData {
+  runId: string
+  workspaceExists: boolean
+  workspacePath?: string
+  rawDiff: string
+  filesCount?: number
+  files: DiffFile[]
+  message?: string
+  error?: string
+}
+
+export interface DevServerStatus {
+  runId: string
+  running: boolean
+  port: number | null
+  url: string | null
+  status: "STARTING" | "RUNNING" | "STOPPED"
+  startedAt?: string
+  logTail: string[]
+}
+
 export const OrchestratorApi = {
+  // Diff & Dev Server
+  async getRunDiff(runId: string) {
+    const res = await axios.get<{ success: boolean; data: RunDiffData }>(`/api/runs/${runId}/diff`)
+    return res.data.data
+  },
+
+  async startDevServer(runId: string) {
+    const res = await axios.post<{ success: boolean; data: DevServerStatus }>(`/api/runs/${runId}/dev-server/start`)
+    return res.data.data
+  },
+
+  async stopDevServer(runId: string) {
+    const res = await axios.post<{ success: boolean; data: any }>(`/api/runs/${runId}/dev-server/stop`)
+    return res.data.data
+  },
+
+  async getDevServerStatus(runId: string) {
+    const res = await axios.get<{ success: boolean; data: DevServerStatus }>(`/api/runs/${runId}/dev-server/status`)
+    return res.data.data
+  },
   // System & Health
   async getHealth() {
     const res = await axios.get<{ success: boolean; data: { status: string; service: string; version: string } }>("/api/health")

@@ -17,9 +17,14 @@ import {
   RefreshCw,
   Search,
   Filter,
+  FileCode,
+  Globe,
+  BookOpen,
 } from "lucide-react"
-import { OrchestratorApi, type RunManifest } from "@/services/orchestrator"
+import { OrchestratorApi, type RunManifest, type RunDiffData } from "@/services/orchestrator"
 import { subscribeToEvents } from "@/services/events"
+import { DiffViewer } from "@/components/diff/DiffViewer"
+import { DevServerController } from "@/components/review/DevServerController"
 
 export const RunsPage: React.FC = () => {
   const [runs, setRuns] = useState<RunManifest[]>([])
@@ -27,6 +32,9 @@ export const RunsPage: React.FC = () => {
   const [filterState, setFilterState] = useState<string>("ALL")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedRun, setSelectedRun] = useState<RunManifest | null>(null)
+  const [activeTab, setActiveTab] = useState<"OVERVIEW" | "DIFF" | "QA" | "RETROSPECTIVE">("OVERVIEW")
+  const [diffData, setDiffData] = useState<RunDiffData | null>(null)
+  const [diffLoading, setDiffLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [revisionModalOpen, setRevisionModalOpen] = useState(false)
   const [revisionReason, setRevisionReason] = useState("")
@@ -49,6 +57,19 @@ export const RunsPage: React.FC = () => {
     }
   }
 
+  const loadDiff = async (runId: string) => {
+    try {
+      setDiffLoading(true)
+      const data = await OrchestratorApi.getRunDiff(runId)
+      setDiffData(data)
+    } catch (err) {
+      console.error("Failed to load diff:", err)
+      setDiffData(null)
+    } finally {
+      setDiffLoading(false)
+    }
+  }
+
   useEffect(() => {
     loadRuns()
     const unsubscribe = subscribeToEvents(() => {
@@ -56,6 +77,12 @@ export const RunsPage: React.FC = () => {
     })
     return () => unsubscribe()
   }, [])
+
+  useEffect(() => {
+    if (selectedRun && (activeTab === "DIFF" || activeTab === "QA")) {
+      loadDiff(selectedRun.runId)
+    }
+  }, [selectedRun?.runId, activeTab])
 
   const filteredRuns = runs.filter((r) => {
     const matchesFilter =
@@ -165,7 +192,7 @@ export const RunsPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Runs & Human Review Center</h1>
           <p className="text-sm text-slate-400">
-            Audit eksekusi agent, verifikasi file scope, buka isolated worktree di VS Code, dan buat keputusan review.
+            Audit eksekusi agent, periksa diff kode in-browser, jalankan visual QA dev server, dan kelola approval.
           </p>
         </div>
 
@@ -184,7 +211,7 @@ export const RunsPage: React.FC = () => {
           <button
             onClick={loadRuns}
             disabled={loading}
-            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -197,7 +224,7 @@ export const RunsPage: React.FC = () => {
           <button
             key={f}
             onClick={() => setFilterState(f)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
               filterState === f
                 ? "bg-indigo-600/20 text-indigo-400 border border-indigo-500/30"
                 : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
@@ -363,91 +390,149 @@ export const RunsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Scope Audit Card */}
-              <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                    Scope Audit Guard
-                  </span>
-                  <span
-                    className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded ${
-                      selectedRun.execution?.scopeAudit?.passed
-                        ? "bg-emerald-500/15 text-emerald-300"
-                        : "bg-rose-500/15 text-rose-300"
-                    }`}
-                  >
-                    {selectedRun.execution?.scopeAudit?.passed ? "PASS" : "FAIL / PENDING"}
-                  </span>
-                </div>
+              {/* Inspector Navigation Tabs */}
+              <div className="flex items-center gap-2 border-b border-slate-800 text-xs">
+                <button
+                  onClick={() => setActiveTab("OVERVIEW")}
+                  className={`pb-2.5 font-semibold px-2 border-b-2 transition-all cursor-pointer ${
+                    activeTab === "OVERVIEW"
+                      ? "text-indigo-400 border-indigo-500"
+                      : "text-slate-400 border-transparent hover:text-slate-200"
+                  }`}
+                >
+                  Overview & Verification
+                </button>
+                <button
+                  onClick={() => setActiveTab("DIFF")}
+                  className={`pb-2.5 font-semibold px-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+                    activeTab === "DIFF"
+                      ? "text-indigo-400 border-indigo-500"
+                      : "text-slate-400 border-transparent hover:text-slate-200"
+                  }`}
+                >
+                  <FileCode className="h-3.5 w-3.5" />
+                  <span>Code Changes (Diff)</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("QA")}
+                  className={`pb-2.5 font-semibold px-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+                    activeTab === "QA"
+                      ? "text-indigo-400 border-indigo-500"
+                      : "text-slate-400 border-transparent hover:text-slate-200"
+                  }`}
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  <span>Visual QA Dev Server</span>
+                </button>
+              </div>
 
-                <div className="text-xs space-y-1.5 text-slate-400">
-                  <div>
-                    <span className="text-slate-500">Allowed Paths: </span>
-                    <span className="font-mono text-slate-300">
-                      {selectedRun.task.allowedPaths?.join(", ") || "None"}
-                    </span>
-                  </div>
-                  {selectedRun.execution?.scopeAudit?.modifiedFiles && (
-                    <div>
-                      <span className="text-slate-500">Modified Files: </span>
-                      <span className="font-mono text-slate-300">
-                        {selectedRun.execution.scopeAudit.modifiedFiles.join(", ") || "None"}
+              {/* Tab 1: Overview & Verification */}
+              {activeTab === "OVERVIEW" && (
+                <div className="space-y-6">
+                  {/* Scope Audit Card */}
+                  <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                        Scope Audit Guard
                       </span>
+                      <span
+                        className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded ${
+                          selectedRun.execution?.scopeAudit?.passed
+                            ? "bg-emerald-500/15 text-emerald-300"
+                            : "bg-rose-500/15 text-rose-300"
+                        }`}
+                      >
+                        {selectedRun.execution?.scopeAudit?.passed ? "PASS" : "FAIL / PENDING"}
+                      </span>
+                    </div>
+
+                    <div className="text-xs space-y-1.5 text-slate-400">
+                      <div>
+                        <span className="text-slate-500">Allowed Paths: </span>
+                        <span className="font-mono text-slate-300">
+                          {selectedRun.task.allowedPaths?.join(", ") || "None"}
+                        </span>
+                      </div>
+                      {selectedRun.execution?.scopeAudit?.modifiedFiles && (
+                        <div>
+                          <span className="text-slate-500">Modified Files: </span>
+                          <span className="font-mono text-slate-300">
+                            {selectedRun.execution.scopeAudit.modifiedFiles.join(", ") || "None"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Verification Results */}
+                  <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 space-y-3">
+                    <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Terminal className="h-4 w-4 text-indigo-400" />
+                      Verification & Test Gates
+                    </span>
+
+                    {selectedRun.execution?.verification?.results ? (
+                      <div className="space-y-2">
+                        {selectedRun.execution.verification.results.map((v) => (
+                          <div
+                            key={v.script}
+                            className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-xs"
+                          >
+                            <span className="font-mono text-slate-200">{v.script}</span>
+                            <span
+                              className={`font-mono text-[10px] font-semibold px-2 py-0.5 rounded ${
+                                v.passed ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/20 text-rose-300"
+                              }`}
+                            >
+                              {v.passed ? "EXIT 0 (PASS)" : `EXIT ${v.exitCode} (FAIL)`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 italic">Belum ada data verifikasi yang dicatat.</p>
+                    )}
+                  </div>
+
+                  {/* Telemetry Card */}
+                  {selectedRun.telemetry && (
+                    <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                      <div>
+                        <span className="text-slate-500">Model: </span>
+                        <span className="text-slate-200 font-mono">{selectedRun.telemetry.model}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Duration: </span>
+                        <span className="text-slate-200 font-mono">
+                          {selectedRun.telemetry.durationMs ? `${Math.round(selectedRun.telemetry.durationMs / 1000)}s` : "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Total Tokens: </span>
+                        <span className="text-indigo-400 font-mono font-semibold">
+                          {selectedRun.telemetry.tokens?.totalTokens?.toLocaleString() || "-"}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
+              )}
 
-              {/* Verification Results */}
-              <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 space-y-3">
-                <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Terminal className="h-4 w-4 text-indigo-400" />
-                  Verification & Test Gates
-                </span>
+              {/* Tab 2: Code Changes & Diff */}
+              {activeTab === "DIFF" && (
+                <div className="space-y-4">
+                  <DiffViewer diffData={diffData} loading={diffLoading} />
+                </div>
+              )}
 
-                {selectedRun.execution?.verification?.results ? (
-                  <div className="space-y-2">
-                    {selectedRun.execution.verification.results.map((v) => (
-                      <div
-                        key={v.script}
-                        className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-xs"
-                      >
-                        <span className="font-mono text-slate-200">{v.script}</span>
-                        <span
-                          className={`font-mono text-[10px] font-semibold px-2 py-0.5 rounded ${
-                            v.passed ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/20 text-rose-300"
-                          }`}
-                        >
-                          {v.passed ? "EXIT 0 (PASS)" : `EXIT ${v.exitCode} (FAIL)`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500 italic">Belum ada data verifikasi yang dicatat.</p>
-                )}
-              </div>
-
-              {/* Telemetry Card */}
-              {selectedRun.telemetry && (
-                <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                  <div>
-                    <span className="text-slate-500">Model: </span>
-                    <span className="text-slate-200 font-mono">{selectedRun.telemetry.model}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">Duration: </span>
-                    <span className="text-slate-200 font-mono">
-                      {selectedRun.telemetry.durationMs ? `${Math.round(selectedRun.telemetry.durationMs / 1000)}s` : "-"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">Total Tokens: </span>
-                    <span className="text-indigo-400 font-mono font-semibold">
-                      {selectedRun.telemetry.tokens?.totalTokens?.toLocaleString() || "-"}
-                    </span>
-                  </div>
+              {/* Tab 3: Visual QA Dev Server */}
+              {activeTab === "QA" && (
+                <div className="space-y-4">
+                  <DevServerController
+                    runId={selectedRun.runId}
+                    workspaceExists={diffData?.workspaceExists ?? true}
+                  />
                 </div>
               )}
             </div>
