@@ -83,19 +83,25 @@ export const DashboardLayout: React.FC = () => {
           <nav className="p-4 space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon
-              const isActive = location.pathname === item.to || (item.to !== "/" && location.pathname.startsWith(item.to))
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-indigo-600/15 text-indigo-400 border border-indigo-500/30 shadow-sm"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-                  }`}
+                  end={item.to === "/"}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 select-none border ${
+                      isActive
+                        ? "bg-indigo-600/15 text-indigo-400 border-indigo-500/30 shadow-sm"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border-transparent"
+                    }`
+                  }
                 >
-                  <Icon className={`h-4 w-4 ${isActive ? "text-indigo-400" : "text-slate-500"}`} />
-                  {item.label}
+                  {({ isActive }) => (
+                    <>
+                      <Icon className={`h-4 w-4 ${isActive ? "text-indigo-400" : "text-slate-500"}`} />
+                      <span>{item.label}</span>
+                    </>
+                  )}
                 </NavLink>
               )
             })}
