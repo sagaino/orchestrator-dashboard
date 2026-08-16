@@ -73,7 +73,7 @@ export interface ProjectInfo {
 export interface RunManifest {
   schemaVersion: number
   runId: string
-  state: "PREPARING" | "CLAIMED" | "EXECUTING" | "SCOPE_AUDIT" | "VERIFYING" | "GRAPHIFY" | "REVIEW" | "DONE" | "FAILED" | "BLOCKED"
+  state: "PENDING_APPROVAL" | "APPROVED" | "CLAIMING" | "CLAIMED" | "RUNNING" | "EXECUTING" | "SCOPE_AUDIT" | "VERIFYING" | "GRAPHIFY" | "REVIEW" | "RETROSPECTIVE" | "DONE" | "FAILED" | "BLOCKED"
   project: {
     id: string
     repository: string
@@ -339,6 +339,13 @@ export const OrchestratorApi = {
     const res = await axios.post<{ success: boolean; data: RunManifest }>(`/api/runs/${runId}/request-changes`, {
       reason,
       requestedBy,
+    })
+    return res.data.data
+  },
+
+  async startRun(runId: string, approvedBy = "user") {
+    const res = await axios.post<{ success: boolean; data: RunManifest }>(`/api/runs/${runId}/start`, {
+      approvedBy,
     })
     return res.data.data
   },
