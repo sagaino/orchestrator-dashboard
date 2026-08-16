@@ -1,0 +1,25 @@
+{
+  "app": {
+    "ready": "Project orchestrator-dashboard is ready for development",
+    "description": "The standard skeleton was created by Personal AI Orchestrator."
+  },
+  "auth": {
+    "login": "Sign in",
+    "welcomeBack": "Welcome back. Enter your credentials to continue.",
+    "emailPlaceholder": "Email address",
+    "passwordPlaceholder": "Password",
+    "adapterMissing": "The auth adapter has not been configured for this project.",
+    "failed": "Login failed.",
+    "tokenMissing": "The login response did not contain a token.",
+    "defaultUser": "User",
+    "success": "Login successful. Welcome, {{name}}."
+  },
+  "validation": {
+    "email": "Enter a valid email address.",
+    "password": "Password must contain at least 6 characters."
+  },
+  "notFound": {
+    "description": "The requested page could not be found.",
+    "returnHome": "Return to home"
+  }
+}

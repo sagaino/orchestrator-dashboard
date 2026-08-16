@@ -1,0 +1,25 @@
+{
+  "app": {
+    "ready": "Project orchestrator-dashboard siap dikembangkan",
+    "description": "Skeleton standar berhasil dibuat oleh Personal AI Orchestrator."
+  },
+  "auth": {
+    "login": "Masuk",
+    "welcomeBack": "Selamat datang kembali. Masukkan kredensial untuk melanjutkan.",
+    "emailPlaceholder": "Alamat email",
+    "passwordPlaceholder": "Kata sandi",
+    "adapterMissing": "Auth adapter belum dikonfigurasi untuk project ini.",
+    "failed": "Login gagal.",
+    "tokenMissing": "Response login tidak memiliki token.",
+    "defaultUser": "Pengguna",
+    "success": "Login berhasil. Selamat datang, {{name}}."
+  },
+  "validation": {
+    "email": "Masukkan alamat email yang valid.",
+    "password": "Kata sandi minimal 6 karakter."
+  },
+  "notFound": {
+    "description": "Halaman yang diminta tidak ditemukan.",
+    "returnHome": "Kembali ke beranda"
+  }
+}

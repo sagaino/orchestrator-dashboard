@@ -1,20 +1,23 @@
-import { Button } from "@/components/ui/button"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "./components/ui/tooltip";
+import { RouterProvider } from "react-router-dom";
+import { router } from "./routes";
+import { Toaster } from "./components/ui/toast";
+import I18nProvider from "./lib/i18n/i18nProvider";
+
+const queryClient = new QueryClient();
 
 export function App() {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
-      </div>
-    </div>
+    <I18nProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster>
+            <RouterProvider router={router} />
+          </Toaster>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </I18nProvider>
   )
 }
 
