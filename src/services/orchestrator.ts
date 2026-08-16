@@ -149,27 +149,60 @@ export interface VaultHealth {
 
 export interface TelemetryReport {
   schemaVersion: number
-  summary: {
-    totalRuns: number
-    totalTokens: number
-    inputTokens: number
-    outputTokens: number
-    cacheReadTokens: number
+  mode: string
+  generatedAt: string
+  projectId: string | null
+  runCount: number
+  telemetry?: {
+    records: Array<{
+      recordId: string
+      stage: string
+      model?: string
+      durationSeconds: number
+      usage?: {
+        inputTokens: number
+        outputTokens: number
+        thinkingTokens: number
+        cacheReadTokens: number
+        totalTokens: number
+        contextTokens: number
+      }
+      source?: "explicit" | "inferred"
+      metadata?: {
+        runId?: string
+        taskId?: string
+        projectId?: string
+      }
+    }>
+    summary?: {
+      calls: number
+      measuredCalls: number
+      durationSeconds: number
+      usage: {
+        inputTokens: number
+        outputTokens: number
+        thinkingTokens: number
+        cacheReadTokens: number
+        totalTokens: number
+        contextTokens: number
+      }
+      byStage?: Record<string, { calls: number; durationSeconds: number; usage: { totalTokens: number } }>
+    }
+  }
+  summary?: {
     explicitRecords: number
     inferredRecords: number
     inferredSkippedByExplicit: number
-    models: Record<string, number>
-    projects: Record<string, { runs: number; tokens: number }>
   }
-  runs: Array<{
+  latestRuns?: Array<{
     runId: string
-    projectId: string
-    taskId: string
-    stage: string
-    model: string
+    taskId: string | null
+    projectId: string | null
+    state: string
+    calls: number
     totalTokens: number
-    durationMs: number
-    source: "explicit" | "inferred"
+    durationSeconds: number
+    warning: boolean
   }>
 }
 
@@ -275,8 +308,9 @@ export const OrchestratorApi = {
 
   // Knowledge
   async getKnowledgeCandidates() {
-    const res = await axios.get<{ success: boolean; data: KnowledgeCandidate[] }>("/api/knowledge/candidates")
-    return res.data.data
+    const res = await axios.get<{ success: boolean; data: any }>("/api/knowledge/candidates")
+    const candidates = res.data?.data?.candidates ?? res.data?.data ?? []
+    return Array.isArray(candidates) ? candidates : []
   },
 
   async promoteKnowledge(selector: string, targetPath?: string, approvedBy = "user") {
