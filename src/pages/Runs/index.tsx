@@ -120,7 +120,7 @@ export const RunsPage: React.FC = () => {
     try {
       setActionLoading(true)
       const res = await OrchestratorApi.previewRun(runId)
-      alert(`Worktree terisolasi dibuka di VS Code:\n${res.workspacePath}`)
+      alert(`Workspace dibuka di VS Code:\n${res.workspacePath || "Berhasil dibuka di VS Code."}`)
     } catch (err: any) {
       alert(`Gagal preview: ${err.message}`)
     } finally {
