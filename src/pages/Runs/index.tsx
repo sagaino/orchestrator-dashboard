@@ -87,8 +87,8 @@ export const RunsPage: React.FC = () => {
   const filteredRuns = runs.filter((r) => {
     const matchesFilter =
       filterState === "ALL" ||
-      (filterState === "REVIEW" && r.state === "REVIEW") ||
-      (filterState === "ACTIVE" && ["CLAIMED", "EXECUTING", "VERIFYING", "SCOPE_AUDIT"].includes(r.state)) ||
+      (filterState === "REVIEW" && (r.state === "REVIEW" || r.state === "RETROSPECTIVE")) ||
+      (filterState === "ACTIVE" && ["PENDING_APPROVAL", "APPROVED", "CLAIMING", "CLAIMED", "RUNNING", "EXECUTING", "VERIFYING", "SCOPE_AUDIT"].includes(r.state)) ||
       (filterState === "DONE" && r.state === "DONE") ||
       (filterState === "FAILED" && r.state === "FAILED")
 
@@ -101,6 +101,19 @@ export const RunsPage: React.FC = () => {
   })
 
   // Review Actions
+  const handleStart = async (runId: string) => {
+    try {
+      setActionLoading(true)
+      await OrchestratorApi.startRun(runId)
+      alert("Run berhasil di-approve dan mulai dieksekusi!")
+      loadRuns()
+    } catch (err: any) {
+      alert(`Gagal menjalankan run: ${err.message}`)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   const handlePreview = async (runId: string) => {
     try {
       setActionLoading(true)
@@ -246,7 +259,7 @@ export const RunsPage: React.FC = () => {
           ) : (
             filteredRuns.map((r) => {
               const isSelected = selectedRun?.runId === r.runId
-              const isReview = r.state === "REVIEW"
+              const isReview = r.state === "REVIEW" || r.state === "RETROSPECTIVE"
               const isDone = r.state === "DONE"
               const isFailed = r.state === "FAILED"
               return (
@@ -333,8 +346,20 @@ export const RunsPage: React.FC = () => {
                     <span>Preview in VS Code</span>
                   </button>
 
-                  {/* Review Actions if state == REVIEW */}
-                  {selectedRun.state === "REVIEW" && (
+                  {/* Start/Approve if PENDING_APPROVAL or APPROVED */}
+                  {(selectedRun.state === "PENDING_APPROVAL" || selectedRun.state === "APPROVED") && (
+                    <button
+                      onClick={() => handleStart(selectedRun.runId)}
+                      disabled={actionLoading}
+                      className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Approve & Execute</span>
+                    </button>
+                  )}
+
+                  {/* Review Actions if state == REVIEW or RETROSPECTIVE */}
+                  {(selectedRun.state === "REVIEW" || selectedRun.state === "RETROSPECTIVE") && (
                     <>
                       <button
                         onClick={() => setRevisionModalOpen(true)}
