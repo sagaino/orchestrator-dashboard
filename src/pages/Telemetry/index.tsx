@@ -9,18 +9,27 @@ import {
   Database,
   Clock,
   Coins,
+  ShieldCheck,
+  Zap,
+  Terminal,
+  ArrowDownRight,
 } from "lucide-react"
-import { OrchestratorApi, type TelemetryReport } from "@/services/orchestrator"
+import { OrchestratorApi, type TelemetryReport, type RtkAnalytics } from "@/services/orchestrator"
 
 export const TelemetryPage: React.FC = () => {
   const [telemetry, setTelemetry] = useState<TelemetryReport | null>(null)
+  const [rtk, setRtk] = useState<RtkAnalytics | null>(null)
   const [loading, setLoading] = useState(true)
 
   const loadData = async () => {
     try {
       setLoading(true)
-      const data = await OrchestratorApi.getTelemetry()
-      setTelemetry(data)
+      const [telemetryData, rtkData] = await Promise.all([
+        OrchestratorApi.getTelemetry().catch(() => null),
+        OrchestratorApi.getRtkTelemetry().catch(() => null),
+      ])
+      if (telemetryData) setTelemetry(telemetryData)
+      if (rtkData) setRtk(rtkData)
     } catch (err) {
       console.error(err)
     } finally {
@@ -35,6 +44,12 @@ export const TelemetryPage: React.FC = () => {
   const usage = telemetry?.telemetry?.summary?.usage
   const latestRuns = telemetry?.latestRuns || []
   const stageBreakdown = telemetry?.telemetry?.summary?.byStage || {}
+  const rtkSummary = rtk?.summary
+
+  // Calculate combined savings
+  const cacheSavings = usage?.cacheReadTokens ?? 0
+  const rtkSavings = rtkSummary?.totalSavedTokens ?? 0
+  const totalOptimizedTokens = cacheSavings + rtkSavings
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -42,7 +57,7 @@ export const TelemetryPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Telemetry & Token Scoreboard</h1>
           <p className="text-sm text-slate-400">
-            Laporan akurat konsumsi token provider Antigravity (Gemini), efisiensi cache, dan durasi eksekusi per project.
+            Laporan akurat konsumsi token provider Antigravity, efisiensi prompt cache, context compaction, dan RTK proxy.
           </p>
         </div>
 
@@ -77,29 +92,83 @@ export const TelemetryPage: React.FC = () => {
 
         <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            <span>Total Recorded Runs</span>
-            <Layers className="h-4 w-4 text-violet-400" />
+            <span>Total Combined Savings</span>
+            <Zap className="h-4 w-4 text-amber-400" />
           </div>
-          <p className="text-2xl font-bold text-white">{telemetry?.runCount ?? latestRuns.length}</p>
-          <p className="text-xs text-slate-500">
-            {telemetry?.summary?.explicitRecords ?? 0} explicit / {telemetry?.summary?.inferredRecords ?? 0} inferred
-          </p>
+          <p className="text-2xl font-bold text-amber-400">{totalOptimizedTokens.toLocaleString()}</p>
+          <p className="text-xs text-slate-500">Prompt Cache + RTK Filter</p>
         </div>
 
         <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider">
             <span>Primary Model</span>
-            <Cpu className="h-4 w-4 text-amber-400" />
+            <Cpu className="h-4 w-4 text-indigo-400" />
           </div>
           <p className="text-lg font-bold text-white font-mono truncate">gemini-3.7-flash-high</p>
           <p className="text-xs text-slate-500">Effort: high</p>
         </div>
       </div>
 
+      {/* RTK Token Killer Analytics Section */}
+      <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5">
+              <Terminal className="h-5 w-5 text-indigo-400" />
+              <h2 className="text-base font-semibold text-white">RTK (Rust Token Killer) CLI Proxy Analytics</h2>
+              <span className="px-2 py-0.5 rounded-full font-mono text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                ACTIVE PROXY
+              </span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Analitik pemangkasan token bash output secara real-time dari binary RTK CLI.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+            <span>Scope: Global CLI Interception</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="p-4 rounded-lg bg-slate-950 border border-slate-800/80 space-y-1">
+            <span className="text-slate-500 text-xs">Total CLI Commands</span>
+            <p className="text-xl font-bold text-slate-100 font-mono">{rtkSummary?.totalCommands ?? 0}</p>
+            <span className="text-[10px] text-slate-500 font-sans">Perintah proxy terintercept</span>
+          </div>
+
+          <div className="p-4 rounded-lg bg-slate-950 border border-slate-800/80 space-y-1">
+            <span className="text-slate-500 text-xs">Raw Shell Output</span>
+            <p className="text-xl font-bold text-slate-300 font-mono">
+              {(rtkSummary?.totalInputTokens ?? 0).toLocaleString()} <span className="text-xs font-sans text-slate-500">tokens</span>
+            </p>
+            <span className="text-[10px] text-slate-500 font-sans">Sebelum difilter RTK</span>
+          </div>
+
+          <div className="p-4 rounded-lg bg-slate-950 border border-slate-800/80 space-y-1">
+            <span className="text-slate-500 text-xs">Filtered Output Delivered</span>
+            <p className="text-xl font-bold text-indigo-300 font-mono">
+              {(rtkSummary?.totalOutputTokens ?? 0).toLocaleString()} <span className="text-xs font-sans text-slate-500">tokens</span>
+            </p>
+            <span className="text-[10px] text-slate-500 font-sans">Kompak & berakurasi tinggi</span>
+          </div>
+
+          <div className="p-4 rounded-lg bg-slate-950 border border-slate-800/80 space-y-1">
+            <span className="text-slate-500 text-xs">RTK Tokens Saved</span>
+            <p className="text-xl font-bold text-emerald-400 font-mono">
+              +{(rtkSummary?.totalSavedTokens ?? 0).toLocaleString()}
+            </p>
+            <span className="text-[10px] text-emerald-400/80 font-sans font-semibold">
+              {rtkSummary?.savingsPercentage ?? 0}% Efisiensi Output
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Stage Breakdown */}
       {Object.keys(stageBreakdown).length > 0 && (
         <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 space-y-4">
-          <h2 className="text-base font-semibold text-white">Token Breakdown by Stage</h2>
+          <h2 className="text-base font-semibold text-white">Token Breakdown by Orchestration Stage</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {Object.entries(stageBreakdown).map(([stage, stats]) => (
               <div key={stage} className="p-4 rounded-lg bg-slate-800/40 border border-slate-700/50 space-y-1.5">
