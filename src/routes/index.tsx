@@ -1,41 +1,44 @@
-import { ROUTES } from "@/lib/constant/routes";
-import NotFound from "@/pages/NotFound";
-import ProjectReadyPage from "@/pages/ProjectReady";
-import { createBrowserRouter, Outlet } from "react-router-dom";
-import PublicRoute from "./PublicRoute";
-import LoginPage from "@/pages/Login";
-import PrivateRoute from "./PrivateRoute";
+import { createBrowserRouter } from "react-router-dom"
+import { DashboardLayout } from "@/components/layout/DashboardLayout"
+import { OverviewPage } from "@/pages/Overview"
+import { TasksPage } from "@/pages/Tasks"
+import { RunsPage } from "@/pages/Runs"
+import { KnowledgePage } from "@/pages/Knowledge"
+import { TelemetryPage } from "@/pages/Telemetry"
+import NotFound from "@/pages/NotFound"
+import PrivateRoute from "./PrivateRoute"
 
 export const router = createBrowserRouter([
-  // Private Routes
   {
     path: "/",
     element: (
       <PrivateRoute>
-        <Outlet />
+        <DashboardLayout />
       </PrivateRoute>
     ),
     children: [
-      // {
-      //   index: true,
-      //   element: <Navigate to={ROUTES.GALLERY} replace />
-      // },
       {
         index: true,
-        element: <ProjectReadyPage />,
-      }
-    ]
+        element: <OverviewPage />,
+      },
+      {
+        path: "tasks",
+        element: <TasksPage />,
+      },
+      {
+        path: "runs",
+        element: <RunsPage />,
+      },
+      {
+        path: "knowledge",
+        element: <KnowledgePage />,
+      },
+      {
+        path: "telemetry",
+        element: <TelemetryPage />,
+      },
+    ],
   },
-  // Public Routes - No layout wrapper needed
-  {
-    path: ROUTES.LOGIN,
-    element: (
-      <PublicRoute>
-        <LoginPage />
-      </PublicRoute>
-    ),
-  },
-  // Error Routes
   {
     path: "*",
     element: <NotFound />,

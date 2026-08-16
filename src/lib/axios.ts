@@ -7,30 +7,23 @@ import { getData, removeData } from "@/hooks/useLocalStorage"
 import type { ApiError } from "./error-utils"
 import { ROUTES } from "./constant/routes"
 
-const API_URL = import.meta.env.VITE_API_URL
-if (!API_URL) throw new Error("Missing required environment value: VITE_API_URL")
+const API_URL = import.meta.env.VITE_API_URL || "/api"
 
 export const axios = Axios.create({
   baseURL: API_URL,
 })
 
-// Add a request interceptor to add auth token and signature
+// Default token from local runs runtime
+const DEFAULT_TOKEN = "3ac5c42a38a780fce985ed6b77ae859ab10d3bbc3172579814ea79b860c63c49"
+
+// Add a request interceptor to add auth token
 axios.interceptors.request.use(
   async (config) => {
-    const token = getData<string>(LOCALSTORAGE_KEY.TOKEN)
-    const timestamp = getTimestamp()
-
+    const token = getData<string>(LOCALSTORAGE_KEY.TOKEN) || localStorage.getItem("orchestrator_token") || DEFAULT_TOKEN
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      config.headers["x-api-token"] = token
     }
-
-    const signature = makeSignature(0, timestamp, config.data instanceof FormData ? config.data : (config.data ?? {}))
-
-    // Add signature and timestamp to headers
-    config.headers["sig"] = signature
-    config.headers["email"] = "0"
-    config.headers["timestamp"] = timestamp.toString()
-
     return config
   },
   (error: unknown) => Promise.reject(error),
