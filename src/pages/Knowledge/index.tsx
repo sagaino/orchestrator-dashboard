@@ -148,52 +148,59 @@ export const KnowledgePage: React.FC = () => {
             <span className="text-xs font-mono text-slate-400">{candidates.length} Menunggu Keputusan</span>
           </div>
 
-          {candidates.length === 0 ? (
+          {!candidates || !Array.isArray(candidates) || candidates.length === 0 ? (
             <div className="p-12 text-center rounded-xl bg-slate-900/40 border border-slate-800 text-slate-500 text-xs">
               Tidak ada candidate pengetahuan yang menunggu review.
             </div>
           ) : (
             <div className="space-y-3">
-              {candidates.map((cand) => (
-                <div
-                  key={cand.candidateId}
-                  className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="font-semibold text-sm text-white">{cand.title}</h3>
-                      <p className="text-xs font-mono text-slate-500">{cand.candidatePath}</p>
+              {candidates.map((cand: any) => {
+                const candidateId = cand.id || cand.candidateId || cand.path
+                return (
+                  <div
+                    key={candidateId}
+                    className="p-5 rounded-xl bg-slate-900 border border-slate-800 space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="font-semibold text-sm text-white">{cand.title}</h3>
+                        <p className="text-xs font-mono text-slate-500">{cand.path || cand.candidatePath}</p>
+                      </div>
+
+                      {cand.confidence !== null && cand.confidence !== undefined && (
+                        <span className="px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                          Confidence: {(cand.confidence * 100).toFixed(0)}%
+                        </span>
+                      )}
                     </div>
 
-                    <span className="px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                      Confidence: {(cand.confidence * 100).toFixed(0)}%
-                    </span>
-                  </div>
+                    {cand.summary && <p className="text-xs text-slate-300 leading-relaxed">{cand.summary}</p>}
 
-                  {cand.summary && <p className="text-xs text-slate-300 leading-relaxed">{cand.summary}</p>}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                      <span className="text-[11px] text-slate-500 font-mono">
+                        Target: {cand.recommendedTarget || "01-Knowledge/"}
+                      </span>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
-                    <span className="text-[11px] text-slate-500 font-mono">Provenance: {cand.provenance}</span>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handlePromote(cand.candidateId)}
-                        disabled={actionLoading}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors cursor-pointer"
-                      >
-                        Promote to Wiki
-                      </button>
-                      <button
-                        onClick={() => handleReject(cand.candidateId)}
-                        disabled={actionLoading}
-                        className="px-3 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-medium transition-colors cursor-pointer"
-                      >
-                        Reject
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handlePromote(candidateId)}
+                          disabled={actionLoading}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors cursor-pointer"
+                        >
+                          Promote to Wiki
+                        </button>
+                        <button
+                          onClick={() => handleReject(candidateId)}
+                          disabled={actionLoading}
+                          className="px-3 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-medium transition-colors cursor-pointer"
+                        >
+                          Reject
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
