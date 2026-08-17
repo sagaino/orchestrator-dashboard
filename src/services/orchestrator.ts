@@ -70,6 +70,38 @@ export interface ProjectInfo {
   projectPagePath: string
 }
 
+export interface VerificationResultItem {
+  script: string
+  passed: boolean
+  exitCode: number
+  stdoutTail?: string
+  stderrTail?: string
+}
+
+export interface RunHistoryEntry {
+  event: string
+  state: string
+  at: string
+  message?: string
+}
+
+export interface KnowledgeCandidateProposal {
+  title?: string
+  type?: string
+  targetPath?: string
+  summary?: string
+}
+
+export interface RunRetrospectiveData {
+  analysis?: string
+  summary?: string
+  knowledgeDecision?: "PROJECT_ONLY" | "CANDIDATE" | "WIKI" | "IGNORE" | "UPDATE" | "NEW" | string
+  confidence?: number
+  suggestedRouting?: string
+  notes?: string
+  candidateProposal?: KnowledgeCandidateProposal
+}
+
 export interface RunManifest {
   schemaVersion: number
   runId: string
@@ -99,7 +131,7 @@ export interface RunManifest {
     }
     verification?: {
       allPassed: boolean
-      results: Array<{ script: string; passed: boolean; exitCode: number; stdoutTail?: string; stderrTail?: string }>
+      results: VerificationResultItem[]
     }
     graphify?: {
       skipped: boolean
@@ -117,12 +149,8 @@ export interface RunManifest {
       totalTokens?: number
     }
   }
-  history?: Array<{
-    event: string
-    state: string
-    at: string
-    message?: string
-  }>
+  retrospective?: RunRetrospectiveData
+  history?: RunHistoryEntry[]
 }
 
 export interface KnowledgeCandidate {

@@ -30,7 +30,7 @@ export const QuickTaskIntake: React.FC<QuickTaskIntakeProps> = ({
             <select
               value={selectedProject}
               onChange={(e) => onSelectProject(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -47,7 +47,7 @@ export const QuickTaskIntake: React.FC<QuickTaskIntakeProps> = ({
               value={prompt}
               onChange={(e) => onPromptChange(e.target.value)}
               placeholder="Contoh: Tambahkan tombol toggle dark mode pada Navbar dan pastikan typecheck lolos..."
-              className="w-full px-3 py-2.5 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none font-sans"
+              className="w-full px-3 py-2.5 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 resize-none font-sans"
             />
           </div>
 
@@ -61,7 +61,7 @@ export const QuickTaskIntake: React.FC<QuickTaskIntakeProps> = ({
           <button
             type="submit"
             disabled={submitting || !prompt.trim()}
-            className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/20"
+            className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/20 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
             {submitting ? (
               <span>Planning & Queuing...</span>
@@ -77,3 +77,4 @@ export const QuickTaskIntake: React.FC<QuickTaskIntakeProps> = ({
     </div>
   )
 }
+

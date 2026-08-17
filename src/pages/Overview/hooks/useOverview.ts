@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react"
 import { useDaemonStatus, useProjects, useRuns, useRequestTask } from "@/hooks/use-orchestrator"
+import { toast } from "@/components/ui/toast"
 import type { UseOverviewReturn } from "../types/overview"
 
 export const useOverview = (): UseOverviewReturn => {
@@ -25,11 +26,21 @@ export const useOverview = (): UseOverviewReturn => {
         request: quickPrompt.trim(),
         autoStart: true,
       })
-      setQuickSuccess(`Task ${res.task?.id || "baru"} berhasil dibuat dan dimasukkan ke antrean!`)
+      const successMsg = `Task ${res.task?.id || "baru"} berhasil dibuat dan dimasukkan ke antrean!`
+      setQuickSuccess(successMsg)
       setQuickPrompt("")
+      toast.add({
+        title: "Task Dispatched",
+        description: successMsg,
+        type: "success",
+      })
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err)
-      alert(`Gagal mengirim task: ${errorMessage}`)
+      toast.add({
+        title: "Gagal Mengirim Task",
+        description: errorMessage,
+        type: "error",
+      })
     }
   }
 
@@ -55,3 +66,4 @@ export const useOverview = (): UseOverviewReturn => {
     loadData: async () => {},
   }
 }
+
