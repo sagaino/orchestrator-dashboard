@@ -26,7 +26,7 @@ export const TelemetryPage: React.FC = () => {
   } = useTelemetryPage()
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-12">
+    <div className="max-w-7xl mx-auto space-y-8 pb-12 min-w-0 w-full">
       {/* Header with Title and Refresh Action */}
       <TelemetryHeader loading={loading} onRefresh={handleRefresh} />
 
@@ -37,11 +37,11 @@ export const TelemetryPage: React.FC = () => {
       />
 
       {/* Visual Analytics Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-7">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 min-w-0 items-stretch">
+        <div className="lg:col-span-7 min-w-0 w-full flex flex-col h-full">
           <TokenTrendChart data={trendData} loading={loading} />
         </div>
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-5 min-w-0 w-full flex flex-col h-full">
           <StageDistributionChart
             data={stageData}
             totalTokens={totalStageTokens}

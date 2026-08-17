@@ -1,6 +1,6 @@
 import React from "react"
 import { useTasks } from "./hooks"
-import { TaskIntakeForm, LiveJobQueue } from "./components"
+import { TaskIntakeForm, LiveJobQueue, ClarificationModal } from "./components"
 
 export const TasksPage: React.FC = () => {
   const {
@@ -16,6 +16,13 @@ export const TasksPage: React.FC = () => {
     submitting,
     handleSubmit,
     refetchDaemon,
+    clarificationOpen,
+    clarificationQuestion,
+    clarificationAnswer,
+    setClarificationAnswer,
+    handleCloseClarification,
+    handleSubmitClarification,
+    pendingPrompt,
   } = useTasks()
 
   return (
@@ -49,6 +56,18 @@ export const TasksPage: React.FC = () => {
           <LiveJobQueue jobs={queueJobs} onRefresh={refetchDaemon} />
         </div>
       </div>
+
+      {/* Interactive Clarification Modal */}
+      <ClarificationModal
+        isOpen={clarificationOpen}
+        question={clarificationQuestion}
+        answer={clarificationAnswer}
+        onAnswerChange={setClarificationAnswer}
+        submitting={submitting}
+        onClose={handleCloseClarification}
+        onSubmit={handleSubmitClarification}
+        originalPrompt={pendingPrompt || prompt}
+      />
     </div>
   )
 }
