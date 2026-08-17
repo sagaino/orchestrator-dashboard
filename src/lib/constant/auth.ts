@@ -1,0 +1,1 @@
+export const DEFAULT_API_TOKEN = import.meta.env.VITE_ORCHESTRATOR_TOKEN || '3ac5c42a38a780fce985ed6b77ae859ab10d3bbc3172579814ea79b860c63c49';

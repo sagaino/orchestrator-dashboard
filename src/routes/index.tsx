@@ -6,7 +6,9 @@ import { RunsPage } from "@/pages/Runs"
 import { KnowledgePage } from "@/pages/Knowledge"
 import { TelemetryPage } from "@/pages/Telemetry"
 import NotFound from "@/pages/NotFound"
+import { ROUTES } from "@/lib/constant/routes"
 import PrivateRoute from "./PrivateRoute"
+import ErrorBoundary from "@/components/ErrorBoundary"
 
 export const router = createBrowserRouter([
   {
@@ -16,25 +18,26 @@ export const router = createBrowserRouter([
         <DashboardLayout />
       </PrivateRoute>
     ),
+    errorElement: <ErrorBoundary />,
     children: [
       {
         index: true,
         element: <OverviewPage />,
       },
       {
-        path: "tasks",
+        path: ROUTES.TASK,
         element: <TasksPage />,
       },
       {
-        path: "runs",
+        path: ROUTES.RUNS,
         element: <RunsPage />,
       },
       {
-        path: "knowledge",
+        path: ROUTES.KNOWLEDGE,
         element: <KnowledgePage />,
       },
       {
-        path: "telemetry",
+        path: ROUTES.TELEMETRY,
         element: <TelemetryPage />,
       },
     ],
