@@ -12,49 +12,25 @@ import {
   ChevronRight,
   ArrowRight,
 } from "lucide-react"
-import {
-  OrchestratorApi,
-  type KnowledgeCandidate,
-  type VaultHealth,
-} from "@/services/orchestrator"
+import { type KnowledgeCandidate, type VaultHealth } from "@/services/orchestrator"
+import { useKnowledgeCandidates, useKnowledgeHealth, usePromoteKnowledge, useRejectKnowledge } from "@/hooks/use-orchestrator"
 
 export const KnowledgePage: React.FC = () => {
-  const [candidates, setCandidates] = useState<KnowledgeCandidate[]>([])
-  const [health, setHealth] = useState<VaultHealth | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [actionLoading, setActionLoading] = useState(false)
-
-  const loadData = async () => {
-    try {
-      setLoading(true)
-      const [candList, healthData] = await Promise.all([
-        OrchestratorApi.getKnowledgeCandidates(),
-        OrchestratorApi.getKnowledgeHealth(),
-      ])
-      setCandidates(candList)
-      setHealth(healthData)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadData()
-  }, [])
+  const { data: candidates = [], isLoading: candidatesLoading } = useKnowledgeCandidates()
+  const { data: health = null, isLoading: healthLoading, refetch: refetchHealth } = useKnowledgeHealth()
+  const { mutateAsync: promoteKnowledge, isPending: promotePending } = usePromoteKnowledge()
+  const { mutateAsync: rejectKnowledge, isPending: rejectPending } = useRejectKnowledge()
+  
+  const loading = candidatesLoading || healthLoading
+  const actionLoading = promotePending || rejectPending
 
   const handlePromote = async (candidateId: string) => {
     const target = prompt("Masukkan target path di 01-Knowledge/ (opsional):", "")
     try {
-      setActionLoading(true)
-      await OrchestratorApi.promoteKnowledge(candidateId, target || undefined)
+      await promoteKnowledge({ selector: candidateId, targetPath: target || undefined })
       alert("Candidate berhasil dipromosikan ke 01-Knowledge/!")
-      loadData()
     } catch (err: any) {
       alert(`Gagal promosi: ${err.message}`)
-    } finally {
-      setActionLoading(false)
     }
   }
 
@@ -62,14 +38,10 @@ export const KnowledgePage: React.FC = () => {
     const reason = prompt("Masukkan alasan penolakan candidate:", "Duplicate or not reusable")
     if (reason === null) return
     try {
-      setActionLoading(true)
-      await OrchestratorApi.rejectKnowledge(candidateId, reason)
+      await rejectKnowledge({ selector: candidateId, reason })
       alert("Candidate berhasil ditolak dan diarsipkan.")
-      loadData()
     } catch (err: any) {
       alert(`Gagal reject: ${err.message}`)
-    } finally {
-      setActionLoading(false)
     }
   }
 
@@ -92,7 +64,7 @@ export const KnowledgePage: React.FC = () => {
         </div>
 
         <button
-          onClick={loadData}
+          onClick={() => refetchHealth&& refetchHealth()}
           disabled={loading}
           className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
         >
