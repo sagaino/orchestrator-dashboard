@@ -198,12 +198,10 @@ export const DashboardLayout: React.FC = () => {
 
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Live Event Pill */}
-            {lastEvent && lastEvent.event !== "connected" && (
-              <div className="hidden sm:flex items-center gap-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full text-xs font-mono text-indigo-300">
-                <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse"></span>
-                <span>SSE: {lastEvent.event}</span>
-              </div>
-            )}
+            <div className="hidden sm:flex items-center gap-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full text-xs font-mono text-indigo-300">
+              <span className={`h-2 w-2 rounded-full ${lastEvent?.event && lastEvent.event !== "connected" ? "bg-indigo-400 animate-pulse" : "bg-emerald-400"}`}></span>
+              <span>SSE: {lastEvent?.event || "connected"}</span>
+            </div>
 
             {/* Notification Popover */}
             <Popover>
@@ -252,39 +250,46 @@ export const DashboardLayout: React.FC = () => {
                       Belum ada notifikasi
                     </div>
                   ) : (
-                    notificationList.map((n) => (
-                      <div
-                        key={n.id}
-                        className={`p-3 text-xs space-y-1 transition-colors ${
-                          n.readAt ? "opacity-70 hover:bg-slate-800/40" : "bg-indigo-950/20 hover:bg-indigo-950/30"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-1.5 font-medium text-slate-200">
-                            {!n.readAt && <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 shrink-0" />}
-                            <span className="truncate">{n.title || n.type || "Notification"}</span>
-                          </div>
-                          <span className="text-[10px] font-mono text-slate-500 shrink-0">
-                            {n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
-                          </span>
-                        </div>
-                        {n.message && (
-                          <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-2">{n.message}</p>
-                        )}
-                        <div className="flex items-center justify-between text-[10px] font-mono pt-1">
-                          {n.taskId ? (
-                            <span className="text-indigo-400 font-semibold">{n.taskId}</span>
-                          ) : (
-                            <span className="text-slate-500">{n.type || "system"}</span>
-                          )}
-                          {n.delivery && (
-                            <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60">
-                              {n.delivery}
+                    notificationList.map((item: any, idx: number) => {
+                      const deliveryStatus = typeof item.delivery === "object" && item.delivery !== null
+                        ? (item.delivery.status || "SENT")
+                        : (item.delivery ? String(item.delivery) : null);
+                      const key = item.id || item.notificationId || `notif-${idx}-${item.createdAt || Date.now()}`;
+
+                      return (
+                        <div
+                          key={key}
+                          className={`p-3 text-xs space-y-1 transition-colors ${
+                            item.readAt ? "opacity-70 hover:bg-slate-800/40" : "bg-indigo-950/20 hover:bg-indigo-950/30"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-1.5 font-medium text-slate-200">
+                              {!item.readAt && <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 shrink-0" />}
+                              <span className="truncate">{item.title || item.type || "Notification"}</span>
+                            </div>
+                            <span className="text-[10px] font-mono text-slate-500 shrink-0">
+                              {item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
                             </span>
+                          </div>
+                          {item.message && (
+                            <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-2">{item.message}</p>
                           )}
+                          <div className="flex items-center justify-between text-[10px] font-mono pt-1">
+                            {item.taskId ? (
+                              <span className="text-indigo-400 font-semibold">{item.taskId}</span>
+                            ) : (
+                              <span className="text-slate-500">{item.type || "system"}</span>
+                            )}
+                            {deliveryStatus && (
+                              <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60">
+                                {deliveryStatus}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </PopoverContent>
