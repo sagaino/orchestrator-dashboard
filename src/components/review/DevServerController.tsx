@@ -6,12 +6,11 @@ import {
   RefreshCw,
   Terminal,
   Globe,
-  CheckCircle2,
-  AlertTriangle,
   Eye,
   EyeOff,
 } from "lucide-react"
 import { OrchestratorApi, type DevServerStatus } from "@/services/orchestrator"
+import { toast } from "@/components/ui/toast"
 
 interface DevServerControllerProps {
   runId: string
@@ -43,8 +42,18 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
       setLoading(true)
       const data = await OrchestratorApi.startDevServer(runId)
       setStatus(data)
-    } catch (err: any) {
-      alert(`Gagal menjalankan dev server: ${err.message}`)
+      toast.add({
+        title: "Dev Server Dimulai",
+        description: `Visual QA dev server aktif pada port ${data.port || "default"}`,
+        type: "success",
+      })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      toast.add({
+        title: "Gagal Menjalankan Dev Server",
+        description: errorMessage,
+        type: "error",
+      })
     } finally {
       setLoading(false)
     }
@@ -55,12 +64,23 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
       setLoading(true)
       await OrchestratorApi.stopDevServer(runId)
       checkStatus()
-    } catch (err: any) {
-      alert(`Gagal menghentikan dev server: ${err.message}`)
+      toast.add({
+        title: "Dev Server Dihentikan",
+        description: "Dev server berhasil dimatikan.",
+        type: "info",
+      })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      toast.add({
+        title: "Gagal Menghentikan Dev Server",
+        description: errorMessage,
+        type: "error",
+      })
     } finally {
       setLoading(false)
     }
   }
+
 
   if (!workspaceExists) {
     return (
@@ -106,7 +126,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
               <button
                 onClick={handleStart}
                 disabled={loading || isStarting}
-                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer shadow-lg shadow-emerald-600/20"
+                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer shadow-lg shadow-emerald-600/20 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 {isStarting ? (
                   <>
@@ -124,7 +144,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
               <button
                 onClick={handleStop}
                 disabled={loading}
-                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer shadow-lg shadow-rose-600/20"
+                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer shadow-lg shadow-rose-600/20 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 <Square className="h-3.5 w-3.5 fill-white" />
                 <span>Stop Server</span>
@@ -142,7 +162,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
                 href={status.url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-indigo-400 font-semibold hover:underline flex items-center gap-1"
+                className="text-indigo-400 font-semibold hover:underline flex items-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
               >
                 <span>{status.url}</span>
                 <ExternalLink className="h-3 w-3" />
@@ -153,7 +173,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowIframe(!showIframe)}
-                className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 {showIframe ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                 <span>{showIframe ? "Hide Embedded Preview" : "Show Embedded Preview"}</span>
@@ -163,7 +183,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
                 href={status.url}
                 target="_blank"
                 rel="noreferrer"
-                className="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
+                className="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium flex items-center gap-1.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 <span>Open in New Window</span>
                 <ExternalLink className="h-3.5 w-3.5" />

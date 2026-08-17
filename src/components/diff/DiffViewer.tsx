@@ -109,10 +109,10 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ diffData, loading = fals
               <button
                 key={file.file}
                 onClick={() => setSelectedFileIndex(i)}
-                className={`w-full text-left p-2.5 rounded-lg text-xs transition-all flex items-start gap-2.5 cursor-pointer ${
+                className={`w-full text-left p-2.5 rounded-lg text-xs transition-all flex items-start gap-2.5 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   isSelected
                     ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 font-medium"
-                    : "text-slate-300 hover:bg-slate-900"
+                    : "text-slate-300 hover:bg-slate-900 border border-transparent"
                 }`}
               >
                 <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${statusColor}`} />
@@ -143,7 +143,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ diffData, loading = fals
 
           <button
             onClick={() => handleCopy(selectedFile.patch)}
-            className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             title="Copy patch"
           >
             {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
