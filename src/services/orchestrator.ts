@@ -70,6 +70,17 @@ export interface ProjectInfo {
   projectPagePath: string
 }
 
+export interface OnboardExistingProjectPayload {
+  repositoryPath: string
+  projectId?: string
+}
+
+export interface OnboardNewProjectPayload {
+  projectId: string
+  targetDirectory: string
+  blueprint?: string
+}
+
 export interface VerificationResultItem {
   script: string
   passed: boolean
@@ -323,6 +334,16 @@ export const OrchestratorApi = {
 
   async getProjectDetail(id: string) {
     const res = await axios.get<{ success: boolean; data: ProjectInfo }>(`/api/projects/${id}`)
+    return res.data.data
+  },
+
+  async onboardExistingProject(payload: { repositoryPath: string; projectId?: string }) {
+    const res = await axios.post<{ success: boolean; data: any }>("/api/projects/onboard/existing", payload)
+    return res.data.data
+  },
+
+  async onboardNewProject(payload: { projectId: string; targetDirectory: string; blueprint?: string }) {
+    const res = await axios.post<{ success: boolean; data: any }>("/api/projects/onboard/new", payload)
     return res.data.data
   },
 
