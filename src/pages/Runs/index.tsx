@@ -226,7 +226,7 @@ export const RunsPage: React.FC = () => {
           <button
             onClick={loadRuns}
             disabled={loading}
-            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer outline-none focus:outline-none"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -239,10 +239,10 @@ export const RunsPage: React.FC = () => {
           <button
             key={f}
             onClick={() => setFilterState(f)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer outline-none focus:outline-none focus-visible:outline-none ${
               filterState === f
                 ? "bg-indigo-600/20 text-indigo-400 border border-indigo-500/30"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                : "text-slate-400 border border-transparent hover:text-slate-200 hover:bg-slate-900"
             }`}
           >
             {f}
@@ -342,7 +342,7 @@ export const RunsPage: React.FC = () => {
                   <button
                     onClick={() => handlePreview(selectedRun.runId)}
                     disabled={actionLoading}
-                    className="px-3.5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs font-medium text-slate-100 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="px-3.5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs font-medium text-slate-100 flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus:outline-none"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                     <span>Preview in VS Code</span>
@@ -353,7 +353,7 @@ export const RunsPage: React.FC = () => {
                     <button
                       onClick={() => handleStart(selectedRun.runId)}
                       disabled={actionLoading}
-                      className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                      className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus:outline-none"
                     >
                       <Sparkles className="h-3.5 w-3.5" />
                       <span>Approve & Execute</span>
@@ -366,7 +366,7 @@ export const RunsPage: React.FC = () => {
                       <button
                         onClick={() => setRevisionModalOpen(true)}
                         disabled={actionLoading}
-                        className="px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus:outline-none"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         <span>Request Changes</span>
@@ -375,7 +375,7 @@ export const RunsPage: React.FC = () => {
                       <button
                         onClick={() => handleAccept(selectedRun.runId)}
                         disabled={actionLoading}
-                        className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus:outline-none"
                       >
                         <Check className="h-3.5 w-3.5" />
                         <span>Accept & Sync Wiki</span>
@@ -384,7 +384,7 @@ export const RunsPage: React.FC = () => {
                       <button
                         onClick={() => handleReject(selectedRun.runId)}
                         disabled={actionLoading}
-                        className="px-3.5 py-2 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3.5 py-2 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus:outline-none"
                       >
                         <X className="h-3.5 w-3.5" />
                         <span>Reject</span>
@@ -398,7 +398,7 @@ export const RunsPage: React.FC = () => {
                       <button
                         onClick={() => handleRecover(selectedRun.runId)}
                         disabled={actionLoading}
-                        className="px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus:outline-none"
                       >
                         <Wrench className="h-3.5 w-3.5" />
                         <span>Auto Recover</span>
@@ -407,7 +407,7 @@ export const RunsPage: React.FC = () => {
                       <button
                         onClick={() => handleRetry(selectedRun.runId)}
                         disabled={actionLoading}
-                        className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus:outline-none"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         <span>Retry Task</span>
@@ -421,7 +421,7 @@ export const RunsPage: React.FC = () => {
               <div className="flex items-center gap-2 border-b border-slate-800 text-xs">
                 <button
                   onClick={() => setActiveTab("OVERVIEW")}
-                  className={`pb-2.5 font-semibold px-2 border-b-2 transition-all cursor-pointer ${
+                  className={`pb-2.5 font-semibold px-2 border-b-2 transition-all cursor-pointer outline-none focus:outline-none focus-visible:outline-none ${
                     activeTab === "OVERVIEW"
                       ? "text-indigo-400 border-indigo-500"
                       : "text-slate-400 border-transparent hover:text-slate-200"
@@ -431,7 +431,7 @@ export const RunsPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab("DIFF")}
-                  className={`pb-2.5 font-semibold px-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`pb-2.5 font-semibold px-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 outline-none focus:outline-none focus-visible:outline-none ${
                     activeTab === "DIFF"
                       ? "text-indigo-400 border-indigo-500"
                       : "text-slate-400 border-transparent hover:text-slate-200"
@@ -442,7 +442,7 @@ export const RunsPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab("QA")}
-                  className={`pb-2.5 font-semibold px-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`pb-2.5 font-semibold px-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 outline-none focus:outline-none focus-visible:outline-none ${
                     activeTab === "QA"
                       ? "text-indigo-400 border-indigo-500"
                       : "text-slate-400 border-transparent hover:text-slate-200"
@@ -594,14 +594,14 @@ export const RunsPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setRevisionModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition-colors cursor-pointer outline-none focus:outline-none"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading || !revisionReason.trim()}
-                  className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-medium text-white transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-medium text-white transition-colors cursor-pointer outline-none focus:outline-none"
                 >
                   {actionLoading ? "Submitting..." : "Send Revision"}
                 </button>

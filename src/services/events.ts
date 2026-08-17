@@ -1,4 +1,4 @@
-const DEFAULT_TOKEN = "3ac5c42a38a780fce985ed6b77ae859ab10d3bbc3172579814ea79b860c63c49"
+import { DEFAULT_API_TOKEN } from "@/lib/constant/auth"
 
 export interface OrchestratorEvent {
   event: string
@@ -9,7 +9,7 @@ export function subscribeToEvents(
   onEvent: (event: OrchestratorEvent) => void,
   onError?: (err: any) => void
 ) {
-  const token = localStorage.getItem("orchestrator_token") || DEFAULT_TOKEN
+  const token = localStorage.getItem("orchestrator_token") || DEFAULT_API_TOKEN
   const eventSource = new EventSource(`/api/events?token=${token}`)
 
   const eventTypes = [

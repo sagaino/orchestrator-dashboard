@@ -1,4 +1,7 @@
 export const ROUTES = {
   LOGIN: "/login",
-  GALLERY: "/gallery",
+  TASK: "tasks",
+  RUNS: "runs",
+  KNOWLEDGE: "knowledge",
+  TELEMETRY: "telemetry",
 }
