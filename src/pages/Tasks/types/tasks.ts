@@ -32,6 +32,17 @@ export interface LiveJobQueueProps {
   onRefresh?: () => void
 }
 
+export interface ClarificationModalProps {
+  isOpen: boolean
+  question: string
+  answer: string
+  onAnswerChange: (answer: string) => void
+  submitting?: boolean
+  onClose: () => void
+  onSubmit: (e: FormEvent) => Promise<void> | void
+  originalPrompt?: string
+}
+
 export interface UseTasksReturn {
   projects: ProjectInfo[]
   daemon: DaemonStatus | null
@@ -48,4 +59,13 @@ export interface UseTasksReturn {
   submitting: boolean
   handleSubmit: (e: FormEvent) => Promise<void>
   refetchDaemon?: () => void
+  clarificationOpen: boolean
+  setClarificationOpen: Dispatch<SetStateAction<boolean>>
+  clarificationQuestion: string
+  setClarificationQuestion: Dispatch<SetStateAction<string>>
+  clarificationAnswer: string
+  setClarificationAnswer: Dispatch<SetStateAction<string>>
+  handleCloseClarification: () => void
+  handleSubmitClarification: (e: FormEvent) => Promise<void>
+  pendingPrompt?: string
 }

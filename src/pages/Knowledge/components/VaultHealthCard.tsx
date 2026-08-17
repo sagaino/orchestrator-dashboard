@@ -13,7 +13,12 @@ import {
   Check,
   Info,
   RefreshCw,
+  Sparkles,
+  Wrench,
+  Loader2,
 } from "lucide-react"
+import { useFixSafeKnowledgeHealth } from "@/hooks/use-orchestrator"
+import { toast } from "@/components/ui/toast"
 import type { VaultHealthCardProps } from "../types"
 
 type FilterCategory = "all" | "broken_links" | "unindexed" | "orphan_candidates" | "errors" | "warnings"
@@ -50,6 +55,8 @@ export const VaultHealthCard: React.FC<VaultHealthCardProps> = ({ health, onRefr
   const [searchQuery, setSearchQuery] = useState("")
   const [copiedPath, setCopiedPath] = useState<string | null>(null)
 
+  const { mutateAsync: fixSafeHealth, isPending: isFixing } = useFixSafeKnowledgeHealth()
+
   if (!health) return null
 
   const handleCopyPath = (path: string) => {
@@ -58,9 +65,34 @@ export const VaultHealthCard: React.FC<VaultHealthCardProps> = ({ health, onRefr
     setTimeout(() => setCopiedPath(null), 2000)
   }
 
+  const handleAutoFixSafe = async () => {
+    try {
+      const res = await fixSafeHealth()
+      toast.add({
+        title: "Auto-Fix Safe Selesai",
+        description:
+          res?.message ||
+          "Isu aman pada Vault berhasil diperbaiki dan didaftarkan ke indeks.",
+        type: "success",
+      })
+      if (onRefresh) {
+        onRefresh()
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      toast.add({
+        title: "Gagal Auto-Fix Safe",
+        description: errorMessage,
+        type: "error",
+      })
+    }
+  }
+
   // Combine errors and warnings into unified issue list
   const errors = Array.isArray(health.errors) ? health.errors : []
   const warnings = Array.isArray(health.warnings) ? health.warnings : []
+  const unindexedCount = health.unindexedCount || 0
+  const hasSafeFixableIssues = unindexedCount > 0 || warnings.length > 0
 
   const unifiedIssues: UnifiedIssue[] = [
     ...errors.map((err, idx) => ({
@@ -154,14 +186,31 @@ export const VaultHealthCard: React.FC<VaultHealthCardProps> = ({ health, onRefr
               Audit Terakhir: {new Date(health.timestamp).toLocaleTimeString()}
             </div>
           )}
+          {hasSafeFixableIssues && (
+            <button
+              type="button"
+              onClick={handleAutoFixSafe}
+              disabled={isFixing}
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              title="Perbaiki otomatis isu aman pada Obsidian Vault"
+            >
+              {isFixing ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" />
+              )}
+              <span>{isFixing ? "Memperbaiki..." : "Auto-Fix Safe Issues"}</span>
+            </button>
+          )}
           {onRefresh && (
             <button
               type="button"
               onClick={onRefresh}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              disabled={isFixing}
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Perbarui status audit vault"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw className={`h-3.5 w-3.5 ${isFixing ? "animate-spin" : ""}`} />
             </button>
           )}
         </div>
@@ -396,6 +445,33 @@ export const VaultHealthCard: React.FC<VaultHealthCardProps> = ({ health, onRefr
               />
             </div>
           </div>
+
+          {/* Quick Auto-Fix Action Banner if safe fixable issues exist */}
+          {hasSafeFixableIssues && (
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+              <div className="flex items-center gap-2 text-emerald-300">
+                <Sparkles className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span>
+                  {unindexedCount > 0
+                    ? `Terdapat ${unindexedCount} berkas belum terindeks yang dapat didaftarkan otomatis ke index.md.`
+                    : "Terdapat peringatan aman pada Vault yang dapat diperbaiki otomatis."}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleAutoFixSafe}
+                disabled={isFixing}
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0 ml-auto shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              >
+                {isFixing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Wrench className="h-3.5 w-3.5" />
+                )}
+                <span>{isFixing ? "Memperbaiki..." : "Auto-Fix Safe Issues"}</span>
+              </button>
+            </div>
+          )}
 
           {/* Issues List or Clean State */}
           {filteredIssues.length === 0 ? (

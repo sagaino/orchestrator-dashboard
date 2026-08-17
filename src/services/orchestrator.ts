@@ -440,6 +440,11 @@ export const OrchestratorApi = {
     return res.data.data
   },
 
+  async fixSafeKnowledgeHealth() {
+    const res = await axios.post<{ success: boolean; data: any }>("/api/knowledge/health/fix-safe")
+    return res.data.data
+  },
+
   // Notifications & Telemetry
   async getNotifications() {
     const res = await axios.get<{ success: boolean; data: any[] }>("/api/notifications")
