@@ -51,7 +51,8 @@ export function useRuns() {
   return useQuery<RunManifest[]>({
     queryKey: queryKeys.runs,
     queryFn: () => OrchestratorApi.getRuns(),
-    staleTime: 3_000,
+    refetchInterval: 3_000,
+    staleTime: 1_000,
   })
 }
 
@@ -217,6 +218,16 @@ export function useRejectKnowledge() {
       OrchestratorApi.rejectKnowledge(selector, reason, rejectedBy),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeCandidates })
+    },
+  })
+}
+
+export function useFixSafeKnowledgeHealth() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => OrchestratorApi.fixSafeKnowledgeHealth(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHealth })
     },
   })
 }
