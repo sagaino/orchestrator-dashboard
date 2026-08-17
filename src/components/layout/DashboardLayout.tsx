@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React from "react"
 import { Outlet, NavLink, useLocation } from "react-router-dom"
 import {
   LayoutDashboard,
@@ -6,54 +6,17 @@ import {
   History,
   BookOpen,
   BarChart3,
-  Activity,
-  CheckCircle2,
-  AlertCircle,
   Bell,
   RefreshCw,
   Cpu,
-  Layers,
 } from "lucide-react"
-import { OrchestratorApi, type DaemonStatus } from "@/services/orchestrator"
-import { subscribeToEvents } from "@/services/events"
+import { useDaemonStatus } from "@/hooks/use-orchestrator"
+import { useSSEEvents } from "@/providers/EventsProvider"
 
 export const DashboardLayout: React.FC = () => {
-  const [daemon, setDaemon] = useState<DaemonStatus | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [liveEvents, setLiveEvents] = useState<Array<{ event: string; timestamp: string; message: string }>>([])
+  const { data: daemon, isLoading: loading, refetch } = useDaemonStatus()
+  const { lastEvent } = useSSEEvents()
   const location = useLocation()
-
-  const fetchStatus = async () => {
-    try {
-      setLoading(true)
-      const data = await OrchestratorApi.getDaemonStatus()
-      setDaemon(data)
-    } catch {
-      setDaemon(null)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchStatus()
-    const interval = setInterval(fetchStatus, 15000)
-
-    const unsubscribe = subscribeToEvents((evt) => {
-      const entry = {
-        event: evt.event,
-        timestamp: new Date().toLocaleTimeString(),
-        message: typeof evt.data === "object" ? JSON.stringify(evt.data) : String(evt.data),
-      }
-      setLiveEvents((prev) => [entry, ...prev.slice(0, 19)])
-      fetchStatus()
-    })
-
-    return () => {
-      clearInterval(interval)
-      unsubscribe()
-    }
-  }, [])
 
   const navItems = [
     { label: "Overview", to: "/", icon: LayoutDashboard },
@@ -89,7 +52,7 @@ export const DashboardLayout: React.FC = () => {
                   to={item.to}
                   end={item.to === "/"}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors outline-none focus:outline-none focus-visible:outline-none focus:ring-0 select-none border ${
+                    `flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 select-none border ${
                       isActive
                         ? "bg-indigo-600/15 text-indigo-400 border-indigo-500/30 shadow-sm"
                         : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border-transparent"
@@ -114,7 +77,7 @@ export const DashboardLayout: React.FC = () => {
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Daemon Runtime</span>
               <button
-                onClick={fetchStatus}
+                onClick={() => refetch()}
                 disabled={loading}
                 title="Refresh Status"
                 className="text-slate-400 hover:text-slate-200 transition-colors p-1"
@@ -172,17 +135,17 @@ export const DashboardLayout: React.FC = () => {
 
           <div className="flex items-center gap-4">
             {/* Live Event Pill */}
-            {liveEvents.length > 0 && (
+            {lastEvent && lastEvent.event !== "connected" && (
               <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full text-xs font-mono text-indigo-300">
                 <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse"></span>
-                <span>SSE: {liveEvents[0].event}</span>
+                <span>SSE: {lastEvent.event}</span>
               </div>
             )}
 
             {/* Notification Badge */}
             <div className="relative">
               <button
-                onClick={fetchStatus}
+                onClick={() => refetch()}
                 className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 transition-colors border border-slate-700/60"
               >
                 <Bell className="h-4 w-4" />

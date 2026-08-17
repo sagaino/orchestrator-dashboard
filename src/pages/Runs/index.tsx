@@ -21,68 +21,57 @@ import {
   Globe,
   BookOpen,
 } from "lucide-react"
-import { OrchestratorApi, type RunManifest, type RunDiffData } from "@/services/orchestrator"
-import { subscribeToEvents } from "@/services/events"
+import { type RunManifest, type RunDiffData } from "@/services/orchestrator"
 import { DiffViewer } from "@/components/diff/DiffViewer"
 import { DevServerController } from "@/components/review/DevServerController"
+import { 
+  useRuns, 
+  useRunDiff, 
+  useAcceptRun, 
+  useRejectRun, 
+  useRequestChanges, 
+  useStartRun,
+  usePreviewRun,
+  useRecoverRun,
+  useRetryRun
+} from "@/hooks/use-orchestrator"
 
 export const RunsPage: React.FC = () => {
-  const [runs, setRuns] = useState<RunManifest[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: runs = [], isLoading: runsLoading, refetch: refetchRuns } = useRuns()
+  
   const [filterState, setFilterState] = useState<string>("ALL")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedRun, setSelectedRun] = useState<RunManifest | null>(null)
   const [activeTab, setActiveTab] = useState<"OVERVIEW" | "DIFF" | "QA" | "RETROSPECTIVE">("OVERVIEW")
-  const [diffData, setDiffData] = useState<RunDiffData | null>(null)
-  const [diffLoading, setDiffLoading] = useState(false)
-  const [actionLoading, setActionLoading] = useState(false)
   const [revisionModalOpen, setRevisionModalOpen] = useState(false)
   const [revisionReason, setRevisionReason] = useState("")
 
-  const loadRuns = async () => {
-    try {
-      setLoading(true)
-      const data = await OrchestratorApi.getRuns()
-      setRuns(data)
-      if (data.length > 0 && !selectedRun) {
-        setSelectedRun(data[0])
-      } else if (selectedRun) {
-        const updated = data.find((r) => r.runId === selectedRun.runId)
-        if (updated) setSelectedRun(updated)
+  const { data: diffData, isLoading: diffLoading } = useRunDiff(
+    (selectedRun && (activeTab === "DIFF" || activeTab === "QA")) ? selectedRun.runId : null
+  )
+
+  const { mutateAsync: acceptRun, isPending: acceptPending } = useAcceptRun()
+  const { mutateAsync: rejectRun, isPending: rejectPending } = useRejectRun()
+  const { mutateAsync: requestChanges, isPending: changesPending } = useRequestChanges()
+  const { mutateAsync: startRun, isPending: startPending } = useStartRun()
+  const { mutateAsync: previewRun, isPending: previewPending } = usePreviewRun()
+  const { mutateAsync: recoverRun, isPending: recoverPending } = useRecoverRun()
+  const { mutateAsync: retryRun, isPending: retryPending } = useRetryRun()
+
+  const actionLoading = acceptPending || rejectPending || changesPending || startPending || previewPending || recoverPending || retryPending
+
+
+  // Keep selectedRun in sync if runs change
+  useEffect(() => {
+    if (!selectedRun && runs.length > 0) {
+      setSelectedRun(runs[0])
+    } else if (selectedRun && runs.length > 0) {
+      const updated = runs.find((r) => r.runId === selectedRun.runId)
+      if (updated && updated !== selectedRun) {
+        setSelectedRun(updated)
       }
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
     }
-  }
-
-  const loadDiff = async (runId: string) => {
-    try {
-      setDiffLoading(true)
-      const data = await OrchestratorApi.getRunDiff(runId)
-      setDiffData(data)
-    } catch (err) {
-      console.error("Failed to load diff:", err)
-      setDiffData(null)
-    } finally {
-      setDiffLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadRuns()
-    const unsubscribe = subscribeToEvents(() => {
-      loadRuns()
-    })
-    return () => unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    if (selectedRun && (activeTab === "DIFF" || activeTab === "QA")) {
-      loadDiff(selectedRun.runId)
-    }
-  }, [selectedRun?.runId, activeTab])
+  }, [runs, selectedRun])
 
   const filteredRuns = runs.filter((r) => {
     if ((r.state as string) === "SUPERSEDED") return false
@@ -105,40 +94,29 @@ export const RunsPage: React.FC = () => {
   // Review Actions
   const handleStart = async (runId: string) => {
     try {
-      setActionLoading(true)
-      await OrchestratorApi.startRun(runId)
+      await startRun({ runId })
       alert("Run berhasil di-approve dan mulai dieksekusi!")
-      loadRuns()
     } catch (err: any) {
       alert(`Gagal menjalankan run: ${err.message}`)
-    } finally {
-      setActionLoading(false)
     }
   }
 
   const handlePreview = async (runId: string) => {
     try {
-      setActionLoading(true)
-      const res = await OrchestratorApi.previewRun(runId)
-      alert(`Workspace dibuka di VS Code:\n${res.workspacePath || "Berhasil dibuka di VS Code."}`)
+      const res = await previewRun(runId)
+      alert(`Workspace dibuka di VS Code:\n${res?.workspacePath || "Berhasil dibuka di VS Code."}`)
     } catch (err: any) {
       alert(`Gagal preview: ${err.message}`)
-    } finally {
-      setActionLoading(false)
     }
   }
 
   const handleAccept = async (runId: string) => {
     if (!confirm("Apakah Anda yakin ingin menyetujui run ini? Perubahan akan diaplikasikan ke branch utama dan disinkronkan ke Wiki.")) return
     try {
-      setActionLoading(true)
-      await OrchestratorApi.acceptRun(runId, { approvedBy: "user" })
+      await acceptRun({ runId, approvedBy: "user" })
       alert("Run berhasil di-accept dan disinkronkan!")
-      loadRuns()
     } catch (err: any) {
       alert(`Gagal accept: ${err.message}`)
-    } finally {
-      setActionLoading(false)
     }
   }
 
@@ -146,14 +124,10 @@ export const RunsPage: React.FC = () => {
     const reason = prompt("Masukkan alasan penolakan run:", "Rejected by user")
     if (reason === null) return
     try {
-      setActionLoading(true)
-      await OrchestratorApi.rejectRun(runId, reason)
+      await rejectRun({ runId, reason })
       alert("Run berhasil ditolak dan worktree dibersihkan.")
-      loadRuns()
     } catch (err: any) {
       alert(`Gagal reject: ${err.message}`)
-    } finally {
-      setActionLoading(false)
     }
   }
 
@@ -161,42 +135,30 @@ export const RunsPage: React.FC = () => {
     e.preventDefault()
     if (!selectedRun || !revisionReason.trim()) return
     try {
-      setActionLoading(true)
-      await OrchestratorApi.requestChanges(selectedRun.runId, revisionReason.trim())
+      await requestChanges({ runId: selectedRun.runId, reason: revisionReason.trim() })
       setRevisionModalOpen(false)
       setRevisionReason("")
       alert("Revisi berhasil dikirim ke agent di worktree terisolasi!")
-      loadRuns()
     } catch (err: any) {
       alert(`Gagal mengirim revisi: ${err.message}`)
-    } finally {
-      setActionLoading(false)
     }
   }
 
   const handleRecover = async (runId: string) => {
     try {
-      setActionLoading(true)
-      await OrchestratorApi.recoverRun(runId)
+      await recoverRun(runId)
       alert("Recovery berhasil dijalankan!")
-      loadRuns()
     } catch (err: any) {
       alert(`Gagal recover: ${err.message}`)
-    } finally {
-      setActionLoading(false)
     }
   }
 
   const handleRetry = async (runId: string) => {
     try {
-      setActionLoading(true)
-      await OrchestratorApi.retryRun(runId)
+      await retryRun(runId)
       alert("Task berhasil didaftarkan ulang ke antrean!")
-      loadRuns()
     } catch (err: any) {
       alert(`Gagal retry: ${err.message}`)
-    } finally {
-      setActionLoading(false)
     }
   }
 
@@ -224,11 +186,11 @@ export const RunsPage: React.FC = () => {
           </div>
 
           <button
-            onClick={loadRuns}
-            disabled={loading}
+            onClick={() => refetchRuns && refetchRuns()}
+            disabled={runsLoading}
             className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer outline-none focus:outline-none"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 ${runsLoading ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
@@ -501,7 +463,7 @@ export const RunsPage: React.FC = () => {
 
                     {selectedRun.execution?.verification?.results ? (
                       <div className="space-y-2">
-                        {selectedRun.execution.verification.results.map((v) => (
+                        {selectedRun.execution.verification.results.map((v: any) => (
                           <div
                             key={v.script}
                             className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-xs"
@@ -549,7 +511,7 @@ export const RunsPage: React.FC = () => {
               {/* Tab 2: Code Changes & Diff */}
               {activeTab === "DIFF" && (
                 <div className="space-y-4">
-                  <DiffViewer diffData={diffData} loading={diffLoading} />
+                  <DiffViewer diffData={diffData ?? null} loading={diffLoading} />
                 </div>
               )}
 

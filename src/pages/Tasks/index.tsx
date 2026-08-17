@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import {
   Play,
   FileText,
@@ -12,68 +12,25 @@ import {
   Eye,
   Terminal,
 } from "lucide-react"
-import { OrchestratorApi, type ProjectInfo, type DaemonStatus } from "@/services/orchestrator"
-import { subscribeToEvents } from "@/services/events"
+import { useProjects, useDaemonStatus, useJobs, useRequestTask } from "@/hooks/use-orchestrator"
 
 export const TasksPage: React.FC = () => {
-  const [projects, setProjects] = useState<ProjectInfo[]>([])
+  const { data: projects = [] } = useProjects()
+  const { data: daemon = null, refetch: refetchDaemon } = useDaemonStatus()
+  const { data: jobs = [] } = useJobs()
+  const { mutateAsync: requestTask, isPending: submitting } = useRequestTask()
+
   const [selectedProject, setSelectedProject] = useState("orchestrator-dashboard")
   const [prompt, setPrompt] = useState("")
   const [autoStart, setAutoStart] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
-  const [contextPreview, setContextPreview] = useState<any | null>(null)
-  const [planPreview, setPlanPreview] = useState<any | null>(null)
-  const [previewLoading, setPreviewLoading] = useState(false)
-  const [daemon, setDaemon] = useState<DaemonStatus | null>(null)
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-
-  const loadData = async () => {
-    try {
-      const [projList, daemonData] = await Promise.all([
-        OrchestratorApi.getProjects(),
-        OrchestratorApi.getDaemonStatus(),
-      ])
-      setProjects(projList)
-      setDaemon(daemonData)
-      if (projList.length > 0 && !selectedProject) {
-        setSelectedProject(projList[0].id)
-      }
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  useEffect(() => {
-    loadData()
-    const unsubscribe = subscribeToEvents(() => {
-      loadData()
-    })
-    return () => unsubscribe()
-  }, [])
-
-  const handlePreviewContext = async () => {
-    if (!selectedProject) return
-    try {
-      setPreviewLoading(true)
-      setContextPreview(null)
-      setPlanPreview(null)
-      // Pick first task or preview
-      const context = await OrchestratorApi.getTaskContext(selectedProject, "task-preview")
-      setContextPreview(context)
-    } catch (err: any) {
-      alert(`Gagal mengambil konteks: ${err.message}`)
-    } finally {
-      setPreviewLoading(false)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!prompt.trim() || !selectedProject) return
     try {
-      setSubmitting(true)
       setStatusMessage(null)
-      const res = await OrchestratorApi.requestTask({
+      const res = await requestTask({
         project: selectedProject,
         request: prompt.trim(),
         autoStart,
@@ -83,18 +40,15 @@ export const TasksPage: React.FC = () => {
         text: `Task canonical berhasil dibuat: ${res.task?.id || "Task"} (${res.autoStart ? "Otomatis diantrekan" : "Tersimpan di Backlog"}).`,
       })
       setPrompt("")
-      loadData()
     } catch (err: any) {
       setStatusMessage({
         type: "error",
         text: `Gagal membuat task: ${err.message}`,
       })
-    } finally {
-      setSubmitting(false)
     }
   }
 
-  const queueJobs = daemon?.queue.latestJobs || []
+  const queueJobs = daemon?.queue.latestJobs || jobs || []
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -210,7 +164,7 @@ export const TasksPage: React.FC = () => {
                 Live Job Queue & Worker Pool
               </h2>
               <button
-                onClick={loadData}
+                onClick={() => refetchDaemon && refetchDaemon()}
                 className="text-xs text-slate-400 hover:text-slate-200 p-1 transition-colors"
                 title="Refresh queue"
               >

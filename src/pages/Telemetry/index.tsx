@@ -14,32 +14,19 @@ import {
   Terminal,
   ArrowDownRight,
 } from "lucide-react"
-import { OrchestratorApi, type TelemetryReport, type RtkAnalytics } from "@/services/orchestrator"
+import { type TelemetryReport, type RtkAnalytics } from "@/services/orchestrator"
+import { useTelemetry, useRtkAnalytics } from "@/hooks/use-orchestrator"
 
 export const TelemetryPage: React.FC = () => {
-  const [telemetry, setTelemetry] = useState<TelemetryReport | null>(null)
-  const [rtk, setRtk] = useState<RtkAnalytics | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { data: telemetry = null, isLoading: telemetryLoading, refetch: refetchTelemetry } = useTelemetry()
+  const { data: rtk = null, isLoading: rtkLoading, refetch: refetchRtk } = useRtkAnalytics()
 
-  const loadData = async () => {
-    try {
-      setLoading(true)
-      const [telemetryData, rtkData] = await Promise.all([
-        OrchestratorApi.getTelemetry().catch(() => null),
-        OrchestratorApi.getRtkTelemetry().catch(() => null),
-      ])
-      if (telemetryData) setTelemetry(telemetryData)
-      if (rtkData) setRtk(rtkData)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+  const loading = telemetryLoading || rtkLoading
+
+  const handleRefresh = () => {
+    if (refetchTelemetry) refetchTelemetry()
+    if (refetchRtk) refetchRtk()
   }
-
-  useEffect(() => {
-    loadData()
-  }, [])
 
   const usage = telemetry?.telemetry?.summary?.usage
   const latestRuns = telemetry?.latestRuns || []
@@ -62,7 +49,7 @@ export const TelemetryPage: React.FC = () => {
         </div>
 
         <button
-          onClick={loadData}
+          onClick={handleRefresh}
           disabled={loading}
           className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
         >
