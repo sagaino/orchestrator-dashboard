@@ -11,9 +11,11 @@ import {
   Cpu,
   Menu,
   CheckCircle2,
+  Plus,
 } from "lucide-react"
 import { useDaemonStatus, useNotifications, useMarkNotificationsRead } from "@/hooks/use-orchestrator"
 import { useSSEEvents } from "@/providers/EventsProvider"
+import { AddProjectModal } from "@/components/project/AddProjectModal"
 import {
   Popover,
   PopoverContent,
@@ -45,6 +47,7 @@ export const DashboardLayout: React.FC = () => {
   const { lastEvent } = useSSEEvents()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [addProjectOpen, setAddProjectOpen] = useState(false)
 
   const navItems = [
     { label: "Overview", to: "/", icon: LayoutDashboard },
@@ -104,6 +107,21 @@ export const DashboardLayout: React.FC = () => {
             )
           })}
         </nav>
+
+        {/* Add Project Sidebar Action */}
+        <div className="px-4 pb-2">
+          <button
+            type="button"
+            onClick={() => {
+              setAddProjectOpen(true)
+              if (onNavClick) onNavClick()
+            }}
+            className="w-full flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-500/50 transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer shadow-xs"
+          >
+            <Plus className="h-4 w-4 text-indigo-400" />
+            <span>+ Add Project</span>
+          </button>
+        </div>
       </div>
 
       {/* Daemon Connection Widget */}
@@ -197,6 +215,16 @@ export const DashboardLayout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
+            {/* Add Project Button */}
+            <button
+              type="button"
+              onClick={() => setAddProjectOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-colors shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Add Project</span>
+            </button>
+
             {/* Live Event Pill */}
             <div className="hidden sm:flex items-center gap-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full text-xs font-mono text-indigo-300">
               <span className={`h-2 w-2 rounded-full ${lastEvent?.event && lastEvent.event !== "connected" ? "bg-indigo-400 animate-pulse" : "bg-emerald-400"}`}></span>
@@ -254,7 +282,7 @@ export const DashboardLayout: React.FC = () => {
                       const deliveryStatus = typeof item.delivery === "object" && item.delivery !== null
                         ? (item.delivery.status || "SENT")
                         : (item.delivery ? String(item.delivery) : null);
-                      const key = item.id || item.notificationId || `notif-${idx}-${item.createdAt || Date.now()}`;
+                      const key = item.id || item.notificationId || (item.createdAt ? `notif-${idx}-${item.createdAt}` : `notif-${idx}`);
 
                       return (
                         <div
@@ -302,6 +330,12 @@ export const DashboardLayout: React.FC = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Add / Onboard Project Modal */}
+      <AddProjectModal
+        isOpen={addProjectOpen}
+        onClose={() => setAddProjectOpen(false)}
+      />
     </div>
   )
 }

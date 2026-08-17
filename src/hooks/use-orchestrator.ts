@@ -10,6 +10,8 @@ import type {
   RunDiffData,
   DevServerStatus,
   RtkAnalytics,
+  OnboardExistingProjectPayload,
+  OnboardNewProjectPayload,
 } from "@/services/orchestrator"
 
 // --- Query Keys ---
@@ -245,7 +247,6 @@ export function useMarkNotificationsRead() {
 }
 
 export function usePreviewRun() {
-  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (runId: string) => OrchestratorApi.previewRun(runId),
   })
@@ -270,6 +271,30 @@ export function useRetryRun() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.runs })
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+      queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
+    },
+  })
+}
+
+export function useOnboardExistingProject() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: OnboardExistingProjectPayload) =>
+      OrchestratorApi.onboardExistingProject(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects })
+      queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
+    },
+  })
+}
+
+export function useOnboardNewProject() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: OnboardNewProjectPayload) =>
+      OrchestratorApi.onboardNewProject(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects })
       queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
     },
   })
