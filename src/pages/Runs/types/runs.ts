@@ -9,7 +9,7 @@ import type {
 } from "@/services/orchestrator"
 
 export type RunFilterState = "ALL" | "REVIEW" | "ACTIVE" | "DONE" | "FAILED"
-export type RunTabType = "OVERVIEW" | "DIFF" | "QA" | "RETROSPECTIVE"
+export type RunTabType = "OVERVIEW" | "DIFF" | "LOGS" | "QA" | "RETROSPECTIVE"
 
 export interface InlineComment extends InlineDiffComment {
   id?: string

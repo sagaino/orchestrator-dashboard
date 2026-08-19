@@ -1,11 +1,12 @@
 import React from "react"
-import { FileCode, Globe, Brain } from "lucide-react"
+import { FileCode, Globe, Brain, Terminal } from "lucide-react"
 import { DiffViewer } from "@/components/diff/DiffViewer"
 import { DevServerController } from "@/components/review/DevServerController"
 import { RunActionToolbar } from "./RunActionToolbar"
 import { RunOverviewTab } from "./RunOverviewTab"
 import { RunExecutionTimeline } from "./RunExecutionTimeline"
 import { RunRetrospectiveTab } from "./RunRetrospectiveTab"
+import { LiveTerminalLogsTab } from "./LiveTerminalLogsTab"
 import type { RunInspectorProps } from "../types"
 
 export const RunInspector: React.FC<RunInspectorProps> = ({
@@ -33,6 +34,8 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
       </div>
     )
   }
+
+  const isRunning = ["RUNNING", "CLAIMED", "IN_PROGRESS", "CHANGES_REQUESTED"].includes(selectedRun.state)
 
   return (
     <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 space-y-6">
@@ -101,6 +104,20 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
           )}
         </button>
         <button
+          onClick={() => onTabChange("LOGS")}
+          className={`pb-2.5 font-semibold px-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-t whitespace-nowrap ${
+            activeTab === "LOGS"
+              ? "text-indigo-400 border-indigo-500"
+              : "text-slate-400 border-transparent hover:text-slate-200"
+          }`}
+        >
+          <Terminal className="h-3.5 w-3.5" />
+          <span>Live Terminal Logs</span>
+          {isRunning && (
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          )}
+        </button>
+        <button
           onClick={() => onTabChange("QA")}
           className={`pb-2.5 font-semibold px-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-t whitespace-nowrap ${
             activeTab === "QA"
@@ -140,7 +157,12 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
         </div>
       )}
 
-      {/* Tab 3: Visual QA Dev Server */}
+      {/* Tab 3: Live Terminal & Agent Logs */}
+      {activeTab === "LOGS" && (
+        <LiveTerminalLogsTab selectedRun={selectedRun} />
+      )}
+
+      {/* Tab 4: Visual QA Dev Server */}
       {activeTab === "QA" && (
         <div className="space-y-4">
           <DevServerController
@@ -150,7 +172,7 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
         </div>
       )}
 
-      {/* Tab 4: Retrospective & Knowledge Routing */}
+      {/* Tab 5: Retrospective & Knowledge Routing */}
       {activeTab === "RETROSPECTIVE" && (
         <RunRetrospectiveTab selectedRun={selectedRun} />
       )}

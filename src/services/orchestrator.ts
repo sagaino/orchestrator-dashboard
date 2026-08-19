@@ -380,6 +380,11 @@ export const OrchestratorApi = {
     return res.data.data
   },
 
+  async getRunLogs(runId: string) {
+    const res = await axios.get<{ success: boolean; data: { lines: any[]; exists: boolean } }>(`/api/runs/${runId}/logs`)
+    return res.data.data
+  },
+
   async startDevServer(runId: string) {
     const res = await axios.post<{ success: boolean; data: DevServerStatus }>(`/api/runs/${runId}/dev-server/start`)
     return res.data.data
