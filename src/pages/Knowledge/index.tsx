@@ -10,12 +10,15 @@ import {
   RejectCandidateModal,
   CandidatePreviewModal,
   KnowledgeIngestModal,
+  HarvestRunsOverview,
 } from "./components"
 
 export const KnowledgePage: React.FC = () => {
   const [ingestModalOpen, setIngestModalOpen] = useState(false)
   const {
     candidates,
+    harvests,
+    harvestsLoading,
     health,
     loading,
     actionLoading,
@@ -59,6 +62,9 @@ export const KnowledgePage: React.FC = () => {
 
       {/* Vault Health Summary & Interactive Drill-Down */}
       <VaultHealthCard health={health} onRefresh={refetchHealth} />
+
+      {/* Harvested Repositories & Discovered Patterns Overview */}
+      <HarvestRunsOverview harvests={harvests} isLoading={harvestsLoading} />
 
       {/* 2-Column: Candidate Decisions & Vault Structure */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

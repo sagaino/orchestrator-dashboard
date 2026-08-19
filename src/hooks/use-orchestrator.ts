@@ -105,6 +105,14 @@ export function useKnowledgeCandidates() {
   })
 }
 
+export function useHarvestRuns() {
+  return useQuery({
+    queryKey: ["knowledge", "harvests"] as const,
+    queryFn: () => OrchestratorApi.getHarvestRuns(),
+    staleTime: 10_000,
+  })
+}
+
 export function useKnowledgeHealth() {
   return useQuery<VaultHealth>({
     queryKey: queryKeys.knowledgeHealth,

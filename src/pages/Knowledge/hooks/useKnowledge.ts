@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react"
-import { useKnowledgeCandidates, useKnowledgeHealth, usePromoteKnowledge, useRejectKnowledge } from "@/hooks/use-orchestrator"
+import { useKnowledgeCandidates, useHarvestRuns, useKnowledgeHealth, usePromoteKnowledge, useRejectKnowledge } from "@/hooks/use-orchestrator"
 import { toast } from "@/components/ui/toast"
 import type { KnowledgeCandidate } from "@/services/orchestrator"
 import type { UseKnowledgeReturn, KnowledgeSectionItem } from "../types"
@@ -14,6 +14,7 @@ const DEFAULT_KNOWLEDGE_SECTIONS: KnowledgeSectionItem[] = [
 
 export const useKnowledge = (): UseKnowledgeReturn => {
   const { data: candidates = [], isLoading: candidatesLoading } = useKnowledgeCandidates()
+  const { data: harvests = [], isLoading: harvestsLoading } = useHarvestRuns()
   const { data: health = null, isLoading: healthLoading, refetch: refetchHealth } = useKnowledgeHealth()
   const { mutateAsync: promoteKnowledge, isPending: promotePending } = usePromoteKnowledge()
   const { mutateAsync: rejectKnowledge, isPending: rejectPending } = useRejectKnowledge()
@@ -105,8 +106,10 @@ export const useKnowledge = (): UseKnowledgeReturn => {
 
   return {
     candidates,
+    harvests,
+    harvestsLoading,
     health,
-    loading,
+    loading: loading || harvestsLoading,
     actionLoading,
     previewModalOpen,
     setPreviewModalOpen,

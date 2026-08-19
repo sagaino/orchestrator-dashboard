@@ -197,6 +197,31 @@ export interface HarvestedKnowledgeArticle {
   summary?: string
 }
 
+export interface HarvestRunPattern {
+  title: string
+  summary: string
+  confidence: number
+  destination: "WIKI" | "CANDIDATE"
+  tags: string[]
+  keyPoints?: string[]
+  codeStructure?: string
+}
+
+export interface HarvestRun {
+  harvestId: string
+  repositoryPath: string
+  packageName?: string
+  domain: string
+  capturedAt: string | null
+  count: number
+  patterns: HarvestRunPattern[]
+  scanSummary?: {
+    packageName?: string
+    detectedPatterns?: Record<string, any>
+  }
+  sourcePath: string
+}
+
 export interface HarvestKnowledgeResponse {
   success?: boolean
   message?: string
@@ -504,6 +529,12 @@ export const OrchestratorApi = {
       rejectedBy,
     })
     return res.data.data
+  },
+
+  async getHarvestRuns() {
+    const res = await axios.get<{ success: boolean; data: HarvestRun[] }>("/api/knowledge/harvests")
+    const list = res.data?.data ?? []
+    return Array.isArray(list) ? list : []
   },
 
   async getKnowledgeHealth() {
