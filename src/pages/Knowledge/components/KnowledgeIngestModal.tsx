@@ -174,33 +174,30 @@ export const KnowledgeIngestModal: React.FC<KnowledgeIngestModalProps> = ({
         repositoryPath: repoPath.trim(),
         domain: harvestDomain,
         mode: harvestMode,
+        async: true,
       })
 
-      const articles = res?.harvested || res?.articles || res?.items || []
-      const count = articles.length || res?.count || 0
       const msg =
         res?.message ||
-        (count > 0
-          ? `Berhasil memanen ${count} pola arsitektur dari repositori!`
-          : `Pemindaian arsitektur selesai untuk repositori "${repoPath.trim()}".`)
+        `Pemindaian arsitektur ${harvestMode === "pro" ? "Mode Pro (Multi-Pass)" : "Mode Normal"} telah dimulai di background.`
 
       toast.add({
-        title: "Harvest Knowledge Berhasil",
+        title: "Pemindaian Dimulai di Background",
         description: msg,
-        type: "success",
+        type: "info",
       })
 
       if (onSuccess) {
         onSuccess()
       }
 
-      // Close modal on success so user returns to updated Knowledge Center
+      // Close modal immediately so user is not blocked
       handleClose()
     } catch (err: unknown) {
       const errStr = err instanceof Error ? err.message : String(err)
-      setHarvestErrorMessage(errStr || "Terjadi kesalahan saat memproses harvest knowledge dari repositori.")
+      setHarvestErrorMessage(errStr || "Terjadi kesalahan saat memulai harvest knowledge dari repositori.")
       toast.add({
-        title: "Gagal Harvest Knowledge",
+        title: "Gagal Memulai Harvest",
         description: errStr,
         type: "error",
       })

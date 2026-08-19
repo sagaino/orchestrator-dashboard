@@ -16,6 +16,7 @@ import {
 import { useDaemonStatus, useNotifications, useMarkNotificationsRead } from "@/hooks/use-orchestrator"
 import { useSSEEvents } from "@/providers/EventsProvider"
 import { AddProjectModal } from "@/components/project/AddProjectModal"
+import { FloatingHarvestProgress } from "@/components/knowledge/FloatingHarvestProgress"
 import {
   Popover,
   PopoverContent,
@@ -336,6 +337,9 @@ export const DashboardLayout: React.FC = () => {
         isOpen={addProjectOpen}
         onClose={() => setAddProjectOpen(false)}
       />
+
+      {/* Floating Background Harvest Progress Dock */}
+      <FloatingHarvestProgress />
     </div>
   )
 }

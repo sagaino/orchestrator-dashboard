@@ -187,6 +187,7 @@ export interface HarvestKnowledgePayload {
   repositoryPath: string
   domain?: string
   mode?: "normal" | "pro"
+  async?: boolean
 }
 
 export interface HarvestedKnowledgeArticle {
