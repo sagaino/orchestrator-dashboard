@@ -1,14 +1,20 @@
-import type { FormEvent } from "react"
+import type { FormEvent, Dispatch, SetStateAction } from "react"
 import type {
   RunManifest,
   RunDiffData,
   RunHistoryEntry,
   RunRetrospectiveData,
   VerificationResultItem,
+  InlineDiffComment,
 } from "@/services/orchestrator"
 
 export type RunFilterState = "ALL" | "REVIEW" | "ACTIVE" | "DONE" | "FAILED"
 export type RunTabType = "OVERVIEW" | "DIFF" | "QA" | "RETROSPECTIVE"
+
+export interface InlineComment extends InlineDiffComment {
+  id?: string
+  createdAt?: string
+}
 
 export interface RunsHeaderProps {
   searchQuery: string
@@ -66,6 +72,9 @@ export interface RunInspectorProps {
   actionLoading: boolean
   diffData?: RunDiffData | null
   diffLoading: boolean
+  inlineComments?: InlineComment[]
+  onAddInlineComment?: (comment: { file: string; line: number; comment: string }) => void
+  onRemoveInlineComment?: (index: number) => void
   onPreview: (runId: string) => Promise<void>
   onStart: (runId: string) => Promise<void>
   onRequestChanges: () => void
@@ -82,6 +91,8 @@ export interface RequestChangesModalProps {
   actionLoading: boolean
   onClose: () => void
   onSubmit: (e: FormEvent) => Promise<void>
+  inlineComments?: InlineComment[]
+  onRemoveComment?: (index: number) => void
 }
 
 export interface AcceptRunModalProps {
@@ -118,6 +129,10 @@ export interface UseRunsPageReturn {
   setRevisionModalOpen: (open: boolean) => void
   revisionReason: string
   setRevisionReason: (reason: string) => void
+  inlineComments: InlineComment[]
+  setInlineComments: Dispatch<SetStateAction<InlineComment[]>>
+  handleAddInlineComment: (comment: { file: string; line: number; comment: string }) => void
+  handleRemoveInlineComment: (index: number) => void
   acceptModalOpen: boolean
   setAcceptModalOpen: (open: boolean) => void
   rejectModalOpen: boolean

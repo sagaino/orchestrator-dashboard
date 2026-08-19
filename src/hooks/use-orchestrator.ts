@@ -12,6 +12,9 @@ import type {
   RtkAnalytics,
   OnboardExistingProjectPayload,
   OnboardNewProjectPayload,
+  IngestKnowledgePayload,
+  HarvestKnowledgePayload,
+  InlineDiffComment,
 } from "@/services/orchestrator"
 
 // --- Query Keys ---
@@ -179,8 +182,18 @@ export function useRejectRun() {
 export function useRequestChanges() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ runId, reason, requestedBy }: { runId: string; reason: string; requestedBy?: string }) =>
-      OrchestratorApi.requestChanges(runId, reason, requestedBy),
+    mutationFn: ({
+      runId,
+      reason,
+      inlineComments,
+      requestedBy,
+    }: {
+      runId: string
+      reason: string
+      inlineComments?: InlineDiffComment[]
+      requestedBy?: string
+    }) =>
+      OrchestratorApi.requestChanges(runId, reason, inlineComments, requestedBy),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.runs })
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
@@ -197,6 +210,30 @@ export function useStartRun() {
       queryClient.invalidateQueries({ queryKey: queryKeys.runs })
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
       queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
+    },
+  })
+}
+
+export function useIngestKnowledge() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: IngestKnowledgePayload) =>
+      OrchestratorApi.ingestKnowledge(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeCandidates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHealth })
+    },
+  })
+}
+
+export function useHarvestKnowledge() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: HarvestKnowledgePayload) =>
+      OrchestratorApi.harvestKnowledge(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeCandidates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHealth })
     },
   })
 }

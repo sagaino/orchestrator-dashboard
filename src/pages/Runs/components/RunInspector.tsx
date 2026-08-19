@@ -15,6 +15,9 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
   actionLoading,
   diffData,
   diffLoading,
+  inlineComments = [],
+  onAddInlineComment,
+  onRemoveInlineComment,
   onPreview,
   onStart,
   onRequestChanges,
@@ -91,6 +94,11 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
         >
           <FileCode className="h-3.5 w-3.5" />
           <span>Code Changes (Diff)</span>
+          {inlineComments.length > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono border border-amber-500/30">
+              {inlineComments.length}
+            </span>
+          )}
         </button>
         <button
           onClick={() => onTabChange("QA")}
@@ -122,7 +130,13 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
       {/* Tab 2: Code Changes & Diff */}
       {activeTab === "DIFF" && (
         <div className="space-y-4">
-          <DiffViewer diffData={diffData ?? null} loading={diffLoading} />
+          <DiffViewer
+            diffData={diffData ?? null}
+            loading={diffLoading}
+            comments={inlineComments}
+            onAddComment={onAddInlineComment}
+            onRemoveComment={onRemoveInlineComment}
+          />
         </div>
       )}
 

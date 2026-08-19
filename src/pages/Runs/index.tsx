@@ -26,6 +26,9 @@ export const RunsPage: React.FC = () => {
     setRevisionModalOpen,
     revisionReason,
     setRevisionReason,
+    inlineComments,
+    handleAddInlineComment,
+    handleRemoveInlineComment,
     acceptModalOpen,
     setAcceptModalOpen,
     rejectModalOpen,
@@ -81,6 +84,9 @@ export const RunsPage: React.FC = () => {
             actionLoading={actionLoading}
             diffData={diffData}
             diffLoading={diffLoading}
+            inlineComments={inlineComments}
+            onAddInlineComment={handleAddInlineComment}
+            onRemoveInlineComment={handleRemoveInlineComment}
             onPreview={handlePreview}
             onStart={handleStart}
             onRequestChanges={handleOpenRevisionModal}
@@ -100,6 +106,8 @@ export const RunsPage: React.FC = () => {
         actionLoading={actionLoading}
         onClose={() => setRevisionModalOpen(false)}
         onSubmit={handleRequestChangesSubmit}
+        inlineComments={inlineComments}
+        onRemoveComment={handleRemoveInlineComment}
       />
 
       {/* Accept & Wiki Sync Confirmation Modal */}
