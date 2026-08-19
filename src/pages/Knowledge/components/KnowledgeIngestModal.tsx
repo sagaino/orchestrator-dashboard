@@ -76,6 +76,7 @@ export const KnowledgeIngestModal: React.FC<KnowledgeIngestModalProps> = ({
   // Tab 2: Harvest codebase state
   const [repoPath, setRepoPath] = useState("")
   const [harvestDomain, setHarvestDomain] = useState<string>("Backend")
+  const [harvestMode, setHarvestMode] = useState<"normal" | "pro">("normal")
   const [harvestSuccessMessage, setHarvestSuccessMessage] = useState<string | null>(null)
   const [harvestErrorMessage, setHarvestErrorMessage] = useState<string | null>(null)
   const [harvestResult, setHarvestResult] = useState<HarvestKnowledgeResponse | null>(null)
@@ -96,6 +97,7 @@ export const KnowledgeIngestModal: React.FC<KnowledgeIngestModalProps> = ({
 
     setRepoPath("")
     setHarvestDomain("Backend")
+    setHarvestMode("normal")
     setHarvestSuccessMessage(null)
     setHarvestErrorMessage(null)
     setHarvestResult(null)
@@ -171,6 +173,7 @@ export const KnowledgeIngestModal: React.FC<KnowledgeIngestModalProps> = ({
       const res = await harvestKnowledge({
         repositoryPath: repoPath.trim(),
         domain: harvestDomain,
+        mode: harvestMode,
       })
 
       const articles = res?.harvested || res?.articles || res?.items || []
@@ -626,6 +629,76 @@ export const KnowledgeIngestModal: React.FC<KnowledgeIngestModalProps> = ({
                 <p className="text-[11px] text-slate-500">
                   Domain memandu AI untuk memfokuskan ekstraksi pola arsitektur, auth, database, state, atau konfigurasi deployment.
                 </p>
+              </div>
+
+              {/* Mode Harvest: Normal vs Pro */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-slate-300 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
+                    Intensitas Pemindaian (Harvest Mode)
+                  </span>
+                  {harvestMode === "pro" && (
+                    <span className="text-[10px] font-semibold text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-800/50">
+                      ⚡ High Token Usage
+                    </span>
+                  )}
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    disabled={isHarvesting}
+                    onClick={() => setHarvestMode("normal")}
+                    className={`p-3 rounded-lg border text-left transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                      harvestMode === "normal"
+                        ? "bg-indigo-950/60 border-indigo-500 text-white ring-1 ring-indigo-500/50"
+                        : "bg-slate-800/80 border-slate-700/60 text-slate-400 hover:text-slate-200"
+                    } disabled:opacity-50 flex flex-col justify-between`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs text-white">Mode Normal</span>
+                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-800/50">
+                        Hemat Token
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                      Ekstrak 4–8 pola inti tercepat & hemat kuota token.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isHarvesting}
+                    onClick={() => setHarvestMode("pro")}
+                    className={`p-3 rounded-lg border text-left transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                      harvestMode === "pro"
+                        ? "bg-amber-950/60 border-amber-500 text-white ring-1 ring-amber-500/50"
+                        : "bg-slate-800/80 border-slate-700/60 text-slate-400 hover:text-slate-200"
+                    } disabled:opacity-50 flex flex-col justify-between`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs text-amber-300 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 text-amber-400" />
+                        Mode Pro
+                      </span>
+                      <span className="text-[10px] font-mono text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-800/50">
+                        Deep Scan
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                      Pemindaian exhaustive ke seluruh layer (8–15+ pola komprehensif).
+                    </p>
+                  </button>
+                </div>
+
+                {harvestMode === "pro" && (
+                  <div className="p-2.5 rounded-lg bg-amber-950/40 border border-amber-600/40 flex items-start gap-2 text-amber-200 text-xs mt-2">
+                    <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="text-[11px] leading-relaxed text-amber-300">
+                      <strong>Peringatan Penggunaan Token:</strong> Mode Pro menggunakan model reasoning tinggi (*effort: high*) untuk memindai seluruh sub-modul repositori secara mendalam. Mode ini akan mengekstrak lebih banyak pola arsitektur sekaligus namun mengonsumsi kuota token yang lebih besar.
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Info Box */}
