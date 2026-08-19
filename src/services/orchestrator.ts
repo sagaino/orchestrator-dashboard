@@ -500,7 +500,12 @@ export const OrchestratorApi = {
   async getKnowledgeCandidates() {
     const res = await axios.get<{ success: boolean; data: any }>("/api/knowledge/candidates")
     const candidates = res.data?.data?.candidates ?? res.data?.data ?? []
-    return Array.isArray(candidates) ? candidates : []
+    if (!Array.isArray(candidates)) return []
+    return candidates.map((item: any) => ({
+      ...item,
+      candidateId: item.candidateId || item.id || item.title || "",
+      candidatePath: item.candidatePath || item.path || "",
+    }))
   },
 
   async ingestKnowledge(payload: IngestKnowledgePayload) {
