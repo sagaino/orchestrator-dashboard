@@ -207,6 +207,11 @@ export interface HarvestRunPattern {
   tags: string[]
   keyPoints?: string[]
   codeStructure?: string
+  codeSnippets?: Array<{
+    language?: string
+    description?: string
+    code: string
+  }>
 }
 
 export interface HarvestRun {
