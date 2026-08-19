@@ -88,30 +88,40 @@ export const VaultHealthCard: React.FC<VaultHealthCardProps> = ({ health, onRefr
     }
   }
 
-  // Combine errors and warnings into unified issue list
+  // Combine findings, errors, and warnings into unified issue list
+  const findings = Array.isArray(health.findings) ? health.findings : []
   const errors = Array.isArray(health.errors) ? health.errors : []
   const warnings = Array.isArray(health.warnings) ? health.warnings : []
   const unindexedCount = health.unindexedCount || 0
   const hasSafeFixableIssues = unindexedCount > 0 || warnings.length > 0
 
-  const unifiedIssues: UnifiedIssue[] = [
-    ...errors.map((err, idx) => ({
-      id: `err-${idx}-${err.code}`,
-      severity: "error" as const,
-      code: err.code || "VAULT_ERROR",
-      message: err.message || "Unknown vault error detected",
-      file: err.file,
-      category: categorizeIssue(err.code || "", err.message || ""),
-    })),
-    ...warnings.map((warn, idx) => ({
-      id: `warn-${idx}-${warn.code}`,
-      severity: "warning" as const,
-      code: warn.code || "VAULT_WARNING",
-      message: warn.message || "Unknown vault warning detected",
-      file: warn.file,
-      category: categorizeIssue(warn.code || "", warn.message || ""),
-    })),
-  ]
+  const unifiedIssues: UnifiedIssue[] = findings.length > 0
+    ? findings.map((f, idx) => ({
+        id: `f-${idx}-${f.check || f.code}`,
+        severity: (f.severity === "ERROR" || f.severity === "error" ? "error" : "warning") as "error" | "warning",
+        code: f.check || f.code || "VAULT_FINDING",
+        message: f.message || "Unknown vault finding",
+        file: f.path || f.file,
+        category: categorizeIssue(f.check || f.code || "", f.message || ""),
+      }))
+    : [
+        ...errors.map((err, idx) => ({
+          id: `err-${idx}-${err.code}`,
+          severity: "error" as const,
+          code: err.code || "VAULT_ERROR",
+          message: err.message || "Unknown vault error detected",
+          file: err.file,
+          category: categorizeIssue(err.code || "", err.message || ""),
+        })),
+        ...warnings.map((warn, idx) => ({
+          id: `warn-${idx}-${warn.code}`,
+          severity: "warning" as const,
+          code: warn.code || "VAULT_WARNING",
+          message: warn.message || "Unknown vault warning detected",
+          file: warn.file,
+          category: categorizeIssue(warn.code || "", warn.message || ""),
+        })),
+      ]
 
   const totalIssues = unifiedIssues.length
 

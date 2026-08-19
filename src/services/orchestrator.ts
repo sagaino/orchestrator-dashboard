@@ -241,6 +241,14 @@ export interface VaultHealth {
   healthy: boolean
   errors: Array<{ code: string; message: string; file?: string }>
   warnings: Array<{ code: string; message: string; file?: string }>
+  findings?: Array<{ check?: string; code?: string; severity?: string; message: string; path?: string; file?: string }>
+  summary?: {
+    pagesScanned?: number
+    errors?: number
+    warnings?: number
+    info?: number
+    safeFixesAvailable?: number
+  }
   unindexedCount: number
   brokenLinksCount: number
   orphanCandidatesCount: number
