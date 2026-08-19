@@ -1,5 +1,5 @@
-import React from "react"
-import { Check, AlertTriangle } from "lucide-react"
+import React, { useState, useEffect } from "react"
+import { Check, AlertTriangle, GitCommit } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -19,15 +19,33 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
   onClose,
   onConfirm,
 }) => {
+  const [autoCommit, setAutoCommit] = useState(true)
+  const [commitMessage, setCommitMessage] = useState("")
+
+  useEffect(() => {
+    if (run) {
+      const defaultMsg = `feat(${run.task?.id || "TASK"}): ${run.task?.title || "completed task"}`
+      setCommitMessage(defaultMsg)
+      setAutoCommit(true)
+    }
+  }, [run, isOpen])
+
+  const handleConfirmSubmit = () => {
+    onConfirm({
+      autoCommit,
+      commitMessage: autoCommit ? commitMessage : undefined,
+    })
+  }
+
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <AlertDialogContent className="bg-slate-900 border border-slate-800 text-slate-100 max-w-md">
-        <AlertDialogHeader className="space-y-2">
+      <AlertDialogContent className="bg-slate-900 border border-slate-800 text-slate-100 max-w-lg">
+        <AlertDialogHeader className="space-y-3">
           <div className="flex items-center gap-2 text-emerald-400 font-semibold text-base">
             <Check className="h-5 w-5" />
             <AlertDialogTitle className="text-white text-base">Accept & Sinkronisasi Wiki</AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="text-slate-300 text-xs leading-relaxed space-y-2">
+          <AlertDialogDescription className="text-slate-300 text-xs leading-relaxed space-y-3">
             <span>
               Apakah Anda yakin ingin menyetujui run <strong className="text-white font-mono">{run?.task?.id}</strong>?
             </span>
@@ -35,6 +53,35 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-400" />
               <span>Perubahan kode akan diaplikasikan ke branch utama project dan pengetahuan yang relevan disinkronkan ke Wiki secara permanen.</span>
             </span>
+
+            {/* Optional Auto Git Commit Controls */}
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5">
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-200 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={autoCommit}
+                  onChange={(e) => setAutoCommit(e.target.checked)}
+                  className="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                />
+                <GitCommit className="h-4 w-4 text-indigo-400" />
+                <span>Auto-commit ke Git setelah Accept</span>
+              </label>
+
+              {autoCommit && (
+                <div className="space-y-1 pl-6">
+                  <label className="block text-[11px] font-medium text-slate-400">
+                    Pesan Commit (bisa diedit):
+                  </label>
+                  <input
+                    type="text"
+                    value={commitMessage}
+                    onChange={(e) => setCommitMessage(e.target.value)}
+                    placeholder="e.g. feat(FE-019): deskripsi commit"
+                    className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-slate-200 placeholder:text-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  />
+                </div>
+              )}
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -47,11 +94,11 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
             Batal
           </AlertDialogCancel>
           <AlertDialogAction
-            disabled={actionLoading}
-            onClick={onConfirm}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
+            disabled={actionLoading || (autoCommit && !commitMessage.trim())}
+            onClick={handleConfirmSubmit}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer disabled:opacity-50"
           >
-            {actionLoading ? "Menyetujui..." : "Setujui Run"}
+            {actionLoading ? "Menyetujui..." : autoCommit ? "Setujui & Commit" : "Setujui Saja"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -123,6 +123,7 @@ export interface RunManifest {
   }
   task: {
     id: string
+    title?: string
     path: string
     status: string
     verification?: string[]
@@ -484,7 +485,17 @@ export const OrchestratorApi = {
     return res.data.data
   },
 
-  async acceptRun(runId: string, payload: { approvedBy?: string; decision?: string; destination?: string; targetPath?: string } = {}) {
+  async acceptRun(
+    runId: string,
+    payload: {
+      approvedBy?: string
+      decision?: string
+      destination?: string
+      targetPath?: string
+      autoCommit?: boolean
+      commitMessage?: string
+    } = {}
+  ) {
     const res = await axios.post<{ success: boolean; data: RunManifest }>(`/api/runs/${runId}/accept`, {
       approvedBy: payload.approvedBy || "user",
       ...payload,

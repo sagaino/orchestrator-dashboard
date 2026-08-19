@@ -175,8 +175,18 @@ export function useRequestTask() {
 export function useAcceptRun() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ runId, ...payload }: { runId: string; approvedBy?: string; decision?: string; destination?: string; targetPath?: string }) =>
-      OrchestratorApi.acceptRun(runId, payload),
+    mutationFn: ({
+      runId,
+      ...payload
+    }: {
+      runId: string
+      approvedBy?: string
+      decision?: string
+      destination?: string
+      targetPath?: string
+      autoCommit?: boolean
+      commitMessage?: string
+    }) => OrchestratorApi.acceptRun(runId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.runs })
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
