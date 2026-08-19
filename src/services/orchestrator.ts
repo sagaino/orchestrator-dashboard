@@ -369,6 +369,17 @@ export interface RtkAnalytics {
   generatedAt: string
 }
 
+export interface AttachedAsset {
+  type: "MOCKUP" | "PROJECT_ASSET"
+  fileName: string
+  relativeVaultPath?: string
+  relativeProjectPath?: string
+  absolutePath: string
+  url?: string
+  importPath?: string
+  sizeBytes: number
+}
+
 export const OrchestratorApi = {
   // RTK & Telemetry
   async getRtkTelemetry() {
@@ -432,8 +443,26 @@ export const OrchestratorApi = {
     return res.data.data
   },
 
+  // Assets (UI Mockups & Project Assets)
+  async uploadAsset(payload: {
+    fileName: string
+    base64Data: string
+    type?: "MOCKUP" | "PROJECT_ASSET"
+    projectId?: string
+    targetSubDir?: string
+  }) {
+    const res = await axios.post<{ success: boolean; data: AttachedAsset }>("/api/assets/upload", payload)
+    return res.data.data
+  },
+
   // Tasks & Intake
-  async requestTask(payload: { project: string; request: string; autoStart?: boolean; requestedBy?: string }) {
+  async requestTask(payload: {
+    project: string
+    request: string
+    autoStart?: boolean
+    requestedBy?: string
+    attachedAssets?: AttachedAsset[]
+  }) {
     const res = await axios.post<{ success: boolean; data: any }>("/api/tasks/request", payload)
     return res.data.data
   },

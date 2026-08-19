@@ -22,6 +22,11 @@ export interface TaskIntakeFormProps {
   onPromptChange: (prompt: string) => void
   autoStart: boolean
   onAutoStartChange: (autoStart: boolean) => void
+  attachedAssets: import("@/services/orchestrator").AttachedAsset[]
+  onAddAsset: (asset: import("@/services/orchestrator").AttachedAsset) => void
+  onRemoveAsset: (index: number) => void
+  isUploadingAsset: boolean
+  onUploadFile: (file: File, type: "MOCKUP" | "PROJECT_ASSET") => Promise<void>
   statusMessage: TaskStatusMessage | null
   submitting: boolean
   onSubmit: (e: FormEvent) => Promise<void>
@@ -54,6 +59,11 @@ export interface UseTasksReturn {
   setPrompt: Dispatch<SetStateAction<string>>
   autoStart: boolean
   setAutoStart: Dispatch<SetStateAction<boolean>>
+  attachedAssets: import("@/services/orchestrator").AttachedAsset[]
+  handleAddAsset: (asset: import("@/services/orchestrator").AttachedAsset) => void
+  handleRemoveAsset: (index: number) => void
+  isUploadingAsset: boolean
+  handleUploadFile: (file: File, type: "MOCKUP" | "PROJECT_ASSET") => Promise<void>
   statusMessage: TaskStatusMessage | null
   setStatusMessage: Dispatch<SetStateAction<TaskStatusMessage | null>>
   submitting: boolean

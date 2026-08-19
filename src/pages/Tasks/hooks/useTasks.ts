@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react"
-import { useProjects, useDaemonStatus, useJobs, useRequestTask } from "@/hooks/use-orchestrator"
+import { useProjects, useDaemonStatus, useJobs, useRequestTask, useUploadAsset } from "@/hooks/use-orchestrator"
 import { toast } from "@/components/ui/toast"
+import type { AttachedAsset } from "@/services/orchestrator"
 import type { UseTasksReturn, TaskStatusMessage } from "../types"
 
 const isClarificationNeeded = (res: any): boolean => {
@@ -37,17 +38,60 @@ export const useTasks = (): UseTasksReturn => {
   const { data: daemon = null, refetch: refetchDaemon } = useDaemonStatus()
   const { data: jobs = [] } = useJobs()
   const { mutateAsync: requestTask, isPending: submitting } = useRequestTask()
+  const { mutateAsync: uploadAsset, isPending: isUploadingAsset } = useUploadAsset()
 
   const [selectedProject, setSelectedProject] = useState("orchestrator-dashboard")
   const [prompt, setPrompt] = useState("")
   const [autoStart, setAutoStart] = useState(true)
   const [statusMessage, setStatusMessage] = useState<TaskStatusMessage | null>(null)
+  const [attachedAssets, setAttachedAssets] = useState<AttachedAsset[]>([])
 
   // Clarification state
   const [clarificationOpen, setClarificationOpen] = useState(false)
   const [clarificationQuestion, setClarificationQuestion] = useState("")
   const [clarificationAnswer, setClarificationAnswer] = useState("")
   const [pendingPrompt, setPendingPrompt] = useState("")
+
+  const handleAddAsset = (asset: AttachedAsset) => {
+    setAttachedAssets((prev) => [...prev, asset])
+  }
+
+  const handleRemoveAsset = (index: number) => {
+    setAttachedAssets((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const handleUploadFile = async (file: File, type: "MOCKUP" | "PROJECT_ASSET") => {
+    try {
+      const reader = new FileReader()
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+      })
+      reader.readAsDataURL(file)
+      const base64Data = await base64Promise
+
+      const uploaded = await uploadAsset({
+        fileName: file.name,
+        base64Data,
+        type,
+        projectId: selectedProject,
+      })
+
+      handleAddAsset(uploaded)
+      toast.add({
+        title: "Asset Berhasil Diunggah",
+        description: `${file.name} disimpan sebagai ${type === "MOCKUP" ? "UI Mockup Referensi" : "Asset Proyek"}.`,
+        type: "success",
+      })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      toast.add({
+        title: "Gagal Mengunggah Asset",
+        description: errorMessage,
+        type: "error",
+      })
+    }
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -60,6 +104,7 @@ export const useTasks = (): UseTasksReturn => {
         project: selectedProject,
         request: trimmedPrompt,
         autoStart,
+        attachedAssets,
       })
 
       if (isClarificationNeeded(res)) {
@@ -83,7 +128,9 @@ export const useTasks = (): UseTasksReturn => {
         text: successText,
       })
       setPrompt("")
+      setAttachedAssets([])
       setPendingPrompt("")
+      refetchDaemon?.()
       toast.add({
         title: "Task Canonical Dibuat",
         description: successText,
@@ -183,6 +230,11 @@ export const useTasks = (): UseTasksReturn => {
     setPrompt,
     autoStart,
     setAutoStart,
+    attachedAssets,
+    handleAddAsset,
+    handleRemoveAsset,
+    isUploadingAsset,
+    handleUploadFile,
     statusMessage,
     setStatusMessage,
     submitting,
