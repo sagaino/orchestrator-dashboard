@@ -175,6 +175,39 @@ export interface KnowledgeCandidate {
   createdAt: string
 }
 
+export interface IngestKnowledgePayload {
+  content: string
+  title?: string
+  domain: string
+  type: string
+  destination?: "WIKI" | "CANDIDATE"
+}
+
+export interface HarvestKnowledgePayload {
+  repositoryPath: string
+  domain?: string
+}
+
+export interface HarvestedKnowledgeArticle {
+  title: string
+  type: string
+  targetPath?: string
+  destination?: "WIKI" | "CANDIDATE" | string
+  confidence?: number
+  summary?: string
+}
+
+export interface HarvestKnowledgeResponse {
+  success?: boolean
+  message?: string
+  repositoryPath?: string
+  domain?: string
+  articles?: HarvestedKnowledgeArticle[]
+  items?: HarvestedKnowledgeArticle[]
+  count?: number
+  [key: string]: any
+}
+
 export interface VaultHealth {
   schemaVersion: number
   timestamp: string
@@ -251,6 +284,12 @@ export interface DiffFile {
   additions: number
   deletions: number
   patch: string
+}
+
+export interface InlineDiffComment {
+  file: string
+  line: number
+  comment: string
 }
 
 export interface RunDiffData {
@@ -384,9 +423,10 @@ export const OrchestratorApi = {
     return res.data.data
   },
 
-  async requestChanges(runId: string, reason: string, requestedBy = "user") {
+  async requestChanges(runId: string, reason: string, inlineComments: InlineDiffComment[] = [], requestedBy = "user") {
     const res = await axios.post<{ success: boolean; data: RunManifest }>(`/api/runs/${runId}/request-changes`, {
       reason,
+      inlineComments,
       requestedBy,
     })
     return res.data.data
@@ -436,6 +476,16 @@ export const OrchestratorApi = {
     const res = await axios.get<{ success: boolean; data: any }>("/api/knowledge/candidates")
     const candidates = res.data?.data?.candidates ?? res.data?.data ?? []
     return Array.isArray(candidates) ? candidates : []
+  },
+
+  async ingestKnowledge(payload: IngestKnowledgePayload) {
+    const res = await axios.post<{ success: boolean; data: any }>("/api/knowledge/ingest", payload)
+    return res.data.data
+  },
+
+  async harvestKnowledge(payload: HarvestKnowledgePayload) {
+    const res = await axios.post<{ success: boolean; data: HarvestKnowledgeResponse }>("/api/knowledge/harvest", payload)
+    return res.data.data
   },
 
   async promoteKnowledge(selector: string, targetPath?: string, approvedBy = "user") {

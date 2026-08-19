@@ -3,6 +3,16 @@ import { Sparkles, Search } from "lucide-react"
 import { CandidateCard } from "./CandidateCard"
 import type { KnowledgeCandidatesListProps } from "../types"
 
+const DOMAIN_TAGS = [
+  "All",
+  "Frontend",
+  "Backend",
+  "Mobile",
+  "DevOps",
+  "Architecture",
+  "General",
+] as const
+
 export const KnowledgeCandidatesList: React.FC<KnowledgeCandidatesListProps> = ({
   candidates,
   actionLoading,
@@ -11,8 +21,25 @@ export const KnowledgeCandidatesList: React.FC<KnowledgeCandidatesListProps> = (
   onPreview,
 }) => {
   const [searchQuery, setSearchQuery] = useState("")
+  const [selectedDomain, setSelectedDomain] = useState<string>("All")
 
   const filteredCandidates = candidates.filter((cand) => {
+    // 1. Domain tag filter
+    if (selectedDomain !== "All") {
+      const d = selectedDomain.toLowerCase()
+      const candidateWithDomain = cand as { domain?: string }
+      const matchesDomain =
+        candidateWithDomain.domain?.toLowerCase() === d ||
+        cand.candidatePath?.toLowerCase().includes(d) ||
+        cand.title?.toLowerCase().includes(d) ||
+        cand.summary?.toLowerCase().includes(d) ||
+        cand.type?.toLowerCase().includes(d) ||
+        cand.provenance?.toLowerCase().includes(d)
+
+      if (!matchesDomain) return false
+    }
+
+    // 2. Search query filter
     if (!searchQuery.trim()) return true
     const q = searchQuery.toLowerCase()
     return (
@@ -39,6 +66,27 @@ export const KnowledgeCandidatesList: React.FC<KnowledgeCandidatesListProps> = (
         </span>
       </div>
 
+      {/* Domain Tag Filter */}
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        {DOMAIN_TAGS.map((dom) => {
+          const isSelected = selectedDomain === dom
+          return (
+            <button
+              key={dom}
+              type="button"
+              onClick={() => setSelectedDomain(dom)}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                isSelected
+                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/30 font-semibold"
+                  : "bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800"
+              }`}
+            >
+              {dom}
+            </button>
+          )
+        })}
+      </div>
+
       {candidates.length > 3 && (
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
@@ -59,7 +107,7 @@ export const KnowledgeCandidatesList: React.FC<KnowledgeCandidatesListProps> = (
         </div>
       ) : filteredCandidates.length === 0 ? (
         <div className="p-8 text-center rounded-xl bg-slate-900/40 border border-slate-800 text-slate-400 text-xs">
-          Tidak ada candidate yang cocok dengan pencarian "{searchQuery}".
+          Tidak ada candidate yang cocok dengan filter {selectedDomain !== "All" ? `domain "${selectedDomain}"` : ""} {searchQuery ? `atau pencarian "${searchQuery}"` : ""}.
         </div>
       ) : (
         <div className="space-y-3">

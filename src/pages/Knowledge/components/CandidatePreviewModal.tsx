@@ -627,7 +627,7 @@ Dokumen ini diusulkan oleh orchestrator sebagai candidate pengetahuan global yan
         </div>
 
         {/* Footer Actions */}
-        <DialogFooter className="p-4 border-t border-slate-800 bg-slate-900/90 flex flex-row items-center justify-between gap-3">
+        <DialogFooter className="m-0 p-4 border-t border-slate-800 bg-slate-900/90 flex flex-row items-center justify-between gap-3">
           <button
             type="button"
             onClick={onClose}

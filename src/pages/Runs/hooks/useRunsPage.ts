@@ -12,7 +12,7 @@ import {
   useRetryRun
 } from "@/hooks/use-orchestrator"
 import { toast } from "@/components/ui/toast"
-import type { UseRunsPageReturn, RunFilterState, RunTabType } from "../types"
+import type { UseRunsPageReturn, RunFilterState, RunTabType, InlineComment } from "../types"
 
 export const useRunsPage = (): UseRunsPageReturn => {
   const { data: runs = [], isLoading: runsLoading, refetch: refetchRuns } = useRuns()
@@ -23,6 +23,7 @@ export const useRunsPage = (): UseRunsPageReturn => {
   const [activeTab, setActiveTab] = useState<RunTabType>("OVERVIEW")
   const [revisionModalOpen, setRevisionModalOpen] = useState(false)
   const [revisionReason, setRevisionReason] = useState("")
+  const [inlineComments, setInlineComments] = useState<InlineComment[]>([])
   const [acceptModalOpen, setAcceptModalOpen] = useState(false)
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState("Rejected by user")
@@ -52,6 +53,11 @@ export const useRunsPage = (): UseRunsPageReturn => {
       }
     }
   }, [runs, selectedRun])
+
+  // Reset inline comments when active run changes
+  useEffect(() => {
+    setInlineComments([])
+  }, [selectedRun?.runId])
 
   const filteredRuns = runs.filter((r) => {
     if ((r.state as string) === "SUPERSEDED") return false
@@ -175,13 +181,38 @@ export const useRunsPage = (): UseRunsPageReturn => {
     setRejectModalOpen(true)
   }
 
+  const handleAddInlineComment = (comment: { file: string; line: number; comment: string }) => {
+    setInlineComments((prev) => [
+      ...prev,
+      {
+        ...comment,
+        id: `${comment.file}:${comment.line}:${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      },
+    ])
+    toast.add({
+      title: "Catatan Ditambahkan",
+      description: `Catatan disimpan untuk ${comment.file} baris ${comment.line}.`,
+      type: "info",
+    })
+  }
+
+  const handleRemoveInlineComment = (index: number) => {
+    setInlineComments((prev) => prev.filter((_, i) => i !== index))
+  }
+
   const handleRequestChangesSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!selectedRun || !revisionReason.trim()) return
     try {
-      await requestChanges({ runId: selectedRun.runId, reason: revisionReason.trim() })
+      await requestChanges({
+        runId: selectedRun.runId,
+        reason: revisionReason.trim(),
+        inlineComments: inlineComments.map(({ file, line, comment }) => ({ file, line, comment })),
+      })
       setRevisionModalOpen(false)
       setRevisionReason("")
+      setInlineComments([])
       toast.add({
         title: "Revisi Terkirim",
         description: "Revisi berhasil dikirim ke agent di worktree terisolasi!",
@@ -249,6 +280,10 @@ export const useRunsPage = (): UseRunsPageReturn => {
     setRevisionModalOpen,
     revisionReason,
     setRevisionReason,
+    inlineComments,
+    setInlineComments,
+    handleAddInlineComment,
+    handleRemoveInlineComment,
     acceptModalOpen,
     setAcceptModalOpen,
     rejectModalOpen,
