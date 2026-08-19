@@ -14,6 +14,8 @@ const STAGE_COLOR_MAP: Record<string, string> = {
   RETROSPECTIVE: "#8b5cf6", // Violet
   PLANNING: "#38bdf8", // Sky
   VERIFICATION: "#06b6d4", // Cyan
+  KNOWLEDGE_HARVEST: "#ec4899", // Pink
+  KNOWLEDGE_INGEST: "#14b8a6", // Teal
 }
 
 const DEFAULT_PALETTE = [
