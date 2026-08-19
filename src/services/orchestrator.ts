@@ -186,6 +186,7 @@ export interface IngestKnowledgePayload {
 export interface HarvestKnowledgePayload {
   repositoryPath: string
   domain?: string
+  mode?: "normal" | "pro"
 }
 
 export interface HarvestedKnowledgeArticle {
