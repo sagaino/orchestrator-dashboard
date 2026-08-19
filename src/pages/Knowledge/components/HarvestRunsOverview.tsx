@@ -33,6 +33,7 @@ export const HarvestRunsOverview: React.FC<HarvestRunsOverviewProps> = ({
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedDomain, setSelectedDomain] = useState<string>("ALL")
   const [isSectionOpen, setIsSectionOpen] = useState(true)
+  const [expandedPatternIndices, setExpandedPatternIndices] = useState<Set<number>>(new Set())
 
   // Group harvests by normalized repository path
   const groupedRepos = React.useMemo(() => {
@@ -242,22 +243,93 @@ export const HarvestRunsOverview: React.FC<HarvestRunsOverviewProps> = ({
                 </div>
               </div>
 
-              {/* Patterns Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {currentActiveRepo.allUniquePatterns.map((pattern: HarvestRunPattern, idx: number) => {
-                  const isPromoted = pattern.confidence >= 0.9
-                  return (
-                    <div
-                      key={idx}
-                      className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all space-y-3 flex flex-col justify-between"
+              {/* Patterns Grid / Accordion List */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-semibold text-slate-300">
+                    Daftar Pola Arsitektur ({currentActiveRepo.allUniquePatterns.length})
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedPatternIndices(new Set(currentActiveRepo.allUniquePatterns.map((_, i) => i)))}
+                      className="text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors font-medium cursor-pointer"
                     >
-                      <div className="space-y-2">
-                        {/* Pattern Header */}
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="text-xs font-bold text-white leading-snug">
-                            {pattern.title}
-                          </h4>
-                          <div className="flex items-center gap-1.5 shrink-0">
+                      Buka Semua
+                    </button>
+                    <span className="text-slate-600">•</span>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedPatternIndices(new Set())}
+                      className="text-[11px] text-slate-400 hover:text-slate-300 transition-colors font-medium cursor-pointer"
+                    >
+                      Tutup Semua
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {currentActiveRepo.allUniquePatterns.map((pattern: HarvestRunPattern, idx: number) => {
+                    const isPromoted = pattern.confidence >= 0.9
+                    const isPatternExpanded = expandedPatternIndices.has(idx)
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`rounded-xl border transition-all overflow-hidden ${
+                          isPatternExpanded
+                            ? "bg-slate-900/95 border-indigo-500/40 shadow-md"
+                            : "bg-slate-900/70 border-slate-800 hover:border-slate-700 hover:bg-slate-900/90"
+                        }`}
+                      >
+                        {/* Collapsible Pattern Header */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setExpandedPatternIndices((prev) => {
+                              const next = new Set(prev)
+                              if (next.has(idx)) {
+                                next.delete(idx)
+                              } else {
+                                next.add(idx)
+                              }
+                              return next
+                            })
+                          }}
+                          className="w-full p-3.5 flex flex-wrap items-center justify-between gap-3 text-left cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-[260px] flex-1">
+                            <div className="p-1.5 rounded-md bg-slate-800/80 text-slate-400 shrink-0">
+                              {isPatternExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-indigo-400" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-slate-400" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-xs font-bold text-white tracking-wide truncate">
+                                {pattern.title}
+                              </h4>
+                              {!isPatternExpanded && pattern.summary && (
+                                <p className="text-[11px] text-slate-400 truncate max-w-xl">
+                                  {pattern.summary}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="hidden sm:flex flex-wrap gap-1">
+                              {(pattern.tags || []).slice(0, 2).map((tag, tIdx) => (
+                                <span
+                                  key={tIdx}
+                                  className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-400 border border-slate-700/50"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+
                             <span
                               className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium ${
                                 isPromoted
@@ -267,56 +339,67 @@ export const HarvestRunsOverview: React.FC<HarvestRunsOverviewProps> = ({
                             >
                               {isPromoted ? "01-Knowledge" : "05-Candidates"}
                             </span>
+
                             <span className="px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-slate-800 border border-slate-700">
                               {(pattern.confidence * 100).toFixed(0)}%
                             </span>
                           </div>
-                        </div>
+                        </button>
 
-                        {/* Summary */}
-                        <p className="text-[11px] text-slate-300 leading-relaxed line-clamp-3">
-                          {pattern.summary}
-                        </p>
+                        {/* Collapsible Details Body */}
+                        {isPatternExpanded && (
+                          <div className="p-4 pt-1 border-t border-slate-800/80 bg-slate-950/40 space-y-3.5">
+                            {/* Full Summary */}
+                            <div className="space-y-1">
+                              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                                Overview:
+                              </span>
+                              <p className="text-xs text-slate-300 leading-relaxed">
+                                {pattern.summary}
+                              </p>
+                            </div>
 
-                        {/* Key Implementation Points */}
-                        {pattern.keyPoints && pattern.keyPoints.length > 0 && (
-                          <div className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800/80 space-y-1">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                              Key Implementation Points:
-                            </span>
-                            <ul className="space-y-1 text-[11px] text-slate-400 list-disc list-inside">
-                              {pattern.keyPoints.slice(0, 3).map((pt, pIdx) => (
-                                <li key={pIdx} className="line-clamp-1">
-                                  {pt}
-                                </li>
-                              ))}
-                            </ul>
+                            {/* Key Implementation Points */}
+                            {pattern.keyPoints && pattern.keyPoints.length > 0 && (
+                              <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800/80 space-y-1.5">
+                                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                                  Key Implementation Points:
+                                </span>
+                                <ul className="space-y-1 text-xs text-slate-300 list-disc list-inside">
+                                  {pattern.keyPoints.map((pt, pIdx) => (
+                                    <li key={pIdx} className="leading-relaxed">
+                                      {pt}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Tags & Architecture Structure Footer */}
+                            <div className="pt-2 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex flex-wrap gap-1.5">
+                                {(pattern.tags || []).map((tag, tIdx) => (
+                                  <span
+                                    key={tIdx}
+                                    className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60"
+                                  >
+                                    #{tag}
+                                  </span>
+                                ))}
+                              </div>
+                              {pattern.codeStructure && (
+                                <span className="text-[11px] font-mono text-indigo-400 flex items-center gap-1">
+                                  <Code2 className="h-3.5 w-3.5" />
+                                  <span>Structured Implementation</span>
+                                </span>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
-
-                      {/* Tags & Code Structure */}
-                      <div className="pt-2 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap gap-1">
-                          {(pattern.tags || []).slice(0, 3).map((tag, tIdx) => (
-                            <span
-                              key={tIdx}
-                              className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400"
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
-                        {pattern.codeStructure && (
-                          <span className="text-[10px] font-mono text-indigo-400 flex items-center gap-1">
-                            <Code2 className="h-3 w-3" />
-                            <span>Structured</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             </div>
           ) : (
