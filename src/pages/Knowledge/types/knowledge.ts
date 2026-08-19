@@ -68,6 +68,8 @@ export interface KnowledgeArchitectureProps {
 
 export interface UseKnowledgeReturn {
   candidates: KnowledgeCandidate[]
+  harvests: import("@/services/orchestrator").HarvestRun[]
+  harvestsLoading: boolean
   health: VaultHealth | null
   loading: boolean
   actionLoading: boolean
