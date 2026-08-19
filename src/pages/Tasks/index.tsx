@@ -12,6 +12,11 @@ export const TasksPage: React.FC = () => {
     setPrompt,
     autoStart,
     setAutoStart,
+    attachedAssets,
+    handleAddAsset,
+    handleRemoveAsset,
+    isUploadingAsset,
+    handleUploadFile,
     statusMessage,
     submitting,
     handleSubmit,
@@ -45,6 +50,11 @@ export const TasksPage: React.FC = () => {
             onPromptChange={setPrompt}
             autoStart={autoStart}
             onAutoStartChange={setAutoStart}
+            attachedAssets={attachedAssets}
+            onAddAsset={handleAddAsset}
+            onRemoveAsset={handleRemoveAsset}
+            isUploadingAsset={isUploadingAsset}
+            onUploadFile={handleUploadFile}
             statusMessage={statusMessage}
             submitting={submitting}
             onSubmit={handleSubmit}

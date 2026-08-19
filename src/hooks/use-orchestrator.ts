@@ -159,11 +159,28 @@ export function useRtkAnalytics() {
 
 // --- Mutation Hooks ---
 
+export function useUploadAsset() {
+  return useMutation({
+    mutationFn: (payload: {
+      fileName: string
+      base64Data: string
+      type?: "MOCKUP" | "PROJECT_ASSET"
+      projectId?: string
+      targetSubDir?: string
+    }) => OrchestratorApi.uploadAsset(payload),
+  })
+}
+
 export function useRequestTask() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: { project: string; request: string; autoStart?: boolean; requestedBy?: string }) =>
-      OrchestratorApi.requestTask(payload),
+    mutationFn: (payload: {
+      project: string
+      request: string
+      autoStart?: boolean
+      requestedBy?: string
+      attachedAssets?: import("@/services/orchestrator").AttachedAsset[]
+    }) => OrchestratorApi.requestTask(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
       queryClient.invalidateQueries({ queryKey: queryKeys.runs })
