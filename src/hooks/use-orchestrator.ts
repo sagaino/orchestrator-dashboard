@@ -24,6 +24,7 @@ export const queryKeys = {
   runs: ["runs"] as const,
   runDetail: (id: string) => ["runs", id] as const,
   runDiff: (id: string) => ["runs", id, "diff"] as const,
+  runLogs: (id: string) => ["runs", id, "logs"] as const,
   devServer: (id: string) => ["runs", id, "devServer"] as const,
   jobs: ["jobs"] as const,
   knowledgeCandidates: ["knowledge", "candidates"] as const,
@@ -77,6 +78,16 @@ export function useRunDiff(runId: string | null) {
     queryFn: () => OrchestratorApi.getRunDiff(runId!),
     enabled: !!runId,
     staleTime: 10_000,
+  })
+}
+
+export function useRunLogs(runId: string | null, isRunning = false) {
+  return useQuery<{ lines: any[]; exists: boolean }>({
+    queryKey: queryKeys.runLogs(runId!),
+    queryFn: () => OrchestratorApi.getRunLogs(runId!),
+    enabled: !!runId,
+    refetchInterval: isRunning ? 2_000 : false,
+    staleTime: 1_000,
   })
 }
 
