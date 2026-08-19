@@ -209,7 +209,7 @@ export const KnowledgeIngestModal: React.FC<KnowledgeIngestModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="bg-slate-900 border border-slate-800 text-slate-100 max-w-4xl max-h-[90vh] p-4 sm:p-6 overflow-y-auto w-full">
+      <DialogContent className="bg-slate-900 border border-slate-800 text-slate-100 sm:max-w-5xl lg:max-w-6xl w-[95vw] max-h-[90vh] p-4 sm:p-6 overflow-y-auto">
         <DialogHeader className="space-y-3">
           <div className="flex items-center gap-2 text-indigo-400 font-semibold text-base">
             <PlusCircle className="h-5 w-5" />
@@ -346,7 +346,7 @@ export const KnowledgeIngestModal: React.FC<KnowledgeIngestModalProps> = ({
               </div>
 
               {/* Tipe Knowledge & Destinasi */}
-              <div className="grid grid-cols-1 gap-4 sm:gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                 {/* Tipe Knowledge */}
                 <div className="space-y-1.5">
                   <label className="block text-xs font-medium text-slate-300">
@@ -527,7 +527,7 @@ export const KnowledgeIngestModal: React.FC<KnowledgeIngestModalProps> = ({
                     Domain: {harvestDomain}
                   </span>
                 </div>
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
                   {harvestedArticles.map((art, idx) => (
                     <div
                       key={idx}
