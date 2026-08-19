@@ -118,14 +118,21 @@ export const useRunsPage = (): UseRunsPageReturn => {
     setAcceptModalOpen(true)
   }
 
-  const handleConfirmAccept = async () => {
+  const handleConfirmAccept = async (options?: { autoCommit?: boolean; commitMessage?: string }) => {
     if (!selectedRun) return
     try {
-      await acceptRun({ runId: selectedRun.runId, approvedBy: "user" })
+      await acceptRun({
+        runId: selectedRun.runId,
+        approvedBy: "user",
+        autoCommit: options?.autoCommit,
+        commitMessage: options?.commitMessage,
+      })
       setAcceptModalOpen(false)
       toast.add({
         title: "Run Accepted",
-        description: "Run berhasil di-accept dan disinkronkan ke branch utama & Wiki!",
+        description: options?.autoCommit
+          ? "Run berhasil di-accept, di-commit ke Git, dan disinkronkan ke Wiki!"
+          : "Run berhasil di-accept dan disinkronkan ke branch utama & Wiki!",
         type: "success",
       })
     } catch (err: unknown) {

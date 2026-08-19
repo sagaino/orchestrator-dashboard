@@ -100,7 +100,7 @@ export interface AcceptRunModalProps {
   run: RunManifest | null
   actionLoading: boolean
   onClose: () => void
-  onConfirm: () => Promise<void>
+  onConfirm: (options?: { autoCommit?: boolean; commitMessage?: string }) => Promise<void>
 }
 
 export interface RejectRunModalProps {
