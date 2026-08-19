@@ -112,30 +112,32 @@ const RenderMarkdown: React.FC<{ content: string }> = ({ content }) => {
         elements.push(
           <div
             key={`frontmatter-${i}`}
-            className="p-3.5 mb-4 rounded-lg bg-slate-950/80 border border-slate-800/90 text-xs font-mono space-y-1.5 shadow-inner"
+            className="p-4 mb-4 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-mono space-y-2 shadow-inner"
           >
-            <div className="text-[10px] uppercase font-bold tracking-wider text-slate-500 flex items-center gap-1.5 pb-1 border-b border-slate-800">
-              <Layers className="h-3.5 w-3.5 text-indigo-400" />
+            <div className="text-[11px] uppercase font-bold tracking-wider text-slate-400 flex items-center gap-2 pb-2 border-b border-slate-800">
+              <Layers className="h-4 w-4 text-indigo-400" />
               Obsidian Frontmatter Metadata
             </div>
-            {frontmatterLines.map((fmLine, idx) => {
-              const colonIndex = fmLine.indexOf(":")
-              if (colonIndex !== -1) {
-                const key = fmLine.slice(0, colonIndex).trim()
-                const value = fmLine.slice(colonIndex + 1).trim()
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 pt-1">
+              {frontmatterLines.map((fmLine, idx) => {
+                const colonIndex = fmLine.indexOf(":")
+                if (colonIndex !== -1) {
+                  const key = fmLine.slice(0, colonIndex).trim()
+                  const value = fmLine.slice(colonIndex + 1).trim()
+                  return (
+                    <div key={idx} className="flex items-baseline gap-2">
+                      <span className="text-indigo-400 font-semibold shrink-0">{key}:</span>
+                      <span className="text-slate-200 break-words">{value}</span>
+                    </div>
+                  )
+                }
                 return (
-                  <div key={idx} className="flex gap-2">
-                    <span className="text-indigo-300 font-semibold">{key}:</span>
-                    <span className="text-slate-300 break-all">{value}</span>
+                  <div key={idx} className="text-slate-400 col-span-full">
+                    {fmLine}
                   </div>
                 )
-              }
-              return (
-                <div key={idx} className="text-slate-400">
-                  {fmLine}
-                </div>
-              )
-            })}
+              })}
+            </div>
           </div>
         )
         continue
@@ -421,9 +423,9 @@ Dokumen ini diusulkan oleh orchestrator sebagai candidate pengetahuan global yan
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-slate-900 border border-slate-800 text-slate-100 max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden shadow-2xl rounded-2xl">
+      <DialogContent className="bg-slate-900 border border-slate-800 text-slate-100 sm:max-w-5xl w-[95vw] max-h-[90vh] h-[85vh] flex flex-col p-0 overflow-hidden shadow-2xl rounded-2xl">
         {/* Header */}
-        <DialogHeader className="p-6 pb-4 border-b border-slate-800/80 bg-slate-900/90 space-y-3">
+        <DialogHeader className="p-5 pb-3 border-b border-slate-800/80 bg-slate-900/90 space-y-3 shrink-0">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-1 flex-1 min-w-[280px]">
               <div className="flex items-center gap-2">
