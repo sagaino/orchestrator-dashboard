@@ -171,6 +171,17 @@ export function useUploadAsset() {
   })
 }
 
+export function useDeleteAsset() {
+  return useMutation({
+    mutationFn: (payload: {
+      type?: "MOCKUP" | "PROJECT_ASSET"
+      relativeVaultPath?: string
+      relativeProjectPath?: string
+      projectId?: string
+    }) => OrchestratorApi.deleteAsset(payload),
+  })
+}
+
 export function useRequestTask() {
   const queryClient = useQueryClient()
   return useMutation({

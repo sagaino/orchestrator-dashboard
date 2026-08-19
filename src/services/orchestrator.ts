@@ -455,6 +455,16 @@ export const OrchestratorApi = {
     return res.data.data
   },
 
+  async deleteAsset(payload: {
+    type?: "MOCKUP" | "PROJECT_ASSET"
+    relativeVaultPath?: string
+    relativeProjectPath?: string
+    projectId?: string
+  }) {
+    const res = await axios.post<{ success: boolean; data: { deleted: boolean; path: string } }>("/api/assets/delete", payload)
+    return res.data.data
+  },
+
   // Tasks & Intake
   async requestTask(payload: {
     project: string

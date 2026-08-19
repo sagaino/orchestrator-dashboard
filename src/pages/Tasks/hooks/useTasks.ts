@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react"
-import { useProjects, useDaemonStatus, useJobs, useRequestTask, useUploadAsset } from "@/hooks/use-orchestrator"
+import { useProjects, useDaemonStatus, useJobs, useRequestTask, useUploadAsset, useDeleteAsset } from "@/hooks/use-orchestrator"
 import { toast } from "@/components/ui/toast"
 import type { AttachedAsset } from "@/services/orchestrator"
 import type { UseTasksReturn, TaskStatusMessage } from "../types"
@@ -39,6 +39,7 @@ export const useTasks = (): UseTasksReturn => {
   const { data: jobs = [] } = useJobs()
   const { mutateAsync: requestTask, isPending: submitting } = useRequestTask()
   const { mutateAsync: uploadAsset, isPending: isUploadingAsset } = useUploadAsset()
+  const { mutateAsync: deleteAsset } = useDeleteAsset()
 
   const [selectedProject, setSelectedProject] = useState("orchestrator-dashboard")
   const [prompt, setPrompt] = useState("")
@@ -56,8 +57,22 @@ export const useTasks = (): UseTasksReturn => {
     setAttachedAssets((prev) => [...prev, asset])
   }
 
-  const handleRemoveAsset = (index: number) => {
+  const handleRemoveAsset = async (index: number) => {
+    const target = attachedAssets[index]
     setAttachedAssets((prev) => prev.filter((_, i) => i !== index))
+
+    if (target) {
+      try {
+        await deleteAsset({
+          type: target.type,
+          relativeVaultPath: target.relativeVaultPath,
+          relativeProjectPath: target.relativeProjectPath,
+          projectId: selectedProject,
+        })
+      } catch (err) {
+        console.warn("Gagal menghapus file fisik asset:", err)
+      }
+    }
   }
 
   const handleUploadFile = async (file: File, type: "MOCKUP" | "PROJECT_ASSET") => {
