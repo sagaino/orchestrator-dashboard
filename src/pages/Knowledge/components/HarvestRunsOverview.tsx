@@ -105,27 +105,13 @@ export const HarvestRunsOverview: React.FC<HarvestRunsOverviewProps> = ({
     }
   }, [groupedRepos, selectedRepoKey])
 
-  if (isLoading) {
-    return (
-      <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 animate-pulse space-y-4">
-        <div className="h-5 bg-slate-800 rounded w-1/3" />
-        <div className="h-20 bg-slate-800/60 rounded-xl" />
-      </div>
-    )
-  }
-
-  if (!harvests || harvests.length === 0) {
-    return null
-  }
-
-  const totalDistinctRepos = groupedRepos.length
-  const totalUniquePatternsCount = groupedRepos.reduce((acc, g) => acc + g.totalUniquePatterns, 0)
-
   // Filter repos by domain
-  const filteredRepos = groupedRepos.filter((g) => {
-    const matchDomain = selectedDomain === "ALL" || g.domain.toLowerCase() === selectedDomain.toLowerCase()
-    return matchDomain
-  })
+  const filteredRepos = React.useMemo(() => {
+    return groupedRepos.filter((g) => {
+      const matchDomain = selectedDomain === "ALL" || g.domain.toLowerCase() === selectedDomain.toLowerCase()
+      return matchDomain
+    })
+  }, [groupedRepos, selectedDomain])
 
   const currentActiveRepo = groupedRepos.find((g) => g.repositoryPath === selectedRepoKey) || (filteredRepos.length > 0 ? filteredRepos[0] : null)
 
@@ -158,6 +144,22 @@ export const HarvestRunsOverview: React.FC<HarvestRunsOverviewProps> = ({
       return matchSearch && matchTag
     })
   }, [currentActiveRepo, searchQuery, selectedTag])
+
+  if (isLoading) {
+    return (
+      <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 animate-pulse space-y-4">
+        <div className="h-5 bg-slate-800 rounded w-1/3" />
+        <div className="h-20 bg-slate-800/60 rounded-xl" />
+      </div>
+    )
+  }
+
+  if (!harvests || harvests.length === 0) {
+    return null
+  }
+
+  const totalDistinctRepos = groupedRepos.length
+  const totalUniquePatternsCount = groupedRepos.reduce((acc, g) => acc + g.totalUniquePatterns, 0)
 
   return (
     <div className="rounded-2xl bg-slate-900/70 border border-slate-800 overflow-hidden shadow-lg space-y-0">
