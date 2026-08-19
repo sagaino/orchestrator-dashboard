@@ -10,6 +10,8 @@ const STAGE_COLOR_MAP: Record<string, string> = {
   RETROSPECTIVE: "#8b5cf6",
   PLANNING: "#38bdf8",
   VERIFICATION: "#06b6d4",
+  KNOWLEDGE_HARVEST: "#ec4899",
+  KNOWLEDGE_INGEST: "#14b8a6",
 }
 
 export const StageBreakdown: React.FC<StageBreakdownProps> = ({ stageBreakdown, stageData }) => {
