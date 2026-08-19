@@ -173,15 +173,13 @@ export const KnowledgeIngestModal: React.FC<KnowledgeIngestModalProps> = ({
         domain: harvestDomain,
       })
 
-      setHarvestResult(res)
-      const articles = res.articles || res.items || []
-      const count = articles.length || res.count || 0
+      const articles = res?.harvested || res?.articles || res?.items || []
+      const count = articles.length || res?.count || 0
       const msg =
-        res.message ||
+        res?.message ||
         (count > 0
-          ? `Berhasil memindai arsitektur dan membuat ${count} artikel knowledge baru dari repositori.`
+          ? `Berhasil memanen ${count} pola arsitektur dari repositori!`
           : `Pemindaian arsitektur selesai untuk repositori "${repoPath.trim()}".`)
-      setHarvestSuccessMessage(msg)
 
       toast.add({
         title: "Harvest Knowledge Berhasil",
@@ -192,6 +190,9 @@ export const KnowledgeIngestModal: React.FC<KnowledgeIngestModalProps> = ({
       if (onSuccess) {
         onSuccess()
       }
+
+      // Close modal on success so user returns to updated Knowledge Center
+      handleClose()
     } catch (err: unknown) {
       const errStr = err instanceof Error ? err.message : String(err)
       setHarvestErrorMessage(errStr || "Terjadi kesalahan saat memproses harvest knowledge dari repositori.")
