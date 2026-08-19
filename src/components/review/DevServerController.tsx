@@ -214,12 +214,12 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
               <Terminal className="h-4 w-4 text-slate-500" />
               Dev Server Console Logs
             </span>
-            <span className="font-mono text-[10px] text-slate-500">{status?.logTail.length || 0} lines</span>
+            <span className="font-mono text-[10px] text-slate-500">{(Array.isArray(status?.logTail) ? status.logTail.length : 0)} lines</span>
           </div>
 
           <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800/80 font-mono text-[11px] text-slate-300 h-44 overflow-y-auto space-y-1">
-            {!status?.logTail || status.logTail.length === 0 ? (
-              <span className="text-slate-600 italic">Dev server belum dimulai.</span>
+            {!Array.isArray(status?.logTail) || status.logTail.length === 0 ? (
+              <span className="text-slate-600 italic">Dev server belum dimulai atau tidak ada log.</span>
             ) : (
               status.logTail.map((line, i) => (
                 <div key={i} className="leading-relaxed break-all">
