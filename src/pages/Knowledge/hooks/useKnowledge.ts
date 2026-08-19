@@ -12,6 +12,8 @@ const DEFAULT_KNOWLEDGE_SECTIONS: KnowledgeSectionItem[] = [
   { title: "Debugging", path: "01-Knowledge/debugging/", desc: "Catatan investigasi root-cause dan cara perbaikan bug." },
 ]
 
+import { getSuggestedTargetPath } from "../components/CandidatePreviewModal"
+
 export const useKnowledge = (): UseKnowledgeReturn => {
   const { data: candidates = [], isLoading: candidatesLoading, refetch: refetchCandidates } = useKnowledgeCandidates()
   const { data: harvests = [], isLoading: harvestsLoading, refetch: refetchHarvests } = useHarvestRuns()
@@ -40,7 +42,7 @@ export const useKnowledge = (): UseKnowledgeReturn => {
 
   const handleOpenPromote = (candidate: KnowledgeCandidate) => {
     setSelectedCandidateForPromote(candidate)
-    setPromoteTargetPath("")
+    setPromoteTargetPath(getSuggestedTargetPath(candidate.type, candidate.title, candidate.candidatePath))
     setPromoteModalOpen(true)
   }
 

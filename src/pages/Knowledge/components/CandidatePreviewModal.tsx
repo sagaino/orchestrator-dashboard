@@ -25,7 +25,7 @@ import {
 import type { CandidatePreviewModalProps } from "../types"
 
 // Helper to determine suggested target path based on candidate type
-const getSuggestedTargetPath = (type?: string, title?: string, candidatePath?: string): string => {
+export const getSuggestedTargetPath = (type?: string, title?: string, candidatePath?: string): string => {
   const cleanType = (type || "concepts").toLowerCase()
   let folder = "concepts"
   if (cleanType.includes("pattern")) folder = "patterns"
