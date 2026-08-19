@@ -27,6 +27,7 @@ export const queryKeys = {
   devServer: (id: string) => ["runs", id, "devServer"] as const,
   jobs: ["jobs"] as const,
   knowledgeCandidates: ["knowledge", "candidates"] as const,
+  knowledgeHarvests: ["knowledge", "harvests"] as const,
   knowledgeHealth: ["knowledge", "health"] as const,
   notifications: ["notifications"] as const,
   telemetry: (projectId?: string) => ["telemetry", projectId ?? "all"] as const,
@@ -107,9 +108,9 @@ export function useKnowledgeCandidates() {
 
 export function useHarvestRuns() {
   return useQuery({
-    queryKey: ["knowledge", "harvests"] as const,
+    queryKey: queryKeys.knowledgeHarvests,
     queryFn: () => OrchestratorApi.getHarvestRuns(),
-    staleTime: 10_000,
+    staleTime: 5_000,
   })
 }
 
@@ -170,6 +171,9 @@ export function useAcceptRun() {
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
       queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
       queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeCandidates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHarvests })
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHealth })
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications })
     },
   })
 }
@@ -229,6 +233,7 @@ export function useIngestKnowledge() {
       OrchestratorApi.ingestKnowledge(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeCandidates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHarvests })
       queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHealth })
     },
   })
@@ -241,6 +246,7 @@ export function useHarvestKnowledge() {
       OrchestratorApi.harvestKnowledge(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeCandidates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHarvests })
       queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHealth })
     },
   })

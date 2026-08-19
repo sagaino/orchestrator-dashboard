@@ -93,6 +93,8 @@ export interface UseKnowledgeReturn {
   handleConfirmPromote: (e: FormEvent) => Promise<void>
   handleConfirmReject: (e: FormEvent) => Promise<void>
   refetchHealth?: () => void
+  refetchHarvests?: () => void
+  refetchCandidates?: () => void
   knowledgeSections: KnowledgeSectionItem[]
 }
 

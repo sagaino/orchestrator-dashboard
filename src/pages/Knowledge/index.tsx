@@ -41,6 +41,8 @@ export const KnowledgePage: React.FC = () => {
     handleConfirmPromote,
     handleConfirmReject,
     refetchHealth,
+    refetchHarvests,
+    refetchCandidates,
     knowledgeSections,
   } = useKnowledge()
 
@@ -89,6 +91,11 @@ export const KnowledgePage: React.FC = () => {
       <KnowledgeIngestModal
         isOpen={ingestModalOpen}
         onClose={() => setIngestModalOpen(false)}
+        onSuccess={() => {
+          if (refetchHarvests) refetchHarvests()
+          if (refetchCandidates) refetchCandidates()
+          if (refetchHealth) refetchHealth()
+        }}
       />
 
       {/* Candidate Markdown Previewer Modal */}

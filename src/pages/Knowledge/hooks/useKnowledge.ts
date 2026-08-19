@@ -13,8 +13,8 @@ const DEFAULT_KNOWLEDGE_SECTIONS: KnowledgeSectionItem[] = [
 ]
 
 export const useKnowledge = (): UseKnowledgeReturn => {
-  const { data: candidates = [], isLoading: candidatesLoading } = useKnowledgeCandidates()
-  const { data: harvests = [], isLoading: harvestsLoading } = useHarvestRuns()
+  const { data: candidates = [], isLoading: candidatesLoading, refetch: refetchCandidates } = useKnowledgeCandidates()
+  const { data: harvests = [], isLoading: harvestsLoading, refetch: refetchHarvests } = useHarvestRuns()
   const { data: health = null, isLoading: healthLoading, refetch: refetchHealth } = useKnowledgeHealth()
   const { mutateAsync: promoteKnowledge, isPending: promotePending } = usePromoteKnowledge()
   const { mutateAsync: rejectKnowledge, isPending: rejectPending } = useRejectKnowledge()
@@ -131,6 +131,8 @@ export const useKnowledge = (): UseKnowledgeReturn => {
     handleConfirmPromote,
     handleConfirmReject,
     refetchHealth,
+    refetchHarvests,
+    refetchCandidates,
     knowledgeSections: DEFAULT_KNOWLEDGE_SECTIONS,
   }
 }

@@ -73,6 +73,14 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
         case "KNOWLEDGE_PROMOTED":
         case "KNOWLEDGE_REJECTED":
           queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeCandidates })
+          queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHarvests })
+          queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHealth })
+          break
+
+        case "KNOWLEDGE_HARVESTED":
+        case "KNOWLEDGE_INGESTED":
+          queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHarvests })
+          queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeCandidates })
           queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHealth })
           break
 
