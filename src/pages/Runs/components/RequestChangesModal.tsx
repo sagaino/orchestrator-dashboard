@@ -38,14 +38,18 @@ export const RequestChangesModal: React.FC<RequestChangesModalProps> = ({
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-slate-300">
-              Poin Revisi / Catatan Perbaikan
+              Poin Revisi / Catatan Perbaikan {(visualAnnotations.length > 0 || (inlineComments && inlineComments.length > 0)) && <span className="text-slate-500 font-normal">(Opsional jika sudah ada anotasi)</span>}
             </label>
             <textarea
-              rows={4}
-              required
+              rows={3}
+              required={visualAnnotations.length === 0 && (!inlineComments || inlineComments.length === 0)}
               value={reason}
               onChange={(e) => onReasonChange(e.target.value)}
-              placeholder="Tuliskan poin-poin yang perlu direvisi..."
+              placeholder={
+                visualAnnotations.length > 0 || (inlineComments && inlineComments.length > 0)
+                  ? "Tambahkan instruksi umum tambahan jika ada (opsional)..."
+                  : "Tuliskan poin-poin yang perlu direvisi..."
+              }
               className="w-full px-3.5 py-3 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 resize-none font-sans"
             />
           </div>
@@ -147,7 +151,10 @@ export const RequestChangesModal: React.FC<RequestChangesModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={actionLoading || !reason.trim()}
+              disabled={
+                actionLoading ||
+                (!reason.trim() && visualAnnotations.length === 0 && (!inlineComments || inlineComments.length === 0))
+              }
               className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-xs font-medium text-white transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 flex items-center gap-1.5"
             >
               <Send className="h-3.5 w-3.5" />
