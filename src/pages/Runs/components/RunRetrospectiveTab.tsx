@@ -48,7 +48,21 @@ const getDecisionBadge = (decision?: string) => {
 }
 
 export const RunRetrospectiveTab: React.FC<RunRetrospectiveTabProps> = ({ selectedRun }) => {
-  const retro = selectedRun.retrospective
+  // Extract retrospective from manifest.retrospective OR manifest.knowledge
+  const retro = selectedRun.retrospective || (selectedRun.knowledge ? {
+    knowledgeDecision: selectedRun.knowledge.approval?.classification || selectedRun.knowledge.proposal?.classification || "PROJECT_ONLY",
+    confidence: selectedRun.knowledge.proposal?.confidence ?? 0.95,
+    suggestedRouting: selectedRun.knowledge.sync?.targetPath || selectedRun.knowledge.approval?.targetPath || selectedRun.knowledge.proposal?.targetPath || (selectedRun.knowledge.approval?.destination === "PROJECT" ? "02-Projects (Task Log)" : "01-Knowledge (Global Wiki)"),
+    analysis: selectedRun.knowledge.proposal?.summary || selectedRun.knowledge.proposal?.rationale || "Knowledge diklasifikasikan dan diselaraskan secara otomatis.",
+    summary: selectedRun.knowledge.proposal?.summary || "",
+    notes: (selectedRun.knowledge.proposal?.considerations || []).join("\n"),
+    candidateProposal: selectedRun.knowledge.proposal ? {
+      title: selectedRun.knowledge.proposal.title,
+      type: selectedRun.knowledge.proposal.type,
+      targetPath: selectedRun.knowledge.proposal.targetPath,
+      summary: selectedRun.knowledge.proposal.summary,
+    } : undefined,
+  } : null)
 
   if (!retro) {
     const isRunning = [
