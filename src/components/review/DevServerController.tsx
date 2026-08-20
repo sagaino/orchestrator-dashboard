@@ -15,14 +15,22 @@ import {
   Tablet,
   Monitor,
   Maximize2,
+  MapPin,
+  X,
+  MessageSquarePlus,
+  Trash2,
 } from "lucide-react"
 import { OrchestratorApi, type DevServerStatus } from "@/services/orchestrator"
 import { toast } from "@/components/ui/toast"
+import type { VisualAnnotation } from "@/pages/Runs/types"
 
 interface DevServerControllerProps {
   runId: string
   workspaceExists: boolean
   sources?: string[]
+  visualAnnotations?: VisualAnnotation[]
+  onAddVisualAnnotation?: (annotation: { x: number; y: number; comment: string }) => void
+  onRemoveVisualAnnotation?: (id: string) => void
 }
 
 type ViewMode = "SPLIT" | "WEB_ONLY" | "OVERLAY"
@@ -32,6 +40,9 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
   runId,
   workspaceExists,
   sources = [],
+  visualAnnotations = [],
+  onAddVisualAnnotation,
+  onRemoveVisualAnnotation,
 }) => {
   const [status, setStatus] = useState<DevServerStatus | null>(null)
   const [loading, setLoading] = useState(false)
@@ -40,6 +51,11 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
   const [viewport, setViewport] = useState<ViewportSize>("DESKTOP")
   const [overlayOpacity, setOverlayOpacity] = useState(50)
   const [selectedMockupIndex, setSelectedMockupIndex] = useState(0)
+
+  // Visual Pin Annotation State
+  const [isPinModeActive, setIsPinModeActive] = useState(false)
+  const [pendingPin, setPendingPin] = useState<{ x: number; y: number } | null>(null)
+  const [pinComment, setPinComment] = useState("")
 
   // Find mockup images in sources array
   const mockupSources = (sources || []).filter(
@@ -54,6 +70,31 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
       setViewMode("WEB_ONLY")
     }
   }, [activeMockup])
+
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isPinModeActive) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    setPendingPin({ x, y })
+    setPinComment("")
+  }
+
+  const handleSavePin = () => {
+    if (!pendingPin || !pinComment.trim() || !onAddVisualAnnotation) return
+    onAddVisualAnnotation({
+      x: pendingPin.x,
+      y: pendingPin.y,
+      comment: pinComment.trim(),
+    })
+    setPendingPin(null)
+    setPinComment("")
+  }
+
+  const handleCancelPin = () => {
+    setPendingPin(null)
+    setPinComment("")
+  }
 
   const checkStatus = async () => {
     try {
@@ -244,6 +285,30 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
 
               {/* View Mode Switcher */}
               <div className="flex items-center gap-2">
+                {/* Visual Pin Feedback Mode Button */}
+                <button
+                  onClick={() => {
+                    setIsPinModeActive(!isPinModeActive)
+                    setPendingPin(null)
+                  }}
+                  className={`px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-all border shadow-sm ${
+                    isPinModeActive
+                      ? "bg-rose-600 border-rose-500 text-white animate-pulse"
+                      : visualAnnotations.length > 0
+                        ? "bg-rose-950/80 border-rose-500/40 text-rose-300 hover:bg-rose-900/60"
+                        : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                  }`}
+                  title="Klik untuk mengaktifkan mode pin anotasi pada layar"
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                  <span>{isPinModeActive ? "Click on Preview to Pin" : "Add Visual Feedback"}</span>
+                  {visualAnnotations.length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">
+                      {visualAnnotations.length}
+                    </span>
+                  )}
+                </button>
+
                 {activeMockup && (
                   <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
                     <button
@@ -315,6 +380,22 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
                 />
               </div>
             )}
+
+            {/* Pin Mode Instruction Banner */}
+            {isPinModeActive && (
+              <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-500/30 flex items-center justify-between gap-3 text-xs text-rose-200">
+                <div className="flex items-center gap-2 font-medium">
+                  <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping"></span>
+                  <span>Mode Pin Feedback Aktif: Klik pada area mana saja di atas website untuk memberikan catatan revisi visual.</span>
+                </div>
+                <button
+                  onClick={() => setIsPinModeActive(false)}
+                  className="px-2 py-0.5 rounded bg-rose-900/60 hover:bg-rose-900 text-rose-200 text-[11px]"
+                >
+                  Selesai
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -381,8 +462,91 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
                     <span className="text-[11px] text-emerald-400 font-medium">Live Dev Server</span>
                   </div>
                   <div className="flex-1 overflow-hidden bg-slate-900/30 p-2 flex items-center justify-center">
-                    <div className={`h-full transition-all ${viewportWidths[viewport]}`}>
+                    <div className={`relative h-full transition-all ${viewportWidths[viewport]}`}>
                       <iframe src={status.url} className="w-full h-full bg-white border-0 rounded shadow-lg" title="Worktree App Preview" />
+
+                      {/* Interactive Pin Annotation Layer */}
+                      <div
+                        onClick={handleContainerClick}
+                        className={`absolute inset-0 z-20 ${
+                          isPinModeActive
+                            ? "cursor-crosshair bg-rose-500/5 ring-2 ring-rose-500/40"
+                            : "pointer-events-none"
+                        }`}
+                      >
+                        {/* Render Existing Pins */}
+                        {visualAnnotations.map((pin, idx) => (
+                          <div
+                            key={pin.id}
+                            style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
+                            className="absolute -translate-x-1/2 -translate-y-1/2 group pointer-events-auto cursor-pointer"
+                          >
+                            <div className="h-6 w-6 rounded-full bg-rose-600 text-white text-[11px] font-bold flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-rose-500/50">
+                              {idx + 1}
+                            </div>
+                            {/* Hover Tooltip */}
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-30 w-56 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-xs shadow-2xl space-y-1">
+                              <div className="flex items-center justify-between text-[10px] text-slate-400">
+                                <span>Pin #{idx + 1}</span>
+                                {onRemoveVisualAnnotation && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onRemoveVisualAnnotation(pin.id)
+                                    }}
+                                    className="text-rose-400 hover:underline"
+                                  >
+                                    Hapus
+                                  </button>
+                                )}
+                              </div>
+                              <p className="text-slate-200">{pin.comment}</p>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Pending Pin Popover */}
+                        {pendingPin && (
+                          <div
+                            style={{ left: `${pendingPin.x}%`, top: `${pendingPin.y}%` }}
+                            className="absolute -translate-x-1/2 -translate-y-1/2 z-40 w-64 p-3 rounded-xl bg-slate-900 border border-rose-500 shadow-2xl text-xs space-y-2 pointer-events-auto"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-between text-rose-400 font-semibold">
+                              <span className="flex items-center gap-1">
+                                <MessageSquarePlus className="h-3.5 w-3.5" />
+                                Catatan Visual
+                              </span>
+                              <button onClick={handleCancelPin} className="text-slate-400 hover:text-white">
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                            <textarea
+                              rows={3}
+                              autoFocus
+                              value={pinComment}
+                              onChange={(e) => setPinComment(e.target.value)}
+                              placeholder="Tuliskan revisi untuk bagian ini..."
+                              className="w-full p-2 rounded bg-slate-800 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 resize-none outline-none focus:ring-1 focus:ring-rose-500 font-sans"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={handleCancelPin}
+                                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px]"
+                              >
+                                Batal
+                              </button>
+                              <button
+                                onClick={handleSavePin}
+                                disabled={!pinComment.trim()}
+                                className="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-medium text-[11px]"
+                              >
+                                Simpan Pin
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -431,8 +595,91 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
                   <span className="text-[11px] text-slate-400">Desktop / Laptop Full View</span>
                 </div>
                 <div className={`${isFullscreen ? "flex-1" : "h-[680px]"} bg-slate-900/30 p-2 flex items-center justify-center overflow-hidden`}>
-                  <div className={`h-full transition-all ${viewportWidths[viewport]}`}>
+                  <div className={`relative h-full transition-all ${viewportWidths[viewport]}`}>
                     <iframe src={status.url} className="w-full h-full bg-white border-0 rounded shadow-lg" title="Worktree App Preview" />
+
+                    {/* Interactive Pin Annotation Layer */}
+                    <div
+                      onClick={handleContainerClick}
+                      className={`absolute inset-0 z-20 ${
+                        isPinModeActive
+                          ? "cursor-crosshair bg-rose-500/5 ring-2 ring-rose-500/40"
+                          : "pointer-events-none"
+                      }`}
+                    >
+                      {/* Render Existing Pins */}
+                      {visualAnnotations.map((pin, idx) => (
+                        <div
+                          key={pin.id}
+                          style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
+                          className="absolute -translate-x-1/2 -translate-y-1/2 group pointer-events-auto cursor-pointer"
+                        >
+                          <div className="h-6 w-6 rounded-full bg-rose-600 text-white text-[11px] font-bold flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-rose-500/50">
+                            {idx + 1}
+                          </div>
+                          {/* Hover Tooltip */}
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-30 w-56 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-xs shadow-2xl space-y-1">
+                            <div className="flex items-center justify-between text-[10px] text-slate-400">
+                              <span>Pin #{idx + 1}</span>
+                              {onRemoveVisualAnnotation && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    onRemoveVisualAnnotation(pin.id)
+                                  }}
+                                  className="text-rose-400 hover:underline"
+                                >
+                                  Hapus
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-slate-200">{pin.comment}</p>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Pending Pin Popover */}
+                      {pendingPin && (
+                        <div
+                          style={{ left: `${pendingPin.x}%`, top: `${pendingPin.y}%` }}
+                          className="absolute -translate-x-1/2 -translate-y-1/2 z-40 w-64 p-3 rounded-xl bg-slate-900 border border-rose-500 shadow-2xl text-xs space-y-2 pointer-events-auto"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-between text-rose-400 font-semibold">
+                            <span className="flex items-center gap-1">
+                              <MessageSquarePlus className="h-3.5 w-3.5" />
+                              Catatan Visual
+                            </span>
+                            <button onClick={handleCancelPin} className="text-slate-400 hover:text-white">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          <textarea
+                            rows={3}
+                            autoFocus
+                            value={pinComment}
+                            onChange={(e) => setPinComment(e.target.value)}
+                            placeholder="Tuliskan revisi untuk bagian ini..."
+                            className="w-full p-2 rounded bg-slate-800 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 resize-none outline-none focus:ring-1 focus:ring-rose-500 font-sans"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={handleCancelPin}
+                              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px]"
+                            >
+                              Batal
+                            </button>
+                            <button
+                              onClick={handleSavePin}
+                              disabled={!pinComment.trim()}
+                              className="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-medium text-[11px]"
+                            >
+                              Simpan Pin
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

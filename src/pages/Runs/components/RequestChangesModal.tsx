@@ -19,6 +19,8 @@ export const RequestChangesModal: React.FC<RequestChangesModalProps> = ({
   onSubmit,
   inlineComments = [],
   onRemoveComment,
+  visualAnnotations = [],
+  onRemoveVisualAnnotation,
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -47,6 +49,49 @@ export const RequestChangesModal: React.FC<RequestChangesModalProps> = ({
               className="w-full px-3.5 py-3 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 resize-none font-sans"
             />
           </div>
+
+          {/* Visual Annotations Summary */}
+          {visualAnnotations && visualAnnotations.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-rose-400 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping"></span>
+                  <span>Visual Pin Annotations ({visualAnnotations.length})</span>
+                </label>
+                <span className="text-[10px] text-slate-400 font-sans">
+                  Disertakan sebagai koordinat visual
+                </span>
+              </div>
+              <div className="max-h-40 overflow-y-auto space-y-2 rounded-lg bg-slate-950/60 p-2.5 border border-slate-800 divide-y divide-slate-800/60">
+                {visualAnnotations.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className="flex items-start justify-between gap-2.5 pt-1.5 first:pt-0"
+                  >
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-2 font-mono text-[11px]">
+                        <span className="text-rose-300 font-semibold">Pin #{idx + 1}</span>
+                        <span className="px-1.5 py-0.2 rounded bg-rose-950/80 border border-rose-500/30 text-rose-300 text-[10px] shrink-0 font-mono">
+                          X:{Math.round(item.x)}% Y:{Math.round(item.y)}%
+                        </span>
+                      </div>
+                      <p className="text-slate-200 text-xs whitespace-pre-wrap font-sans pl-0.5">{item.comment}</p>
+                    </div>
+                    {onRemoveVisualAnnotation && (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveVisualAnnotation(item.id)}
+                        className="text-slate-500 hover:text-rose-400 p-1 rounded hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                        title="Hapus pin visual"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Inline Annotations Summary */}
           {inlineComments && inlineComments.length > 0 && (
