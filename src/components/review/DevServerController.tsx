@@ -29,7 +29,7 @@ interface DevServerControllerProps {
   workspaceExists: boolean
   sources?: string[]
   visualAnnotations?: VisualAnnotation[]
-  onAddVisualAnnotation?: (annotation: { x: number; y: number; comment: string }) => void
+  onAddVisualAnnotation?: (annotation: { x: number; y: number; width?: number; height?: number; comment: string }) => void
   onRemoveVisualAnnotation?: (id: string) => void
 }
 
@@ -52,11 +52,16 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
   const [overlayOpacity, setOverlayOpacity] = useState(50)
   const [selectedMockupIndex, setSelectedMockupIndex] = useState(0)
 
-  // Visual Pin Annotation State
+  // Visual Pin & Area Box Annotation State
   const [isPinModeActive, setIsPinModeActive] = useState(false)
-  const [pendingPin, setPendingPin] = useState<{ x: number; y: number } | null>(null)
+  const [pendingPin, setPendingPin] = useState<{ x: number; y: number; width?: number; height?: number } | null>(null)
   const [pinComment, setPinComment] = useState("")
   const [activePinId, setActivePinId] = useState<string | null>(null)
+
+  // Drag selection state
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null)
+  const [dragCurrent, setDragCurrent] = useState<{ x: number; y: number } | null>(null)
 
   // Find mockup images in sources array
   const mockupSources = (sources || []).filter(
@@ -72,12 +77,50 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
     }
   }, [activeMockup])
 
-  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isPinModeActive) return
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isPinModeActive || pendingPin) return
     const rect = e.currentTarget.getBoundingClientRect()
     const x = ((e.clientX - rect.left) / rect.width) * 100
     const y = ((e.clientY - rect.top) / rect.height) * 100
-    setPendingPin({ x, y })
+    setIsDragging(true)
+    setDragStart({ x, y })
+    setDragCurrent({ x, y })
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !dragStart) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
+    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100))
+    setDragCurrent({ x, y })
+  }
+
+  const handleMouseUp = () => {
+    if (!isDragging || !dragStart || !dragCurrent) return
+    setIsDragging(false)
+
+    const minX = Math.min(dragStart.x, dragCurrent.x)
+    const minY = Math.min(dragStart.y, dragCurrent.y)
+    const width = Math.abs(dragCurrent.x - dragStart.x)
+    const height = Math.abs(dragCurrent.y - dragStart.y)
+
+    // If dragged more than 2% in width or height, create an Area Box. Otherwise create a Point Pin.
+    if (width > 2 && height > 2) {
+      setPendingPin({
+        x: minX,
+        y: minY,
+        width,
+        height,
+      })
+    } else {
+      setPendingPin({
+        x: dragStart.x,
+        y: dragStart.y,
+      })
+    }
+
+    setDragStart(null)
+    setDragCurrent(null)
     setPinComment("")
   }
 
@@ -86,6 +129,8 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
     onAddVisualAnnotation({
       x: pendingPin.x,
       y: pendingPin.y,
+      width: pendingPin.width,
+      height: pendingPin.height,
       comment: pinComment.trim(),
     })
     setPendingPin(null)
@@ -179,6 +224,65 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
 
   const renderPinItem = (pin: VisualAnnotation, idx: number) => {
     const isOpened = activePinId === pin.id
+    const isBox = pin.width && pin.height && (pin.width > 1 || pin.height > 1)
+
+    if (isBox) {
+      return (
+        <div
+          key={pin.id}
+          style={{
+            left: `${pin.x}%`,
+            top: `${pin.y}%`,
+            width: `${pin.width}%`,
+            height: `${pin.height}%`,
+          }}
+          className={`absolute group pointer-events-auto z-20 border-2 rounded-md transition-all ${
+            isOpened
+              ? "border-rose-500 bg-rose-500/20 ring-2 ring-rose-500/50 shadow-lg"
+              : "border-rose-500/80 bg-rose-500/10 hover:bg-rose-500/20 border-dashed"
+          }`}
+          onClick={(e) => {
+            e.stopPropagation()
+            setActivePinId(isOpened ? null : pin.id)
+          }}
+        >
+          {/* Top-Left Badge for Box */}
+          <div className="absolute -top-3 -left-3 h-6 w-6 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-rose-500/50 transition-transform hover:scale-110 cursor-pointer">
+            {idx + 1}
+          </div>
+
+          {/* Popover / Tooltip */}
+          <div
+            className={`absolute left-0 bottom-full mb-1 z-40 w-64 p-3 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs shadow-2xl space-y-1.5 transition-all ${
+              isOpened ? "block ring-2 ring-rose-500/50" : "hidden group-hover:block"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800 pb-1">
+              <span className="font-semibold text-rose-300">
+                Box #{idx + 1} ({Math.round(pin.width || 0)}% × {Math.round(pin.height || 0)}%)
+              </span>
+              {onRemoveVisualAnnotation && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (activePinId === pin.id) setActivePinId(null)
+                    onRemoveVisualAnnotation(pin.id)
+                  }}
+                  className="text-rose-400 hover:text-rose-300 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Hapus
+                </button>
+              )}
+            </div>
+            <p className="text-slate-200 leading-relaxed font-sans text-xs">{pin.comment}</p>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div
         key={pin.id}
@@ -513,55 +617,82 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
                     <div className={`relative h-full transition-all ${viewportWidths[viewport]}`}>
                       <iframe src={status.url} className="w-full h-full bg-white border-0 rounded shadow-lg" title="Worktree App Preview" />
 
-                      {/* Interactive Pin Annotation Layer */}
+                      {/* Interactive Pin & Area Box Annotation Layer */}
                       <div
-                        onClick={handleContainerClick}
-                        className={`absolute inset-0 z-20 ${
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        className={`absolute inset-0 z-20 select-none ${
                           isPinModeActive
                             ? "cursor-crosshair bg-rose-500/5 ring-2 ring-rose-500/40"
                             : "pointer-events-none"
                         }`}
                       >
-                        {/* Render Existing Pins */}
+                        {/* Live Dragging Selection Box Preview */}
+                        {isDragging && dragStart && dragCurrent && (
+                          <div
+                            style={{
+                              left: `${Math.min(dragStart.x, dragCurrent.x)}%`,
+                              top: `${Math.min(dragStart.y, dragCurrent.y)}%`,
+                              width: `${Math.abs(dragCurrent.x - dragStart.x)}%`,
+                              height: `${Math.abs(dragCurrent.y - dragStart.y)}%`,
+                            }}
+                            className="absolute border-2 border-dashed border-rose-500 bg-rose-500/20 rounded pointer-events-none z-30"
+                          />
+                        )}
+
+                        {/* Render Existing Pins & Boxes */}
                         {visualAnnotations.map(renderPinItem)}
 
-                        {/* Pending Pin Popover */}
+                        {/* Pending Pin / Box Popover */}
                         {pendingPin && (
                           <div
-                            style={{ left: `${pendingPin.x}%`, top: `${pendingPin.y}%` }}
+                            style={{
+                              left: pendingPin.width ? `${pendingPin.x + pendingPin.width / 2}%` : `${pendingPin.x}%`,
+                              top: pendingPin.height ? `${pendingPin.y + pendingPin.height / 2}%` : `${pendingPin.y}%`,
+                            }}
                             className="absolute -translate-x-1/2 -translate-y-1/2 z-40 w-64 p-3 rounded-xl bg-slate-900 border border-rose-500 shadow-2xl text-xs space-y-2 pointer-events-auto"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center justify-between text-rose-400 font-semibold">
                               <span className="flex items-center gap-1">
                                 <MessageSquarePlus className="h-3.5 w-3.5" />
-                                Catatan Visual
+                                {pendingPin.width && pendingPin.height ? "Catatan Area Seleksi" : "Catatan Pin Titik"}
                               </span>
-                              <button onClick={handleCancelPin} className="text-slate-400 hover:text-white">
+                              <button onClick={handleCancelPin} className="text-slate-400 hover:text-white cursor-pointer">
                                 <X className="h-3.5 w-3.5" />
                               </button>
                             </div>
+                            {pendingPin.width && pendingPin.height && (
+                              <div className="px-2 py-1 rounded bg-rose-950/60 border border-rose-500/30 text-[10px] text-rose-300 font-mono">
+                                Box: {Math.round(pendingPin.width)}% × {Math.round(pendingPin.height)}%
+                              </div>
+                            )}
                             <textarea
                               rows={3}
                               autoFocus
                               value={pinComment}
                               onChange={(e) => setPinComment(e.target.value)}
-                              placeholder="Tuliskan revisi untuk bagian ini..."
+                              placeholder={
+                                pendingPin.width && pendingPin.height
+                                  ? "Tuliskan revisi untuk area kotak ini..."
+                                  : "Tuliskan revisi untuk titik ini..."
+                              }
                               className="w-full p-2 rounded bg-slate-800 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 resize-none outline-none focus:ring-1 focus:ring-rose-500 font-sans"
                             />
                             <div className="flex justify-end gap-2">
                               <button
                                 onClick={handleCancelPin}
-                                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px]"
+                                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] cursor-pointer"
                               >
                                 Batal
                               </button>
                               <button
                                 onClick={handleSavePin}
                                 disabled={!pinComment.trim()}
-                                className="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-medium text-[11px]"
+                                className="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-medium text-[11px] cursor-pointer"
                               >
-                                Simpan Pin
+                                Simpan {pendingPin.width && pendingPin.height ? "Area" : "Pin"}
                               </button>
                             </div>
                           </div>
@@ -622,52 +753,79 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
                       title="Worktree App Preview"
                     />
 
-                    {/* Interactive Pin Annotation Layer */}
+                    {/* Interactive Pin & Area Box Annotation Layer */}
                     {isPinModeActive && (
                       <div
-                        onClick={handleContainerClick}
-                        className="absolute inset-0 z-20 cursor-crosshair bg-rose-500/5 ring-2 ring-rose-500/40"
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        className="absolute inset-0 z-20 select-none cursor-crosshair bg-rose-500/5 ring-2 ring-rose-500/40"
                       >
-                        {/* Render Existing Pins */}
+                        {/* Live Dragging Selection Box Preview */}
+                        {isDragging && dragStart && dragCurrent && (
+                          <div
+                            style={{
+                              left: `${Math.min(dragStart.x, dragCurrent.x)}%`,
+                              top: `${Math.min(dragStart.y, dragCurrent.y)}%`,
+                              width: `${Math.abs(dragCurrent.x - dragStart.x)}%`,
+                              height: `${Math.abs(dragCurrent.y - dragStart.y)}%`,
+                            }}
+                            className="absolute border-2 border-dashed border-rose-500 bg-rose-500/20 rounded pointer-events-none z-30"
+                          />
+                        )}
+
+                        {/* Render Existing Pins & Boxes */}
                         {visualAnnotations.map(renderPinItem)}
 
-                        {/* Pending Pin Popover */}
+                        {/* Pending Pin / Box Popover */}
                         {pendingPin && (
                           <div
-                            style={{ left: `${pendingPin.x}%`, top: `${pendingPin.y}%` }}
+                            style={{
+                              left: pendingPin.width ? `${pendingPin.x + pendingPin.width / 2}%` : `${pendingPin.x}%`,
+                              top: pendingPin.height ? `${pendingPin.y + pendingPin.height / 2}%` : `${pendingPin.y}%`,
+                            }}
                             className="absolute -translate-x-1/2 -translate-y-1/2 z-40 w-64 p-3 rounded-xl bg-slate-900 border border-rose-500 shadow-2xl text-xs space-y-2 pointer-events-auto"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center justify-between text-rose-400 font-semibold">
                               <span className="flex items-center gap-1">
                                 <MessageSquarePlus className="h-3.5 w-3.5" />
-                                Catatan Visual
+                                {pendingPin.width && pendingPin.height ? "Catatan Area Seleksi" : "Catatan Pin Titik"}
                               </span>
-                              <button onClick={handleCancelPin} className="text-slate-400 hover:text-white">
+                              <button onClick={handleCancelPin} className="text-slate-400 hover:text-white cursor-pointer">
                                 <X className="h-3.5 w-3.5" />
                               </button>
                             </div>
+                            {pendingPin.width && pendingPin.height && (
+                              <div className="px-2 py-1 rounded bg-rose-950/60 border border-rose-500/30 text-[10px] text-rose-300 font-mono">
+                                Box: {Math.round(pendingPin.width)}% × {Math.round(pendingPin.height)}%
+                              </div>
+                            )}
                             <textarea
                               rows={3}
                               autoFocus
                               value={pinComment}
                               onChange={(e) => setPinComment(e.target.value)}
-                              placeholder="Tuliskan revisi untuk bagian ini..."
+                              placeholder={
+                                pendingPin.width && pendingPin.height
+                                  ? "Tuliskan revisi untuk area kotak ini..."
+                                  : "Tuliskan revisi untuk titik ini..."
+                              }
                               className="w-full p-2 rounded bg-slate-800 border border-slate-700 text-slate-100 text-xs placeholder-slate-500 resize-none outline-none focus:ring-1 focus:ring-rose-500 font-sans"
                             />
                             <div className="flex justify-end gap-2">
                               <button
                                 onClick={handleCancelPin}
-                                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px]"
+                                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] cursor-pointer"
                               >
                                 Batal
                               </button>
                               <button
                                 onClick={handleSavePin}
                                 disabled={!pinComment.trim()}
-                                className="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-medium text-[11px]"
+                                className="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-medium text-[11px] cursor-pointer"
                               >
-                                Simpan Pin
+                                Simpan {pendingPin.width && pendingPin.height ? "Area" : "Pin"}
                               </button>
                             </div>
                           </div>

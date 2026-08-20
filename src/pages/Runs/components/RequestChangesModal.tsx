@@ -74,9 +74,13 @@ export const RequestChangesModal: React.FC<RequestChangesModalProps> = ({
                   >
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="flex items-center gap-2 font-mono text-[11px]">
-                        <span className="text-rose-300 font-semibold">Pin #{idx + 1}</span>
+                        <span className="text-rose-300 font-semibold">
+                          {item.width && item.height && (item.width > 1 || item.height > 1) ? `Box #${idx + 1}` : `Pin #${idx + 1}`}
+                        </span>
                         <span className="px-1.5 py-0.2 rounded bg-rose-950/80 border border-rose-500/30 text-rose-300 text-[10px] shrink-0 font-mono">
-                          X:{Math.round(item.x)}% Y:{Math.round(item.y)}%
+                          {item.width && item.height && (item.width > 1 || item.height > 1)
+                            ? `Pos: ${Math.round(item.x)}%, ${Math.round(item.y)}% | Size: ${Math.round(item.width)}%×${Math.round(item.height)}%`
+                            : `X:${Math.round(item.x)}% Y:${Math.round(item.y)}%`}
                         </span>
                       </div>
                       <p className="text-slate-200 text-xs whitespace-pre-wrap font-sans pl-0.5">{item.comment}</p>
