@@ -67,19 +67,21 @@ export const RunsPage: React.FC = () => {
       {/* Filter Tabs */}
       <FilterTabs filterState={filterState} onFilterChange={setFilterState} />
 
-      {/* 2-Column Inspector Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Runs List (5 cols) */}
-        <div className="lg:col-span-5 space-y-3">
-          <RunsList
-            runs={filteredRuns}
-            selectedRun={selectedRun}
-            onSelectRun={setSelectedRun}
-          />
-        </div>
+      {/* 2-Column or Full-Width Inspector Layout */}
+      <div className={`grid grid-cols-1 ${activeTab === "QA" ? "lg:grid-cols-1" : "lg:grid-cols-12"} gap-6`}>
+        {/* Left: Runs List (Only show when not in full-width QA tab for maximum preview space) */}
+        {activeTab !== "QA" && (
+          <div className="lg:col-span-5 space-y-3">
+            <RunsList
+              runs={filteredRuns}
+              selectedRun={selectedRun}
+              onSelectRun={setSelectedRun}
+            />
+          </div>
+        )}
 
-        {/* Right: Selected Run Inspector (7 cols) */}
-        <div className="lg:col-span-7">
+        {/* Right: Selected Run Inspector */}
+        <div className={activeTab === "QA" ? "w-full" : "lg:col-span-7"}>
           <RunInspector
             selectedRun={selectedRun}
             activeTab={activeTab}
