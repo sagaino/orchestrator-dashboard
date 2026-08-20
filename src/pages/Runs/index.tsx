@@ -29,6 +29,9 @@ export const RunsPage: React.FC = () => {
     inlineComments,
     handleAddInlineComment,
     handleRemoveInlineComment,
+    visualAnnotations,
+    handleAddVisualAnnotation,
+    handleRemoveVisualAnnotation,
     acceptModalOpen,
     setAcceptModalOpen,
     rejectModalOpen,
@@ -87,6 +90,9 @@ export const RunsPage: React.FC = () => {
             inlineComments={inlineComments}
             onAddInlineComment={handleAddInlineComment}
             onRemoveInlineComment={handleRemoveInlineComment}
+            visualAnnotations={visualAnnotations}
+            onAddVisualAnnotation={handleAddVisualAnnotation}
+            onRemoveVisualAnnotation={handleRemoveVisualAnnotation}
             onPreview={handlePreview}
             onStart={handleStart}
             onRequestChanges={handleOpenRevisionModal}
@@ -108,6 +114,8 @@ export const RunsPage: React.FC = () => {
         onSubmit={handleRequestChangesSubmit}
         inlineComments={inlineComments}
         onRemoveComment={handleRemoveInlineComment}
+        visualAnnotations={visualAnnotations}
+        onRemoveVisualAnnotation={handleRemoveVisualAnnotation}
       />
 
       {/* Accept & Wiki Sync Confirmation Modal */}

@@ -16,6 +16,14 @@ export interface InlineComment extends InlineDiffComment {
   createdAt?: string
 }
 
+export interface VisualAnnotation {
+  id: string
+  x: number // percentage 0-100
+  y: number // percentage 0-100
+  comment: string
+  createdAt: string
+}
+
 export interface RunsHeaderProps {
   searchQuery: string
   onSearchChange: (query: string) => void
@@ -75,6 +83,9 @@ export interface RunInspectorProps {
   inlineComments?: InlineComment[]
   onAddInlineComment?: (comment: { file: string; line: number; comment: string }) => void
   onRemoveInlineComment?: (index: number) => void
+  visualAnnotations?: VisualAnnotation[]
+  onAddVisualAnnotation?: (annotation: { x: number; y: number; comment: string }) => void
+  onRemoveVisualAnnotation?: (id: string) => void
   onPreview: (runId: string) => Promise<void>
   onStart: (runId: string) => Promise<void>
   onRequestChanges: () => void
@@ -93,6 +104,8 @@ export interface RequestChangesModalProps {
   onSubmit: (e: FormEvent) => Promise<void>
   inlineComments?: InlineComment[]
   onRemoveComment?: (index: number) => void
+  visualAnnotations?: VisualAnnotation[]
+  onRemoveVisualAnnotation?: (id: string) => void
 }
 
 export interface AcceptRunModalProps {
@@ -133,6 +146,10 @@ export interface UseRunsPageReturn {
   setInlineComments: Dispatch<SetStateAction<InlineComment[]>>
   handleAddInlineComment: (comment: { file: string; line: number; comment: string }) => void
   handleRemoveInlineComment: (index: number) => void
+  visualAnnotations: VisualAnnotation[]
+  setVisualAnnotations: Dispatch<SetStateAction<VisualAnnotation[]>>
+  handleAddVisualAnnotation: (annotation: { x: number; y: number; comment: string }) => void
+  handleRemoveVisualAnnotation: (id: string) => void
   acceptModalOpen: boolean
   setAcceptModalOpen: (open: boolean) => void
   rejectModalOpen: boolean

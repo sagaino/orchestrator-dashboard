@@ -19,6 +19,9 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
   inlineComments = [],
   onAddInlineComment,
   onRemoveInlineComment,
+  visualAnnotations = [],
+  onAddVisualAnnotation,
+  onRemoveVisualAnnotation,
   onPreview,
   onStart,
   onRequestChanges,
@@ -169,6 +172,9 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
             runId={selectedRun.runId}
             workspaceExists={diffData?.workspaceExists ?? true}
             sources={selectedRun.task?.sources || []}
+            visualAnnotations={visualAnnotations}
+            onAddVisualAnnotation={onAddVisualAnnotation}
+            onRemoveVisualAnnotation={onRemoveVisualAnnotation}
           />
         </div>
       )}

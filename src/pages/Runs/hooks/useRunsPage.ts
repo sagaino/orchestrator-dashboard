@@ -12,7 +12,7 @@ import {
   useRetryRun
 } from "@/hooks/use-orchestrator"
 import { toast } from "@/components/ui/toast"
-import type { UseRunsPageReturn, RunFilterState, RunTabType, InlineComment } from "../types"
+import type { UseRunsPageReturn, RunFilterState, RunTabType, InlineComment, VisualAnnotation } from "../types"
 
 export const useRunsPage = (): UseRunsPageReturn => {
   const { data: runs = [], isLoading: runsLoading, refetch: refetchRuns } = useRuns()
@@ -24,6 +24,7 @@ export const useRunsPage = (): UseRunsPageReturn => {
   const [revisionModalOpen, setRevisionModalOpen] = useState(false)
   const [revisionReason, setRevisionReason] = useState("")
   const [inlineComments, setInlineComments] = useState<InlineComment[]>([])
+  const [visualAnnotations, setVisualAnnotations] = useState<VisualAnnotation[]>([])
   const [acceptModalOpen, setAcceptModalOpen] = useState(false)
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState("Rejected by user")
@@ -54,9 +55,10 @@ export const useRunsPage = (): UseRunsPageReturn => {
     }
   }, [runs, selectedRun])
 
-  // Reset inline comments when active run changes
+  // Reset inline comments & visual annotations when active run changes
   useEffect(() => {
     setInlineComments([])
+    setVisualAnnotations([])
   }, [selectedRun?.runId])
 
   const filteredRuns = runs.filter((r) => {
@@ -70,9 +72,10 @@ export const useRunsPage = (): UseRunsPageReturn => {
       (filterState === "FAILED" && r.state === "FAILED")
 
     const matchesSearch =
-      r.task.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.project.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.runId.toLowerCase().includes(searchQuery.toLowerCase())
+      searchQuery.trim() === "" ||
+      r.runId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (r.task?.title && r.task.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (r.project?.id && r.project.id.toLowerCase().includes(searchQuery.toLowerCase()))
 
     return matchesFilter && matchesSearch
   })
@@ -82,8 +85,8 @@ export const useRunsPage = (): UseRunsPageReturn => {
     try {
       await startRun({ runId })
       toast.add({
-        title: "Run Approved",
-        description: "Run berhasil di-approve dan mulai dieksekusi!",
+        title: "Run Dimulai",
+        description: "Task berhasil di-approve dan proses pengerjaan agent dimulai.",
         type: "success",
       })
     } catch (err: unknown) {
@@ -98,11 +101,11 @@ export const useRunsPage = (): UseRunsPageReturn => {
 
   const handlePreview = async (runId: string) => {
     try {
-      const res = await previewRun(runId)
+      await previewRun(runId)
       toast.add({
-        title: "Workspace VS Code Dibuka",
-        description: res?.workspacePath || "Berhasil dibuka di VS Code.",
-        type: "info",
+        title: "Worktree Dibuka",
+        description: "Workspace review berhasil dibuka di VS Code.",
+        type: "success",
       })
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err)
@@ -208,21 +211,52 @@ export const useRunsPage = (): UseRunsPageReturn => {
     setInlineComments((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const handleAddVisualAnnotation = (annotation: { x: number; y: number; comment: string }) => {
+    const newAnnotation: VisualAnnotation = {
+      id: `visual-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      x: annotation.x,
+      y: annotation.y,
+      comment: annotation.comment,
+      createdAt: new Date().toISOString(),
+    }
+    setVisualAnnotations((prev) => [...prev, newAnnotation])
+    toast.add({
+      title: "Anotasi Visual Ditambahkan",
+      description: `Pin review visual dicatat (${Math.round(annotation.x)}%, ${Math.round(annotation.y)}%).`,
+      type: "info",
+    })
+  }
+
+  const handleRemoveVisualAnnotation = (id: string) => {
+    setVisualAnnotations((prev) => prev.filter((a) => a.id !== id))
+  }
+
   const handleRequestChangesSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!selectedRun || !revisionReason.trim()) return
+
+    // Compile visual annotations into revision instructions if present
+    let compiledReason = revisionReason.trim()
+    if (visualAnnotations.length > 0) {
+      const visualNotes = visualAnnotations
+        .map((a, i) => `[Pin #${i + 1} pada koordinat X:${Math.round(a.x)}% Y:${Math.round(a.y)}%]: ${a.comment}`)
+        .join("\n")
+      compiledReason += `\n\n=== CATATAN VISUAL REVIEW (PIN UI FEEDBACK) ===\n${visualNotes}`
+    }
+
     try {
       await requestChanges({
         runId: selectedRun.runId,
-        reason: revisionReason.trim(),
+        reason: compiledReason,
         inlineComments: inlineComments.map(({ file, line, comment }) => ({ file, line, comment })),
       })
       setRevisionModalOpen(false)
       setRevisionReason("")
       setInlineComments([])
+      setVisualAnnotations([])
       toast.add({
         title: "Revisi Terkirim",
-        description: "Revisi berhasil dikirim ke agent di worktree terisolasi!",
+        description: "Revisi & anotasi visual berhasil dikirim ke agent di worktree terisolasi!",
         type: "success",
       })
     } catch (err: unknown) {
@@ -291,6 +325,10 @@ export const useRunsPage = (): UseRunsPageReturn => {
     setInlineComments,
     handleAddInlineComment,
     handleRemoveInlineComment,
+    visualAnnotations,
+    setVisualAnnotations,
+    handleAddVisualAnnotation,
+    handleRemoveVisualAnnotation,
     acceptModalOpen,
     setAcceptModalOpen,
     rejectModalOpen,
