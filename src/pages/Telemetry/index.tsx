@@ -26,7 +26,7 @@ export const TelemetryPage: React.FC = () => {
   } = useTelemetryPage()
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-12 min-w-0 w-full">
+    <div className="w-full space-y-8 pb-12 min-w-0">
       {/* Header with Title and Refresh Action */}
       <TelemetryHeader loading={loading} onRefresh={handleRefresh} />
 
