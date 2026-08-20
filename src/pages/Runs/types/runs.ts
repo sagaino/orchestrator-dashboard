@@ -18,8 +18,10 @@ export interface InlineComment extends InlineDiffComment {
 
 export interface VisualAnnotation {
   id: string
-  x: number // percentage 0-100
-  y: number // percentage 0-100
+  x: number // percentage 0-100 (left origin)
+  y: number // percentage 0-100 (top origin)
+  width?: number // percentage 0-100 (for area boxes)
+  height?: number // percentage 0-100 (for area boxes)
   comment: string
   createdAt: string
 }
@@ -84,7 +86,7 @@ export interface RunInspectorProps {
   onAddInlineComment?: (comment: { file: string; line: number; comment: string }) => void
   onRemoveInlineComment?: (index: number) => void
   visualAnnotations?: VisualAnnotation[]
-  onAddVisualAnnotation?: (annotation: { x: number; y: number; comment: string }) => void
+  onAddVisualAnnotation?: (annotation: { x: number; y: number; width?: number; height?: number; comment: string }) => void
   onRemoveVisualAnnotation?: (id: string) => void
   onPreview: (runId: string) => Promise<void>
   onStart: (runId: string) => Promise<void>
@@ -148,7 +150,7 @@ export interface UseRunsPageReturn {
   handleRemoveInlineComment: (index: number) => void
   visualAnnotations: VisualAnnotation[]
   setVisualAnnotations: Dispatch<SetStateAction<VisualAnnotation[]>>
-  handleAddVisualAnnotation: (annotation: { x: number; y: number; comment: string }) => void
+  handleAddVisualAnnotation: (annotation: { x: number; y: number; width?: number; height?: number; comment: string }) => void
   handleRemoveVisualAnnotation: (id: string) => void
   acceptModalOpen: boolean
   setAcceptModalOpen: (open: boolean) => void

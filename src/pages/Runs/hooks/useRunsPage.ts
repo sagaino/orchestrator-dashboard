@@ -211,18 +211,23 @@ export const useRunsPage = (): UseRunsPageReturn => {
     setInlineComments((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const handleAddVisualAnnotation = (annotation: { x: number; y: number; comment: string }) => {
+  const handleAddVisualAnnotation = (annotation: { x: number; y: number; width?: number; height?: number; comment: string }) => {
     const newAnnotation: VisualAnnotation = {
       id: `visual-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       x: annotation.x,
       y: annotation.y,
+      width: annotation.width,
+      height: annotation.height,
       comment: annotation.comment,
       createdAt: new Date().toISOString(),
     }
     setVisualAnnotations((prev) => [...prev, newAnnotation])
+    const isBox = Boolean(annotation.width && annotation.height && (annotation.width > 1 || annotation.height > 1))
     toast.add({
-      title: "Anotasi Visual Ditambahkan",
-      description: `Pin review visual dicatat (${Math.round(annotation.x)}%, ${Math.round(annotation.y)}%).`,
+      title: isBox ? "Area Box Ditambahkan" : "Pin Titik Ditambahkan",
+      description: isBox
+        ? `Area seleksi dicatat (${Math.round(annotation.width || 0)}% × ${Math.round(annotation.height || 0)}%).`
+        : `Pin review visual dicatat (${Math.round(annotation.x)}%, ${Math.round(annotation.y)}%).`,
       type: "info",
     })
   }
@@ -246,9 +251,14 @@ export const useRunsPage = (): UseRunsPageReturn => {
 
     if (visualAnnotations.length > 0) {
       const visualNotes = visualAnnotations
-        .map((a, i) => `[Pin #${i + 1} pada koordinat X:${Math.round(a.x)}% Y:${Math.round(a.y)}%]: ${a.comment}`)
+        .map((a, i) => {
+          if (a.width && a.height && (a.width > 1 || a.height > 1)) {
+            return `[Area Box #${i + 1} posisi X:${Math.round(a.x)}% Y:${Math.round(a.y)}%, Ukuran ${Math.round(a.width)}%×${Math.round(a.height)}%]: ${a.comment}`
+          }
+          return `[Pin Point #${i + 1} koordinat X:${Math.round(a.x)}% Y:${Math.round(a.y)}%]: ${a.comment}`
+        })
         .join("\n")
-      compiledReason += `\n\n=== CATATAN VISUAL REVIEW (PIN UI FEEDBACK) ===\n${visualNotes}`
+      compiledReason += `\n\n=== CATATAN VISUAL REVIEW (PIN & AREA SELECTION) ===\n${visualNotes}`
     }
 
     try {
