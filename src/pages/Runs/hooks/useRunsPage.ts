@@ -233,10 +233,17 @@ export const useRunsPage = (): UseRunsPageReturn => {
 
   const handleRequestChangesSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!selectedRun || !revisionReason.trim()) return
+    if (!selectedRun) return
+
+    const hasAnnotations = visualAnnotations.length > 0 || inlineComments.length > 0
+    if (!revisionReason.trim() && !hasAnnotations) return
 
     // Compile visual annotations into revision instructions if present
     let compiledReason = revisionReason.trim()
+    if (!compiledReason && hasAnnotations) {
+      compiledReason = "Perbaiki implementasi sesuai dengan anotasi visual & catatan diff terlampir."
+    }
+
     if (visualAnnotations.length > 0) {
       const visualNotes = visualAnnotations
         .map((a, i) => `[Pin #${i + 1} pada koordinat X:${Math.round(a.x)}% Y:${Math.round(a.y)}%]: ${a.comment}`)
