@@ -129,6 +129,7 @@ export interface RunManifest {
     verification?: string[]
     allowedPaths?: string[]
     requiresChanges?: boolean
+    sources?: string[]
   }
   execution?: {
     claimedAt?: string

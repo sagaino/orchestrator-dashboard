@@ -8,6 +8,13 @@ import {
   Globe,
   Eye,
   EyeOff,
+  Image as ImageIcon,
+  Columns,
+  Layers,
+  Smartphone,
+  Tablet,
+  Monitor,
+  Maximize2,
 } from "lucide-react"
 import { OrchestratorApi, type DevServerStatus } from "@/services/orchestrator"
 import { toast } from "@/components/ui/toast"
@@ -15,12 +22,30 @@ import { toast } from "@/components/ui/toast"
 interface DevServerControllerProps {
   runId: string
   workspaceExists: boolean
+  sources?: string[]
 }
 
-export const DevServerController: React.FC<DevServerControllerProps> = ({ runId, workspaceExists }) => {
+type ViewMode = "SPLIT" | "WEB_ONLY" | "OVERLAY"
+type ViewportSize = "DESKTOP" | "TABLET" | "MOBILE"
+
+export const DevServerController: React.FC<DevServerControllerProps> = ({
+  runId,
+  workspaceExists,
+  sources = [],
+}) => {
   const [status, setStatus] = useState<DevServerStatus | null>(null)
   const [loading, setLoading] = useState(false)
-  const [showIframe, setShowIframe] = useState(false)
+  const [showIframe, setShowIframe] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>("SPLIT")
+  const [viewport, setViewport] = useState<ViewportSize>("DESKTOP")
+  const [overlayOpacity, setOverlayOpacity] = useState(50)
+  const [selectedMockupIndex, setSelectedMockupIndex] = useState(0)
+
+  // Find mockup images in sources array
+  const mockupSources = (sources || []).filter(
+    (s) => s.startsWith("03-Sources/assets/ui-mockups/") || /\.(png|jpg|jpeg|webp|svg)$/i.test(s)
+  )
+  const activeMockup = mockupSources[selectedMockupIndex] || mockupSources[0] || null
 
   const checkStatus = async () => {
     try {
@@ -42,6 +67,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
       setLoading(true)
       const data = await OrchestratorApi.startDevServer(runId)
       setStatus(data)
+      setShowIframe(true)
       toast.add({
         title: "Dev Server Dimulai",
         description: `Visual QA dev server aktif pada port ${data.port || "default"}`,
@@ -81,7 +107,6 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
     }
   }
 
-
   if (!workspaceExists) {
     return (
       <div className="p-8 text-center rounded-xl bg-slate-900/50 border border-slate-800 text-xs text-slate-500 space-y-2">
@@ -95,6 +120,13 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
   const isRunning = status?.running && status?.status === "RUNNING"
   const isStarting = status?.status === "STARTING"
 
+  // Viewport widths
+  const viewportWidths = {
+    DESKTOP: "w-full",
+    TABLET: "max-w-[768px] mx-auto",
+    MOBILE: "max-w-[375px] mx-auto",
+  }
+
   return (
     <div className="space-y-5">
       {/* Control Card */}
@@ -103,7 +135,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
               <Globe className="h-5 w-5 text-indigo-400" />
-              <h3 className="text-base font-semibold text-white">Visual QA Dev Server</h3>
+              <h3 className="text-base font-semibold text-white">Visual QA & Slicing Inspector</h3>
               <span
                 className={`px-2.5 py-0.5 rounded-full font-mono text-[10px] font-semibold uppercase ${
                   isRunning
@@ -117,7 +149,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Jalankan dev server terisolasi pada worktree review ini untuk inspeksi visual sebelum approval.
+              Bandingkan live review preview berdampingan dengan Figma mockup desain untuk validasi akurasi pixel-perfect.
             </p>
           </div>
 
@@ -153,57 +185,231 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
           </div>
         </div>
 
-        {/* Server Active Details & Actions */}
+        {/* Active Controls & Toolbar */}
         {isRunning && status?.url && (
-          <div className="p-4 rounded-lg bg-slate-950/80 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-3 font-mono">
-              <span className="text-slate-400">Preview URL:</span>
-              <a
-                href={status.url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-indigo-400 font-semibold hover:underline flex items-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
-              >
-                <span>{status.url}</span>
-                <ExternalLink className="h-3 w-3" />
-              </a>
-              <span className="text-slate-500 font-sans">| Port: {status.port}</span>
+          <div className="space-y-3">
+            <div className="p-4 rounded-lg bg-slate-950/80 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3 font-mono">
+                <span className="text-slate-400">Preview URL:</span>
+                <a
+                  href={status.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-indigo-400 font-semibold hover:underline flex items-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+                >
+                  <span>{status.url}</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                <span className="text-slate-500 font-sans">| Port: {status.port}</span>
+              </div>
+
+              {/* Viewport Size Switcher */}
+              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+                <button
+                  onClick={() => setViewport("DESKTOP")}
+                  className={`p-1.5 rounded transition-colors ${
+                    viewport === "DESKTOP" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                  title="Desktop View"
+                >
+                  <Monitor className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setViewport("TABLET")}
+                  className={`p-1.5 rounded transition-colors ${
+                    viewport === "TABLET" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                  title="Tablet View (768px)"
+                >
+                  <Tablet className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setViewport("MOBILE")}
+                  className={`p-1.5 rounded transition-colors ${
+                    viewport === "MOBILE" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                  title="Mobile View (375px)"
+                >
+                  <Smartphone className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              {/* View Mode Switcher */}
+              <div className="flex items-center gap-2">
+                {activeMockup && (
+                  <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+                    <button
+                      onClick={() => setViewMode("SPLIT")}
+                      className={`px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                        viewMode === "SPLIT" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      <Columns className="h-3 w-3" />
+                      <span>Side-by-Side</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode("OVERLAY")}
+                      className={`px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                        viewMode === "OVERLAY" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      <Layers className="h-3 w-3" />
+                      <span>Pixel Overlay</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode("WEB_ONLY")}
+                      className={`px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                        viewMode === "WEB_ONLY" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      <Globe className="h-3 w-3" />
+                      <span>Web Only</span>
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setShowIframe(!showIframe)}
+                  className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  {showIframe ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  <span>{showIframe ? "Hide" : "Show"}</span>
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowIframe(!showIframe)}
-                className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-              >
-                {showIframe ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                <span>{showIframe ? "Hide Embedded Preview" : "Show Embedded Preview"}</span>
-              </button>
-
-              <a
-                href={status.url}
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium flex items-center gap-1.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-              >
-                <span>Open in New Window</span>
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </div>
+            {/* Overlay Slider if in Overlay Mode */}
+            {viewMode === "OVERLAY" && activeMockup && showIframe && (
+              <div className="p-3 rounded-lg bg-slate-950/60 border border-indigo-500/30 flex items-center justify-between gap-4 text-xs">
+                <span className="text-indigo-300 font-medium flex items-center gap-1.5">
+                  <Layers className="h-4 w-4" />
+                  Mockup Overlay Opacity: {overlayOpacity}%
+                </span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={overlayOpacity}
+                  onChange={(e) => setOverlayOpacity(Number(e.target.value))}
+                  className="w-48 accent-indigo-500 cursor-pointer"
+                />
+              </div>
+            )}
           </div>
         )}
 
-        {/* Embedded Iframe Preview */}
+        {/* Visual Inspection Area */}
         {isRunning && status?.url && showIframe && (
-          <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-950 shadow-2xl">
-            <div className="h-9 bg-slate-800/80 px-4 flex items-center justify-between border-b border-slate-700 text-xs text-slate-400">
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-rose-500"></span>
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
-                <span className="font-mono text-[11px] text-slate-300 ml-2">{status.url}</span>
+          <div className="space-y-3">
+            {/* Mode 1: SIDE-BY-SIDE SPLIT VIEW */}
+            {viewMode === "SPLIT" && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Left: Figma / Screenshot Mockup */}
+                <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-950 flex flex-col h-[520px]">
+                  <div className="h-9 bg-slate-800/80 px-4 flex items-center justify-between border-b border-slate-700 text-xs text-slate-400">
+                    <span className="flex items-center gap-1.5 font-semibold text-slate-200">
+                      <ImageIcon className="h-3.5 w-3.5 text-indigo-400" />
+                      Figma UI Mockup Reference
+                    </span>
+                    {mockupSources.length > 1 && (
+                      <select
+                        value={selectedMockupIndex}
+                        onChange={(e) => setSelectedMockupIndex(Number(e.target.value))}
+                        className="bg-slate-900 text-[11px] text-slate-300 border border-slate-700 rounded px-2 py-0.5"
+                      >
+                        {mockupSources.map((s, idx) => (
+                          <option key={idx} value={idx}>
+                            Mockup #{idx + 1}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-900/40">
+                    {activeMockup ? (
+                      <img
+                        src={`/api/assets/raw?path=${encodeURIComponent(activeMockup)}`}
+                        alt="UI Mockup Reference"
+                        className="max-h-full max-w-full object-contain rounded border border-slate-800 shadow-md"
+                      />
+                    ) : (
+                      <div className="text-center text-slate-500 text-xs">
+                        <ImageIcon className="h-8 w-8 mx-auto mb-1 opacity-40" />
+                        <span>Tidak ada mockup visual terlampir pada task ini.</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Live Web Preview */}
+                <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-950 flex flex-col h-[520px]">
+                  <div className="h-9 bg-slate-800/80 px-4 flex items-center justify-between border-b border-slate-700 text-xs text-slate-400">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-rose-500"></span>
+                      <span className="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                      <span className="font-mono text-[11px] text-slate-300 ml-2">{status.url}</span>
+                    </div>
+                    <span className="text-[11px] text-emerald-400 font-medium">Live Dev Server</span>
+                  </div>
+                  <div className="flex-1 overflow-auto bg-slate-900/30 p-1 flex items-center justify-center">
+                    <div className={`h-full transition-all ${viewportWidths[viewport]}`}>
+                      <iframe src={status.url} className="w-full h-full bg-white border-0 rounded" title="Worktree App Preview" />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <iframe src={status.url} className="w-full h-[450px] bg-white border-0" title="Worktree App Preview" />
+            )}
+
+            {/* Mode 2: PIXEL OVERLAY VIEW */}
+            {viewMode === "OVERLAY" && (
+              <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-950 shadow-2xl">
+                <div className="h-9 bg-slate-800/80 px-4 flex items-center justify-between border-b border-slate-700 text-xs text-slate-400">
+                  <span className="font-mono text-[11px] text-slate-300">
+                    Pixel Overlay Comparison (Opacity: {overlayOpacity}%)
+                  </span>
+                </div>
+                <div className="relative w-full h-[520px] bg-slate-900/50 flex items-center justify-center overflow-hidden">
+                  {/* Underlay: Live Iframe */}
+                  <div className={`absolute inset-0 z-0 h-full ${viewportWidths[viewport]}`}>
+                    <iframe src={status.url} className="w-full h-full bg-white border-0" title="Worktree App Preview" />
+                  </div>
+
+                  {/* Overlay: Mockup Image */}
+                  {activeMockup && (
+                    <div
+                      className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center"
+                      style={{ opacity: overlayOpacity / 100 }}
+                    >
+                      <img
+                        src={`/api/assets/raw?path=${encodeURIComponent(activeMockup)}`}
+                        alt="Overlay Mockup"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Mode 3: WEB ONLY VIEW */}
+            {viewMode === "WEB_ONLY" && (
+              <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-950 shadow-2xl">
+                <div className="h-9 bg-slate-800/80 px-4 flex items-center justify-between border-b border-slate-700 text-xs text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-rose-500"></span>
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                    <span className="font-mono text-[11px] text-slate-300 ml-2">{status.url}</span>
+                  </div>
+                </div>
+                <div className="h-[520px] bg-slate-900/30 p-2 flex items-center justify-center">
+                  <div className={`h-full transition-all ${viewportWidths[viewport]}`}>
+                    <iframe src={status.url} className="w-full h-full bg-white border-0 rounded" title="Worktree App Preview" />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -217,7 +423,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({ runId,
             <span className="font-mono text-[10px] text-slate-500">{(Array.isArray(status?.logTail) ? status.logTail.length : 0)} lines</span>
           </div>
 
-          <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800/80 font-mono text-[11px] text-slate-300 h-44 overflow-y-auto space-y-1">
+          <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800/80 font-mono text-[11px] text-slate-300 h-36 overflow-y-auto space-y-1">
             {!Array.isArray(status?.logTail) || status.logTail.length === 0 ? (
               <span className="text-slate-600 italic">Dev server belum dimulai atau tidak ada log.</span>
             ) : (

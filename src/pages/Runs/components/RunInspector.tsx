@@ -168,6 +168,7 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
           <DevServerController
             runId={selectedRun.runId}
             workspaceExists={diffData?.workspaceExists ?? true}
+            sources={selectedRun.task?.sources || []}
           />
         </div>
       )}
