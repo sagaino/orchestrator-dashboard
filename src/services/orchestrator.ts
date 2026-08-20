@@ -163,6 +163,33 @@ export interface RunManifest {
     }
   }
   retrospective?: RunRetrospectiveData
+  knowledge?: {
+    proposal?: {
+      classification?: string
+      confidence?: number
+      title?: string
+      type?: string
+      targetPath?: string | null
+      summary?: string
+      rationale?: string
+      considerations?: string[]
+      relatedKnowledge?: string[]
+    }
+    proposedAt?: string
+    approval?: {
+      approvedAt?: string
+      approvedBy?: string
+      classification?: string
+      destination?: string
+      targetPath?: string | null
+    }
+    sync?: {
+      syncedAt?: string
+      destination?: string
+      sourcePath?: string
+      targetPath?: string | null
+    }
+  }
   history?: RunHistoryEntry[]
 }
 
