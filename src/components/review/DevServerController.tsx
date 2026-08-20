@@ -56,6 +56,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
   const [isPinModeActive, setIsPinModeActive] = useState(false)
   const [pendingPin, setPendingPin] = useState<{ x: number; y: number } | null>(null)
   const [pinComment, setPinComment] = useState("")
+  const [activePinId, setActivePinId] = useState<string | null>(null)
 
   // Find mockup images in sources array
   const mockupSources = (sources || []).filter(
@@ -174,6 +175,53 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
     DESKTOP: "w-full",
     TABLET: "max-w-[768px] mx-auto",
     MOBILE: "max-w-[375px] mx-auto",
+  }
+
+  const renderPinItem = (pin: VisualAnnotation, idx: number) => {
+    const isOpened = activePinId === pin.id
+    return (
+      <div
+        key={pin.id}
+        style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
+        className="absolute -translate-x-1/2 -translate-y-1/2 group pointer-events-auto z-30"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Pin Badge with Click-to-Toggle and Bridge-Hover */}
+        <button
+          type="button"
+          onClick={() => setActivePinId(isOpened ? null : pin.id)}
+          className="h-6 w-6 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-rose-500/50 transition-transform hover:scale-110 cursor-pointer"
+        >
+          {idx + 1}
+        </button>
+
+        {/* Popover / Tooltip with invisible hover bridge (-bottom-3 pt-3) */}
+        <div
+          className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-1 z-40 w-60 p-3 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs shadow-2xl space-y-1.5 transition-all ${
+            isOpened ? "block ring-2 ring-rose-500/50" : "hidden group-hover:block"
+          }`}
+        >
+          <div className="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800 pb-1">
+            <span className="font-semibold text-rose-300">Pin #{idx + 1} ({Math.round(pin.x)}%, {Math.round(pin.y)}%)</span>
+            {onRemoveVisualAnnotation && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (activePinId === pin.id) setActivePinId(null)
+                  onRemoveVisualAnnotation(pin.id)
+                }}
+                className="text-rose-400 hover:text-rose-300 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+              >
+                <Trash2 className="h-3 w-3" />
+                Hapus
+              </button>
+            )}
+          </div>
+          <p className="text-slate-200 leading-relaxed font-sans text-xs">{pin.comment}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -475,35 +523,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
                         }`}
                       >
                         {/* Render Existing Pins */}
-                        {visualAnnotations.map((pin, idx) => (
-                          <div
-                            key={pin.id}
-                            style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-                            className="absolute -translate-x-1/2 -translate-y-1/2 group pointer-events-auto cursor-pointer"
-                          >
-                            <div className="h-6 w-6 rounded-full bg-rose-600 text-white text-[11px] font-bold flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-rose-500/50">
-                              {idx + 1}
-                            </div>
-                            {/* Hover Tooltip */}
-                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-30 w-56 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-xs shadow-2xl space-y-1">
-                              <div className="flex items-center justify-between text-[10px] text-slate-400">
-                                <span>Pin #{idx + 1}</span>
-                                {onRemoveVisualAnnotation && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      onRemoveVisualAnnotation(pin.id)
-                                    }}
-                                    className="text-rose-400 hover:underline"
-                                  >
-                                    Hapus
-                                  </button>
-                                )}
-                              </div>
-                              <p className="text-slate-200">{pin.comment}</p>
-                            </div>
-                          </div>
-                        ))}
+                        {visualAnnotations.map(renderPinItem)}
 
                         {/* Pending Pin Popover */}
                         {pendingPin && (
@@ -609,35 +629,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
                         className="absolute inset-0 z-20 cursor-crosshair bg-rose-500/5 ring-2 ring-rose-500/40"
                       >
                         {/* Render Existing Pins */}
-                        {visualAnnotations.map((pin, idx) => (
-                          <div
-                            key={pin.id}
-                            style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-                            className="absolute -translate-x-1/2 -translate-y-1/2 group pointer-events-auto cursor-pointer"
-                          >
-                            <div className="h-6 w-6 rounded-full bg-rose-600 text-white text-[11px] font-bold flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-rose-500/50">
-                              {idx + 1}
-                            </div>
-                            {/* Hover Tooltip */}
-                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-30 w-56 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-xs shadow-2xl space-y-1">
-                              <div className="flex items-center justify-between text-[10px] text-slate-400">
-                                <span>Pin #{idx + 1}</span>
-                                {onRemoveVisualAnnotation && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      onRemoveVisualAnnotation(pin.id)
-                                    }}
-                                    className="text-rose-400 hover:underline"
-                                  >
-                                    Hapus
-                                  </button>
-                                )}
-                              </div>
-                              <p className="text-slate-200">{pin.comment}</p>
-                            </div>
-                          </div>
-                        ))}
+                        {visualAnnotations.map(renderPinItem)}
 
                         {/* Pending Pin Popover */}
                         {pendingPin && (
@@ -686,34 +678,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
                     {/* Non-pin mode markers */}
                     {!isPinModeActive && visualAnnotations.length > 0 && (
                       <div className="absolute inset-0 pointer-events-none z-10">
-                        {visualAnnotations.map((pin, idx) => (
-                          <div
-                            key={pin.id}
-                            style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-                            className="absolute -translate-x-1/2 -translate-y-1/2 group pointer-events-auto cursor-pointer"
-                          >
-                            <div className="h-6 w-6 rounded-full bg-rose-600 text-white text-[11px] font-bold flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-rose-500/50">
-                              {idx + 1}
-                            </div>
-                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-30 w-56 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-xs shadow-2xl space-y-1">
-                              <div className="flex items-center justify-between text-[10px] text-slate-400">
-                                <span>Pin #{idx + 1}</span>
-                                {onRemoveVisualAnnotation && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      onRemoveVisualAnnotation(pin.id)
-                                    }}
-                                    className="text-rose-400 hover:underline"
-                                  >
-                                    Hapus
-                                  </button>
-                                )}
-                              </div>
-                              <p className="text-slate-200">{pin.comment}</p>
-                            </div>
-                          </div>
-                        ))}
+                        {visualAnnotations.map(renderPinItem)}
                       </div>
                     )}
                   </div>
