@@ -34,7 +34,7 @@ export const OverviewPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="w-full space-y-8">
       {/* Top Welcome Banner */}
       <WelcomeBanner onLaunchTask={handleLaunchTask} />
 

@@ -31,7 +31,7 @@ export const TasksPage: React.FC = () => {
   } = useTasks()
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="w-full space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-white tracking-tight">Task Intake & Live Execution</h1>
         <p className="text-sm text-slate-400">
