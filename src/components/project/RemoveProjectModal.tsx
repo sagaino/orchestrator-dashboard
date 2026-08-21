@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Loader2,
   CheckCircle2,
-  Info,
   ShieldAlert,
 } from "lucide-react"
 import {
@@ -79,12 +78,12 @@ export const RemoveProjectModal: React.FC<RemoveProjectModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="bg-slate-900 border border-slate-800 text-slate-100 max-w-lg p-0 overflow-hidden shadow-2xl rounded-2xl">
+      <DialogContent className="bg-slate-900 border border-slate-800 text-slate-100 sm:max-w-xl max-w-xl max-h-[85vh] flex flex-col p-0 overflow-hidden shadow-2xl rounded-2xl gap-0">
         {/* Header */}
-        <DialogHeader className="p-6 pb-4 border-b border-slate-800/80 bg-slate-900/90 space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
-              <Trash2 className="h-5 w-5" />
+        <DialogHeader className="p-5 pb-3 border-b border-slate-800/80 bg-slate-900/90 shrink-0">
+          <div className="flex items-center gap-3 pr-6">
+            <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 shrink-0">
+              <Trash2 className="h-4.5 w-4.5" />
             </div>
             <div>
               <DialogTitle className="text-base font-semibold text-white">
@@ -97,52 +96,52 @@ export const RemoveProjectModal: React.FC<RemoveProjectModalProps> = ({
           </div>
         </DialogHeader>
 
-        {/* Body */}
-        <div className="p-6 space-y-4 text-xs">
+        {/* Scrollable Body */}
+        <div className="p-5 space-y-3.5 overflow-y-auto max-h-[calc(85vh-130px)] text-xs">
           {/* Target Project Card */}
-          <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1 font-mono">
+          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1 font-mono">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Project ID:</span>
-              <span className="text-rose-400 font-bold">{projectId}</span>
+              <span className="text-slate-400 text-xs">Project ID:</span>
+              <span className="text-rose-400 font-bold text-xs">{projectId}</span>
             </div>
             {projectRepo && (
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-slate-500">Repository:</span>
-                <span className="text-slate-300 truncate max-w-[280px]">{projectRepo}</span>
+              <div className="flex items-center justify-between text-[11px] gap-2 pt-0.5">
+                <span className="text-slate-500 shrink-0">Repository:</span>
+                <span className="text-slate-300 truncate font-sans text-[11px]">{projectRepo}</span>
               </div>
             )}
           </div>
 
           {/* Safety Guarantees Notice */}
-          <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/20 text-emerald-300 space-y-1.5">
+          <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/20 text-emerald-300 space-y-1">
             <div className="flex items-center gap-2 font-semibold text-emerald-400 text-xs">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
               <span>Jaminan Keamanan Source Code:</span>
             </div>
-            <p className="text-[11px] text-emerald-200/80 leading-relaxed pl-6">
-              Folder kode sumber aplikasi asli Anda di komputer <strong>TIDAK AKAN DIHAPUS</strong>. Global knowledge yang pernah dipelajari AI juga tetap aman.
+            <p className="text-[11px] text-emerald-200/80 leading-relaxed pl-5.5">
+              Folder kode sumber asli di komputer <strong>TIDAK AKAN DIHAPUS</strong>. Global knowledge yang pernah dipelajari AI juga tetap aman.
             </p>
           </div>
 
           {/* Error Details */}
           {errorDetails && (
-            <div className="p-3.5 rounded-xl bg-rose-950/50 border border-rose-500/30 text-rose-300 space-y-1">
-              <div className="flex items-center gap-2 font-semibold text-rose-400">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
+            <div className="p-3 rounded-xl bg-rose-950/50 border border-rose-500/30 text-rose-300 space-y-1">
+              <div className="flex items-center gap-2 font-semibold text-rose-400 text-xs">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 <span>Tidak Dapat Menghapus Project:</span>
               </div>
-              <p className="text-[11px] text-rose-200/90 leading-relaxed pl-6">{errorDetails}</p>
+              <p className="text-[11px] text-rose-200/90 leading-relaxed pl-5.5">{errorDetails}</p>
             </div>
           )}
 
           {/* Deletion Method Options */}
-          <div className="space-y-2 pt-1">
+          <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-300">Pilih Metode Penghapusan:</label>
             <div className="space-y-2">
               {/* Option 1: Unregister & Archive (Default) */}
               <div
                 onClick={() => setPurgePermanently(false)}
-                className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
+                className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${
                   !purgePermanently
                     ? "bg-indigo-950/30 border-indigo-500/50 text-slate-200"
                     : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700"
@@ -160,7 +159,7 @@ export const RemoveProjectModal: React.FC<RemoveProjectModalProps> = ({
               {/* Option 2: Purge Archive (Permanent) */}
               <div
                 onClick={() => setPurgePermanently(true)}
-                className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
+                className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${
                   purgePermanently
                     ? "bg-rose-950/30 border-rose-500/50 text-slate-200"
                     : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700"
@@ -178,7 +177,7 @@ export const RemoveProjectModal: React.FC<RemoveProjectModalProps> = ({
           </div>
 
           {/* Type Confirmation */}
-          <div className="space-y-1.5 pt-2">
+          <div className="space-y-1.5 pt-1">
             <label className="text-[11px] text-slate-400">
               Ketik <span className="font-mono text-rose-400 font-semibold">{projectId}</span> untuk mengonfirmasi:
             </label>
@@ -193,12 +192,12 @@ export const RemoveProjectModal: React.FC<RemoveProjectModalProps> = ({
         </div>
 
         {/* Footer */}
-        <DialogFooter className="p-4 px-6 border-t border-slate-800/80 bg-slate-950/50 flex items-center justify-between gap-3">
+        <DialogFooter className="m-0 p-4 px-5 border-t border-slate-800/80 bg-slate-950/50 flex flex-row items-center justify-end gap-2.5 shrink-0">
           <button
             type="button"
             onClick={handleClose}
             disabled={isPending}
-            className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+            className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
           >
             Batal
           </button>
@@ -206,12 +205,12 @@ export const RemoveProjectModal: React.FC<RemoveProjectModalProps> = ({
             type="button"
             onClick={handleRemove}
             disabled={!isConfirmed || isPending}
-            className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-600/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Memproses Penghapusan...</span>
+                <span>Memproses...</span>
               </>
             ) : (
               <>
