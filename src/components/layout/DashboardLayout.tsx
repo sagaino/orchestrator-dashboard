@@ -120,7 +120,7 @@ export const DashboardLayout: React.FC = () => {
             className="w-full flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-500/50 transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer shadow-xs"
           >
             <Plus className="h-4 w-4 text-indigo-400" />
-            <span>+ Add Project</span>
+            <span>Add Project</span>
           </button>
         </div>
       </div>
