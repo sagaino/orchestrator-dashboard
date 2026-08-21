@@ -115,6 +115,9 @@ export async function installLifecycleFixtures(page: Page) {
     const pathname = url.pathname
     const method = request.method()
 
+    if (pathname === "/api/auth/session") {
+      return json(route, { sessionId: "e2e-operator-session", actor: "local:e2e-operator", actionNonce: "e2e-action-nonce", expiresAt: "2099-01-01T00:00:00.000Z" })
+    }
     if (pathname === "/api/events") {
       return route.fulfill({ status: 200, contentType: "text/event-stream", body: "event: READY\ndata: {}\n\n" })
     }
