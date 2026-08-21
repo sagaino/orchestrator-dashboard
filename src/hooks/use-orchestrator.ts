@@ -21,6 +21,7 @@ import type {
 export const queryKeys = {
   daemon: ["daemon"] as const,
   projects: ["projects"] as const,
+  archivedProjects: ["projects", "archived"] as const,
   runs: ["runs"] as const,
   runDetail: (id: string) => ["runs", id] as const,
   runDiff: (id: string) => ["runs", id, "diff"] as const,
@@ -51,6 +52,14 @@ export function useProjects() {
     queryKey: queryKeys.projects,
     queryFn: () => OrchestratorApi.getProjects(),
     staleTime: 60_000,
+  })
+}
+
+export function useArchivedProjects() {
+  return useQuery<import("@/services/orchestrator").ArchivedProject[]>({
+    queryKey: queryKeys.archivedProjects,
+    queryFn: () => OrchestratorApi.getArchivedProjects(),
+    staleTime: 10_000,
   })
 }
 
@@ -407,9 +416,33 @@ export function useRemoveProject() {
       OrchestratorApi.removeProject(projectId, purge),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects })
+      queryClient.invalidateQueries({ queryKey: queryKeys.archivedProjects })
       queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
       queryClient.invalidateQueries({ queryKey: queryKeys.runs })
+    },
+  })
+}
+
+export function usePurgeArchivedProject() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (projectId: string) => OrchestratorApi.purgeArchivedProject(projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.archivedProjects })
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects })
+    },
+  })
+}
+
+export function useRestoreArchivedProject() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (projectId: string) => OrchestratorApi.restoreArchivedProject(projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects })
+      queryClient.invalidateQueries({ queryKey: queryKeys.archivedProjects })
+      queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
     },
   })
 }

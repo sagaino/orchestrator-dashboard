@@ -2,10 +2,13 @@ import { useState } from "react"
 import {
   useOnboardExistingProject,
   useOnboardNewProject,
+  useArchivedProjects,
+  useRestoreArchivedProject,
+  usePurgeArchivedProject,
 } from "@/hooks/use-orchestrator"
 import { toast } from "@/components/ui/toast"
 
-export type AddProjectTab = "existing" | "new"
+export type AddProjectTab = "existing" | "new" | "archive"
 
 export interface UseAddProjectModalOptions {
   onClose: () => void
@@ -31,6 +34,10 @@ export function useAddProjectModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
+  const { data: archivedProjects = [], isLoading: isLoadingArchived } = useArchivedProjects()
+  const { mutateAsync: restoreProject, isPending: isRestoring } = useRestoreArchivedProject()
+  const { mutateAsync: purgeProject, isPending: isPurging } = usePurgeArchivedProject()
+
   const {
     mutateAsync: onboardExisting,
     isPending: isSubmittingExisting,
@@ -41,7 +48,7 @@ export function useAddProjectModal({
     isPending: isSubmittingNew,
   } = useOnboardNewProject()
 
-  const isSubmitting = isSubmittingExisting || isSubmittingNew
+  const isSubmitting = isSubmittingExisting || isSubmittingNew || isRestoring || isPurging
 
   const resetForm = () => {
     setExistingRepoPath("")
@@ -165,6 +172,57 @@ export function useAddProjectModal({
     }
   }
 
+  const handleRestoreProject = async (projectId: string) => {
+    try {
+      setErrorMessage(null)
+      setSuccessMessage(null)
+      await restoreProject(projectId)
+      const msg = `Project '${projectId}' berhasil dikembalikan dan diaktifkan kembali.`
+      setSuccessMessage(msg)
+      toast.add({
+        title: "Project Berhasil Dikembalikan",
+        description: msg,
+        type: "success",
+      })
+      setTimeout(() => {
+        handleClose()
+      }, 1000)
+    } catch (err: any) {
+      const errorObj = err?.response?.data?.error
+      const msg = typeof errorObj === "string" ? errorObj : errorObj?.message || err?.message || "Gagal me-restore project."
+      setErrorMessage(msg)
+      toast.add({
+        title: "Gagal Restore Project",
+        description: msg,
+        type: "error",
+      })
+    }
+  }
+
+  const handlePurgeProject = async (projectId: string) => {
+    try {
+      setErrorMessage(null)
+      setSuccessMessage(null)
+      await purgeProject(projectId)
+      const msg = `Arsip project '${projectId}' berhasil dibersihkan permanen dari Vault.`
+      setSuccessMessage(msg)
+      toast.add({
+        title: "Arsip Dipurge Permanen",
+        description: msg,
+        type: "success",
+      })
+    } catch (err: any) {
+      const errorObj = err?.response?.data?.error
+      const msg = typeof errorObj === "string" ? errorObj : errorObj?.message || err?.message || "Gagal purge arsip project."
+      setErrorMessage(msg)
+      toast.add({
+        title: "Gagal Purge Arsip",
+        description: msg,
+        type: "error",
+      })
+    }
+  }
+
   return {
     activeTab,
     setActiveTab,
@@ -178,6 +236,10 @@ export function useAddProjectModal({
     setNewTargetDir,
     newBlueprint,
     setNewBlueprint,
+    archivedProjects,
+    isLoadingArchived,
+    isRestoring,
+    isPurging,
     errorMessage,
     setErrorMessage,
     successMessage,
@@ -190,6 +252,8 @@ export function useAddProjectModal({
     handleTabChange,
     handleExistingSubmit,
     handleNewSubmit,
+    handleRestoreProject,
+    handlePurgeProject,
   }
 }
 

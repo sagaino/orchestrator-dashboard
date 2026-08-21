@@ -70,6 +70,16 @@ export interface ProjectInfo {
   projectPagePath: string
 }
 
+export interface ArchivedProject {
+  projectId: string
+  title: string
+  repository: string | null
+  removedAt: string | null
+  removedBy: string | null
+  versionCount: number
+  versions: string[]
+}
+
 export interface OnboardExistingProjectPayload {
   repositoryPath: string
   projectId?: string
@@ -475,6 +485,21 @@ export const OrchestratorApi = {
     const res = await axios.delete<{ success: boolean; data: any }>(`/api/projects/${projectId}`, {
       data: { purge },
     })
+    return res.data.data
+  },
+
+  async getArchivedProjects() {
+    const res = await axios.get<{ success: boolean; data: { archivedProjects: ArchivedProject[] } }>("/api/projects-archive")
+    return res.data.data.archivedProjects || []
+  },
+
+  async purgeArchivedProject(projectId: string) {
+    const res = await axios.delete<{ success: boolean; data: any }>(`/api/projects-archive/${projectId}`)
+    return res.data.data
+  },
+
+  async restoreArchivedProject(projectId: string) {
+    const res = await axios.post<{ success: boolean; data: any }>(`/api/projects-archive/${projectId}/restore`)
     return res.data.data
   },
 
