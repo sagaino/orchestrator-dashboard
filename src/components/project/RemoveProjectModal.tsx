@@ -66,7 +66,10 @@ export const RemoveProjectModal: React.FC<RemoveProjectModalProps> = ({
 
       handleClose()
     } catch (err: any) {
-      const msg = err.response?.data?.error || err.message || "Gagal menghapus project"
+      const errorObj = err.response?.data?.error
+      const msg = typeof errorObj === "string" 
+        ? errorObj 
+        : errorObj?.message || err.message || "Gagal menghapus project"
       setErrorDetails(msg)
       toast.add({
         title: "Gagal Menghapus Project",
