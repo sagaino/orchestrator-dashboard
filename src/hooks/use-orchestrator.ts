@@ -399,3 +399,17 @@ export function useOnboardNewProject() {
     },
   })
 }
+
+export function useRemoveProject() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ projectId, purge = false }: { projectId: string; purge?: boolean }) =>
+      OrchestratorApi.removeProject(projectId, purge),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects })
+      queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+      queryClient.invalidateQueries({ queryKey: queryKeys.runs })
+    },
+  })
+}

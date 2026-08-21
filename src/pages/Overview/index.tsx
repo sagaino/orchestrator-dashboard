@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useOverview } from "./hooks"
 import {
@@ -7,9 +7,13 @@ import {
   RegisteredProjects,
   QuickTaskIntake,
 } from "./components"
+import { RemoveProjectModal } from "@/components/project/RemoveProjectModal"
 
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate()
+  const [removeModalOpen, setRemoveModalOpen] = useState(false)
+  const [targetProject, setTargetProject] = useState<{ id: string; repo?: string } | null>(null)
+
   const {
     daemon,
     projects,
@@ -33,6 +37,11 @@ export const OverviewPage: React.FC = () => {
     navigate("/tasks")
   }
 
+  const handleOpenRemoveModal = (projectId: string, repository?: string) => {
+    setTargetProject({ id: projectId, repo: repository })
+    setRemoveModalOpen(true)
+  }
+
   return (
     <div className="w-full space-y-8">
       {/* Top Welcome Banner */}
@@ -53,6 +62,7 @@ export const OverviewPage: React.FC = () => {
           <RegisteredProjects
             projects={projects}
             onCreateTask={handleSelectProjectAndNavigate}
+            onRemoveProject={handleOpenRemoveModal}
           />
         </div>
 
@@ -70,6 +80,17 @@ export const OverviewPage: React.FC = () => {
           />
         </div>
       </div>
+
+      {/* Remove / Purge Project Modal */}
+      <RemoveProjectModal
+        isOpen={removeModalOpen}
+        onClose={() => {
+          setRemoveModalOpen(false)
+          setTargetProject(null)
+        }}
+        projectId={targetProject?.id ?? null}
+        projectRepo={targetProject?.repo}
+      />
     </div>
   )
 }

@@ -1,10 +1,11 @@
 import React from "react"
-import { FolderGit2, ArrowUpRight } from "lucide-react"
+import { FolderGit2, ArrowUpRight, Trash2 } from "lucide-react"
 import type { RegisteredProjectsProps } from "../types/overview"
 
 export const RegisteredProjects: React.FC<RegisteredProjectsProps> = ({
   projects,
   onCreateTask,
+  onRemoveProject,
 }) => {
   return (
     <div className="space-y-4">
@@ -56,12 +57,23 @@ export const RegisteredProjects: React.FC<RegisteredProjectsProps> = ({
 
             <div className="flex items-center gap-2 shrink-0">
               <button
+                type="button"
                 onClick={() => onCreateTask(proj.id)}
                 className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <span>Create Task</span>
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </button>
+              {onRemoveProject && (
+                <button
+                  type="button"
+                  onClick={() => onRemoveProject(proj.id, proj.repository)}
+                  className="p-2 rounded-lg bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700/60 hover:border-rose-500/40 transition-colors cursor-pointer"
+                  title="Hapus / Archive Project"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         ))}
