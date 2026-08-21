@@ -144,10 +144,8 @@ export const KnowledgeIngestModal: React.FC<KnowledgeIngestModalProps> = ({
         onSuccess()
       }
 
-      // Close modal after brief feedback
-      setTimeout(() => {
-        handleClose()
-      }, 1200)
+      // Close modal immediately so user is not blocked
+      handleClose()
     } catch (err: unknown) {
       const errStr = err instanceof Error ? err.message : String(err)
       setErrorMessage(errStr || "Terjadi kesalahan saat memproses ingest knowledge.")
