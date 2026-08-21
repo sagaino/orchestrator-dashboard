@@ -8,6 +8,7 @@ import { RunExecutionTimeline } from "./RunExecutionTimeline"
 import { RunRetrospectiveTab } from "./RunRetrospectiveTab"
 import { LiveTerminalLogsTab } from "./LiveTerminalLogsTab"
 import type { RunInspectorProps } from "../types"
+import { useRunEvidence } from "@/hooks/use-orchestrator"
 
 export const RunInspector: React.FC<RunInspectorProps> = ({
   selectedRun,
@@ -30,6 +31,12 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
   onRecover,
   onRetry,
 }) => {
+  const {
+    data: evidence,
+    isLoading: evidenceLoading,
+    isError: evidenceError,
+  } = useRunEvidence(selectedRun?.runId ?? null)
+
   if (!selectedRun) {
     return (
       <div className="p-12 text-center rounded-xl bg-slate-900/40 border border-slate-800 text-slate-500 text-xs">
@@ -145,7 +152,14 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
       </div>
 
       {/* Tab 1: Overview & Verification */}
-      {activeTab === "OVERVIEW" && <RunOverviewTab selectedRun={selectedRun} />}
+      {activeTab === "OVERVIEW" && (
+        <RunOverviewTab
+          selectedRun={selectedRun}
+          evidence={evidence}
+          evidenceLoading={evidenceLoading}
+          evidenceError={evidenceError}
+        />
+      )}
 
       {/* Tab 2: Code Changes & Diff */}
       {activeTab === "DIFF" && (
