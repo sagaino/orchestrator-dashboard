@@ -20,15 +20,17 @@ function readRuntimeApiToken(): string {
 
 export default defineConfig(({ command }) => {
   const apiToken = command === "serve" ? readRuntimeApiToken() : null
+  const dashboardPort = Number(process.env.ORCHESTRATOR_DASHBOARD_PORT || 5173)
+  const apiTarget = process.env.ORCHESTRATOR_API_URL || "http://127.0.0.1:3721"
   return {
     plugins: [react(), tailwindcss()],
     server: {
       host: "127.0.0.1",
-      port: 5173,
+      port: dashboardPort,
       strictPort: true,
       proxy: {
         "/api": {
-          target: "http://127.0.0.1:3721",
+          target: apiTarget,
           changeOrigin: true,
           configure(proxy) {
             proxy.on("proxyReq", (proxyRequest) => {

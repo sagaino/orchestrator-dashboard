@@ -2,6 +2,18 @@
 
 This is a template for a new Vite project with React, TypeScript, and shadcn/ui.
 
+## Verification
+
+Run the complete dashboard gate with:
+
+```sh
+npm run test:verify
+```
+
+The gate runs TypeScript, ESLint, the production build, proxy/auth security
+checks, and deterministic Chromium lifecycle tests. Browser failures preserve
+screenshots, video, traces, and error context in `test-results/browser`.
+
 ## Adding components
 
 To add components to your app, run the following command:

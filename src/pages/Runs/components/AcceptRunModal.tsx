@@ -57,17 +57,16 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
             <Check className="h-5 w-5" />
             <AlertDialogTitle className="text-white text-base">Accept & Sinkronisasi Wiki</AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="text-slate-300 text-xs leading-relaxed space-y-3">
-            <span>
-              Apakah Anda yakin ingin menyetujui run <strong className="text-white font-mono">{run?.task?.id}</strong>?
-            </span>
-            <span className="block p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-400" />
-              <span>Perubahan kode akan diaplikasikan ke branch utama project dan pengetahuan yang relevan disinkronkan ke Wiki secara permanen.</span>
-            </span>
+          <AlertDialogDescription className="text-slate-300 text-xs leading-relaxed">
+            Apakah Anda yakin ingin menyetujui run <strong className="text-white font-mono">{run?.task?.id}</strong>?
+          </AlertDialogDescription>
+          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-400" />
+            <span>Perubahan kode akan diaplikasikan ke branch utama project dan pengetahuan yang relevan disinkronkan ke Wiki secara permanen.</span>
+          </div>
 
-            {/* Optional Auto Git Commit Controls */}
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5">
+          {/* Optional Auto Git Commit Controls */}
+          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5">
               <label className="flex items-center gap-2 text-xs font-semibold text-slate-200 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -96,8 +95,7 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
                   />
                 </div>
               )}
-            </div>
-          </AlertDialogDescription>
+          </div>
         </AlertDialogHeader>
 
         <AlertDialogFooter className="border-slate-800 bg-slate-900/50 mt-2">
