@@ -28,6 +28,20 @@ export interface DaemonStatus {
     blockedQueuedJobCount: number
     blockedQueuedJobs: Array<{ jobId: string; project: string; reason: string }>
   }
+  durability?: {
+    strategy: string
+    sourceOfTruth: string
+    activeLeaseCount: number
+    invocationCount: number
+    invocationCounts: Record<string, number>
+    guarantees: {
+      atomicJobAdmission: boolean
+      projectExclusiveClaim: boolean
+      manifestRevisionGuard: boolean
+      stableInvocationIdentity: boolean
+      uncertainInvocationNeverAutoReplayed: boolean
+    }
+  }
   notifications: {
     total: number
     unreadCount: number

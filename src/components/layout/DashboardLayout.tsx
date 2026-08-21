@@ -12,6 +12,7 @@ import {
   Menu,
   CheckCircle2,
   Plus,
+  ShieldCheck,
 } from "lucide-react"
 import { useDaemonStatus, useNotifications, useMarkNotificationsRead } from "@/hooks/use-orchestrator"
 import { useSSEEvents } from "@/providers/EventsProvider"
@@ -167,6 +168,13 @@ export const DashboardLayout: React.FC = () => {
               <div className="flex justify-between">
                 <span>Heartbeat:</span>
                 <span>{daemon.heartbeatAgeMs !== null ? `${Math.round(daemon.heartbeatAgeMs / 1000)}s ago` : "-"}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Durability:</span>
+                <span className={daemon.durability?.guarantees.uncertainInvocationNeverAutoReplayed ? "text-emerald-400" : "text-amber-400"}>
+                  <ShieldCheck className="inline h-3 w-3 mr-1" />
+                  {daemon.durability?.guarantees.uncertainInvocationNeverAutoReplayed ? "Protected" : "Unknown"}
+                </span>
               </div>
             </div>
           )}
@@ -343,4 +351,3 @@ export const DashboardLayout: React.FC = () => {
     </div>
   )
 }
-
