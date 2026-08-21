@@ -58,7 +58,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
     )
   }
 
-  if (!diffData || !diffData.workspaceExists || !diffData.files || diffData.files.length === 0) {
+  if (!diffData || !diffData.files || diffData.files.length === 0) {
     return (
       <div className="p-8 text-center rounded-xl bg-slate-900/50 border border-slate-800 text-xs text-slate-500 space-y-2">
         <FileCode className="h-8 w-8 mx-auto text-slate-600 mb-2" />
@@ -370,4 +370,3 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
     </div>
   )
 }
-

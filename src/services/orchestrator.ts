@@ -522,6 +522,7 @@ export interface InlineDiffComment {
 export interface RunDiffData {
   runId: string
   workspaceExists: boolean
+  archived?: boolean
   workspacePath?: string
   rawDiff: string
   filesCount?: number
