@@ -1,5 +1,3 @@
-import { DEFAULT_API_TOKEN } from "@/lib/constant/auth"
-
 export interface OrchestratorEvent {
   event: string
   data: any
@@ -9,8 +7,7 @@ export function subscribeToEvents(
   onEvent: (event: OrchestratorEvent) => void,
   onError?: (err: any) => void
 ) {
-  const token = localStorage.getItem("orchestrator_token") || DEFAULT_API_TOKEN
-  const eventSource = new EventSource(`/api/events?token=${token}`)
+  const eventSource = new EventSource("/api/events")
 
   const eventTypes = [
     "connected",
