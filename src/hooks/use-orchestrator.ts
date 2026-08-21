@@ -4,6 +4,7 @@ import type {
   DaemonStatus,
   ProjectInfo,
   RunManifest,
+  RunEvidence,
   KnowledgeCandidate,
   VaultHealth,
   TelemetryReport,
@@ -24,6 +25,7 @@ export const queryKeys = {
   archivedProjects: ["projects", "archived"] as const,
   runs: ["runs"] as const,
   runDetail: (id: string) => ["runs", id] as const,
+  runEvidence: (id: string) => ["runs", id, "evidence"] as const,
   runDiff: (id: string) => ["runs", id, "diff"] as const,
   runLogs: (id: string) => ["runs", id, "logs"] as const,
   devServer: (id: string) => ["runs", id, "devServer"] as const,
@@ -78,6 +80,16 @@ export function useRunDetail(runId: string | null) {
     queryFn: () => OrchestratorApi.getRunDetail(runId!),
     enabled: !!runId,
     staleTime: 2_000,
+  })
+}
+
+export function useRunEvidence(runId: string | null) {
+  return useQuery<RunEvidence>({
+    queryKey: queryKeys.runEvidence(runId!),
+    queryFn: () => OrchestratorApi.getRunEvidence(runId!),
+    enabled: !!runId,
+    refetchInterval: runId ? 3_000 : false,
+    staleTime: 1_000,
   })
 }
 

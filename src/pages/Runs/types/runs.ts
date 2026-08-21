@@ -3,8 +3,7 @@ import type {
   RunManifest,
   RunDiffData,
   RunHistoryEntry,
-  RunRetrospectiveData,
-  VerificationResultItem,
+  RunEvidence,
   InlineDiffComment,
 } from "@/services/orchestrator"
 
@@ -64,6 +63,9 @@ export interface RunActionToolbarProps {
 
 export interface RunOverviewTabProps {
   selectedRun: RunManifest
+  evidence?: RunEvidence
+  evidenceLoading?: boolean
+  evidenceError?: boolean
 }
 
 export interface RunExecutionTimelineProps {
@@ -175,4 +177,3 @@ export interface UseRunsPageReturn {
   handleRecover: (runId: string) => Promise<void>
   handleRetry: (runId: string) => Promise<void>
 }
-

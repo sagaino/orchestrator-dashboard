@@ -113,6 +113,72 @@ export interface VerificationResultItem {
   stderrTail?: string
 }
 
+export type EvidenceStatus = "PASS" | "FAIL" | "UNKNOWN"
+
+export interface RunEvidenceVerificationResult {
+  command: string
+  exitCode: number | null
+  status: EvidenceStatus
+  stdoutTail: string | null
+  stderrTail: string | null
+}
+
+export interface RunEvidence {
+  schemaVersion: number
+  mode: "run-evidence"
+  runId: string
+  state: string
+  project: { id: string | null; repository: string | null }
+  task: { id: string | null; title: string | null; status: string | null; path: string | null }
+  policy: { allowedPaths: string[]; verificationCommands: string[] }
+  approval: { approvedAt?: string; approvedBy?: string; scope?: string } | null
+  scope: {
+    status: EvidenceStatus
+    changedPaths: string[]
+    allowedPaths: string[]
+    automaticAllowedPaths: string[]
+    outOfScopePaths: string[]
+    deniedPaths: string[]
+  }
+  verification: {
+    status: EvidenceStatus
+    results: RunEvidenceVerificationResult[]
+  }
+  finalization: {
+    status: "APPLIED" | "FAILED" | "NOT_APPLIED"
+    acceptedAt: string | null
+    acceptedBy: string | null
+    humanApproved: boolean
+    appliedAt: string | null
+    appliedPaths: string[]
+    postApplyVerification: {
+      status: EvidenceStatus
+      results: RunEvidenceVerificationResult[]
+    }
+    graphify: { skipped?: boolean; exitCode?: number; reason?: string } | null
+    git: {
+      status: "COMMITTED" | "NO_COMMIT" | "LEGACY_UNKNOWN" | "NOT_APPLICABLE"
+      commitHash: string | null
+      parentCommit: string | null
+      commitMessage: string | null
+      reason: string | null
+      paths: string[]
+    }
+    artifactPath: string | null
+    workspaceState: string | null
+  }
+  knowledge: {
+    proposal: Record<string, unknown> | null
+    approval: Record<string, unknown> | null
+    sync: Record<string, unknown> | null
+  }
+  telemetry: Record<string, unknown> | null
+  history: RunHistoryEntry[]
+  nextAction: string
+  integrity: { status: "OK" | "WARNING"; warnings: string[] }
+  audit: { runId: string; createdAt: string | null; updatedAt: string | null }
+}
+
 export interface RunHistoryEntry {
   event: string
   state: string
@@ -569,6 +635,11 @@ export const OrchestratorApi = {
 
   async getRunDetail(runId: string) {
     const res = await axios.get<{ success: boolean; data: RunManifest }>(`/api/runs/${runId}`)
+    return res.data.data
+  },
+
+  async getRunEvidence(runId: string) {
+    const res = await axios.get<{ success: boolean; data: RunEvidence }>(`/api/runs/${runId}/evidence`)
     return res.data.data
   },
 
