@@ -471,6 +471,13 @@ export const OrchestratorApi = {
     return res.data.data
   },
 
+  async removeProject(projectId: string, purge = false) {
+    const res = await axios.delete<{ success: boolean; data: any }>(`/api/projects/${projectId}`, {
+      data: { purge },
+    })
+    return res.data.data
+  },
+
   // Assets (UI Mockups & Project Assets)
   async uploadAsset(payload: {
     fileName: string

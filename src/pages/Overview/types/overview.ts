@@ -22,6 +22,7 @@ export interface MetricsCardsProps {
 export interface RegisteredProjectsProps {
   projects: ProjectInfo[]
   onCreateTask: (projectId: string) => void
+  onRemoveProject?: (projectId: string, repository?: string) => void
 }
 
 export interface QuickTaskIntakeProps {
