@@ -234,6 +234,13 @@ export interface RunEvidence {
     sync: Record<string, unknown> | null
   }
   telemetry: Record<string, unknown> | null
+  restart: {
+    status: "RECONCILED" | "MANUAL_RECOVERY_REQUIRED"
+    action: string
+    previousState: string | null
+    reconciledAt: string | null
+    taskSyncError: string | null
+  } | null
   history: RunHistoryEntry[]
   nextAction: string
   integrity: { status: "OK" | "WARNING"; warnings: string[] }

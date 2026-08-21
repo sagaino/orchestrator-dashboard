@@ -97,8 +97,8 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
 
       {/* Execution Timeline / State Stepper */}
       <RunExecutionTimeline
-        history={selectedRun.history}
-        currentState={selectedRun.state}
+        history={evidence?.history ?? selectedRun.history}
+        currentState={evidence?.state ?? selectedRun.state}
       />
 
       {/* Inspector Navigation Tabs */}

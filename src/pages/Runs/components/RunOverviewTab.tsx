@@ -12,6 +12,7 @@ import {
   Archive,
   UserCheck,
   AlertTriangle,
+  RotateCcw,
 } from "lucide-react"
 import type { RunOverviewTabProps } from "../types"
 import type { EvidenceStatus, RunEvidenceVerificationResult } from "@/services/orchestrator"
@@ -66,6 +67,34 @@ export const RunOverviewTab: React.FC<RunOverviewTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {evidence.restart && (
+        <div className={`p-4 rounded-xl border space-y-2.5 ${
+          evidence.restart.status === "MANUAL_RECOVERY_REQUIRED"
+            ? "bg-rose-500/10 border-rose-500/30"
+            : "bg-sky-500/10 border-sky-500/30"
+        }`}>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+              <RotateCcw className="h-4 w-4 text-sky-400" />
+              Restart Reconciliation
+            </span>
+            <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded ${
+              evidence.restart.status === "MANUAL_RECOVERY_REQUIRED"
+                ? "bg-rose-500/15 text-rose-300"
+                : "bg-sky-500/15 text-sky-300"
+            }`}>
+              {evidence.restart.status}
+            </span>
+          </div>
+          <div className="grid gap-1.5 text-xs text-slate-400 md:grid-cols-2">
+            <p><span className="text-slate-500">Action: </span><span className="font-mono text-slate-200">{evidence.restart.action}</span></p>
+            <p><span className="text-slate-500">Previous state: </span><span className="font-mono text-slate-200">{evidence.restart.previousState || "UNKNOWN"}</span></p>
+            {evidence.restart.reconciledAt && <p className="md:col-span-2"><span className="text-slate-500">Reconciled at: </span><span className="font-mono text-slate-200">{new Date(evidence.restart.reconciledAt).toLocaleString()}</span></p>}
+            {evidence.restart.taskSyncError && <p className="md:col-span-2 text-rose-300">Task sync: {evidence.restart.taskSyncError}</p>}
+          </div>
+        </div>
+      )}
+
       {/* Scope Audit Card */}
       <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 space-y-2.5">
         <div className="flex items-center justify-between">
