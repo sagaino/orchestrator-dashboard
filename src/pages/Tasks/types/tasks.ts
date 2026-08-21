@@ -1,5 +1,5 @@
 import type { FormEvent, Dispatch, SetStateAction } from "react"
-import type { ProjectInfo, DaemonStatus } from "@/services/orchestrator"
+import type { ProjectInfo, DaemonStatus, TaskRequestResult } from "@/services/orchestrator"
 
 export interface OrchestratorJob {
   jobId: string
@@ -20,8 +20,8 @@ export interface TaskIntakeFormProps {
   onSelectProject: (projectId: string) => void
   prompt: string
   onPromptChange: (prompt: string) => void
-  autoStart: boolean
-  onAutoStartChange: (autoStart: boolean) => void
+  queueAfterConfirmation: boolean
+  onQueueAfterConfirmationChange: (enabled: boolean) => void
   attachedAssets: import("@/services/orchestrator").AttachedAsset[]
   onAddAsset: (asset: import("@/services/orchestrator").AttachedAsset) => void
   onRemoveAsset: (index: number) => void
@@ -48,6 +48,15 @@ export interface ClarificationModalProps {
   originalPrompt?: string
 }
 
+export interface TaskConfirmationModalProps {
+  isOpen: boolean
+  result: TaskRequestResult | null
+  queueAfterConfirmation: boolean
+  confirming: boolean
+  onClose: () => void
+  onConfirm: () => Promise<void>
+}
+
 export interface UseTasksReturn {
   projects: ProjectInfo[]
   daemon: DaemonStatus | null
@@ -57,8 +66,8 @@ export interface UseTasksReturn {
   setSelectedProject: Dispatch<SetStateAction<string>>
   prompt: string
   setPrompt: Dispatch<SetStateAction<string>>
-  autoStart: boolean
-  setAutoStart: Dispatch<SetStateAction<boolean>>
+  queueAfterConfirmation: boolean
+  setQueueAfterConfirmation: Dispatch<SetStateAction<boolean>>
   attachedAssets: import("@/services/orchestrator").AttachedAsset[]
   handleAddAsset: (asset: import("@/services/orchestrator").AttachedAsset) => void
   handleRemoveAsset: (index: number) => void
@@ -78,4 +87,9 @@ export interface UseTasksReturn {
   handleCloseClarification: () => void
   handleSubmitClarification: (e: FormEvent) => Promise<void>
   pendingPrompt?: string
+  confirmationOpen: boolean
+  confirmationResult: TaskRequestResult | null
+  confirming: boolean
+  handleCloseConfirmation: () => void
+  handleConfirmQueue: () => Promise<void>
 }

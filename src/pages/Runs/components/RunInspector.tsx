@@ -1,5 +1,5 @@
 import React from "react"
-import { FileCode, Globe, Brain, Terminal } from "lucide-react"
+import { FileCode, Globe, Brain, Terminal, Compass } from "lucide-react"
 import { DiffViewer } from "@/components/diff/DiffViewer"
 import { DevServerController } from "@/components/review/DevServerController"
 import { RunActionToolbar } from "./RunActionToolbar"
@@ -64,6 +64,22 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
         <span className="text-xs font-mono text-slate-400 bg-slate-800 px-3 py-1 rounded-lg">
           {selectedRun.project.id}
         </span>
+      </div>
+
+      <div role="status" aria-label="Authoritative next action" className="rounded-xl border border-indigo-500/25 bg-indigo-500/10 p-4">
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-indigo-500/15 p-2 text-indigo-300"><Compass className="h-4 w-4" /></div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-300">Next Action</p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-200">
+              {evidenceLoading
+                ? "Memuat tindakan berikutnya dari evidence contract…"
+                : evidenceError
+                  ? "Evidence contract belum tersedia. Muat ulang sebelum mengambil tindakan."
+                  : evidence?.nextAction || "Tidak ada tindakan lanjutan untuk state ini."}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Action Toolbar for Human Review */}

@@ -1,4 +1,4 @@
-import type { DaemonStatus, ProjectInfo, RunManifest } from "@/services/orchestrator"
+import type { DaemonStatus, ProjectInfo, RunManifest, TaskRequestResult } from "@/services/orchestrator"
 
 export interface OverviewMetricsData {
   activeWorkers: number
@@ -51,5 +51,10 @@ export interface UseOverviewReturn {
   activeRuns: RunManifest[]
   completedRuns: RunManifest[]
   handleQuickSubmit: (e: React.FormEvent) => Promise<void>
+  confirmationOpen: boolean
+  confirmationResult: TaskRequestResult | null
+  confirming: boolean
+  handleCloseConfirmation: () => void
+  handleConfirmQueue: () => Promise<void>
   loadData: () => Promise<void>
 }
