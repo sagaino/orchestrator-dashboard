@@ -101,9 +101,7 @@ export function useAddProjectModal({
         onSuccess(res)
       }
 
-      setTimeout(() => {
-        handleClose()
-      }, 1000)
+      handleClose()
     } catch (err: any) {
       const msg =
         err?.response?.data?.error ||
@@ -154,9 +152,7 @@ export function useAddProjectModal({
         onSuccess(res)
       }
 
-      setTimeout(() => {
-        handleClose()
-      }, 1000)
+      handleClose()
     } catch (err: any) {
       const msg =
         err?.response?.data?.error ||
@@ -184,9 +180,7 @@ export function useAddProjectModal({
         description: msg,
         type: "success",
       })
-      setTimeout(() => {
-        handleClose()
-      }, 1000)
+      handleClose()
     } catch (err: any) {
       const errorObj = err?.response?.data?.error
       const msg = typeof errorObj === "string" ? errorObj : errorObj?.message || err?.message || "Gagal me-restore project."
