@@ -8,6 +8,10 @@ import {
   Info,
   Layers,
   Sparkles,
+  Archive,
+  RotateCcw,
+  Trash2,
+  Clock,
 } from "lucide-react"
 import {
   Dialog,
@@ -41,6 +45,10 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     newTargetDir,
     setNewTargetDir,
     newBlueprint,
+    archivedProjects,
+    isLoadingArchived,
+    isRestoring,
+    isPurging,
     errorMessage,
     successMessage,
     isSubmitting,
@@ -50,23 +58,25 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     handleTabChange,
     handleExistingSubmit,
     handleNewSubmit,
+    handleRestoreProject,
+    handlePurgeProject,
   } = useAddProjectModal({ onClose, onSuccess })
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="bg-slate-900 border border-slate-800 text-slate-100 max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden shadow-2xl rounded-2xl">
         {/* Header */}
-        <DialogHeader className="p-6 pb-4 border-b border-slate-800/80 bg-slate-900/90 space-y-3">
+        <DialogHeader className="p-6 pb-4 border-b border-slate-800/80 bg-slate-900/90 space-y-3 shrink-0">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
               <FolderPlus className="h-5 w-5" />
             </div>
             <div>
               <DialogTitle className="text-lg font-bold text-white leading-snug">
-                Add / Onboard Project
+                Project Management & Onboarding
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-400">
-                Daftarkan repositori yang ada atau inisialisasi project baru dengan blueprint terintegrasi.
+                Daftarkan repositori, inisialisasi project baru, atau kelola arsip project.
               </DialogDescription>
             </div>
           </div>
@@ -97,7 +107,20 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
               }`}
             >
               <Sparkles className="h-4 w-4" />
-              <span>New Project (Vite + Shadcn)</span>
+              <span>New Project</span>
+            </button>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => handleTabChange("archive")}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                activeTab === "archive"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Archive className="h-4 w-4" />
+              <span>Archived ({archivedProjects.length})</span>
             </button>
           </div>
         </DialogHeader>
@@ -125,128 +148,102 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
             </div>
           )}
 
-          {/* Loading Progress State */}
-          {isSubmitting && (
-            <div className="p-5 rounded-xl bg-indigo-950/30 border border-indigo-500/30 space-y-3">
-              <div className="flex items-center gap-3">
-                <Loader2 className="h-5 w-5 text-indigo-400 animate-spin" />
-                <div>
-                  <h4 className="text-sm font-semibold text-white">
-                    {activeTab === "existing"
-                      ? "Sedang Menghubungkan Repositori..."
-                      : "Sedang Menginisialisasi Project Baru..."}
-                  </h4>
-                  <p className="text-xs text-slate-400">
-                    {activeTab === "existing"
-                      ? "Memverifikasi package.json, baseline checks, dan bootstrapping Graphify code intelligence."
-                      : "Menjalankan Vite + Shadcn template deterministic staging, verifikasi baseline, dan registrasi Vault."}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 1: Existing Project Form */}
+          {/* Tab 1: Existing Project Form */}
           {activeTab === "existing" && (
             <form id="form-onboard-existing" onSubmit={handleExistingSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-200">
-                  Repository Path Lokal <span className="text-rose-400">*</span>
+                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <span>Repository Path</span>
+                  <span className="text-rose-400">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   disabled={isSubmitting}
+                  placeholder="/Users/username/ciniru/my-repo"
                   value={existingRepoPath}
                   onChange={(e) => setExistingRepoPath(e.target.value)}
-                  placeholder="/Users/username/Documents/my-existing-project"
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 font-mono text-xs disabled:opacity-50"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white font-mono text-xs placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all disabled:opacity-50"
                 />
-                <p className="text-[11px] text-slate-400">
-                  Lokasi path absolut atau relatif ke folder repositori Git lokal yang memiliki <code>package.json</code>.
+                <p className="text-[11px] text-slate-500">
+                  Path absolut ke direktori Git repository yang berisi <code className="text-indigo-400">package.json</code>.
                 </p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-200">
-                  Project ID (Opsional)
+                <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                  <span>Custom Project ID</span>
+                  <span className="text-[10px] text-slate-500 font-normal">Optional</span>
                 </label>
                 <input
                   type="text"
                   disabled={isSubmitting}
+                  placeholder="my-project (default: nama folder)"
                   value={existingProjectId}
                   onChange={(e) => setExistingProjectId(e.target.value)}
-                  placeholder="e.g. my-service (otomatis dari nama folder jika kosong)"
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 font-mono text-xs disabled:opacity-50"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white font-mono text-xs placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all disabled:opacity-50"
                 />
-                <p className="text-[11px] text-slate-400">
-                  Identifier unik untuk project ini di sistem Orchestrator & Obsidian Wiki.
-                </p>
               </div>
 
               <div className="p-3.5 rounded-lg bg-slate-950/40 border border-slate-800 text-xs text-slate-400 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-slate-300 font-semibold text-[11px]">
                   <Info className="h-3.5 w-3.5 text-indigo-400" />
-                  <span>Proses Onboarding Otomatis:</span>
+                  <span>Proses Onboarding Existing:</span>
                 </div>
                 <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-400">
-                  <li>Validasi Git status dan dependensi <code>package.json</code>.</li>
-                  <li>Inisialisasi atau pembaruan Graphify code intelligence lokal.</li>
-                  <li>Registrasi project ke <code>project-registry.md</code> dan Obsidian Vault.</li>
+                  <li>Validasi git repository dan package verification baseline.</li>
+                  <li>Bootstrap & indexing Knowledge Graphify otomatis.</li>
+                  <li>Registrasi project ke Obsidian Wiki schema.</li>
                 </ul>
               </div>
             </form>
           )}
 
-          {/* TAB 2: New Project Form */}
+          {/* Tab 2: New Project Form */}
           {activeTab === "new" && (
             <form id="form-onboard-new" onSubmit={handleNewSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-200">
-                  Project ID <span className="text-rose-400">*</span>
+                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <span>Project ID / Name</span>
+                  <span className="text-rose-400">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   disabled={isSubmitting}
+                  placeholder="my-saas-app"
                   value={newProjectId}
                   onChange={(e) => setNewProjectId(e.target.value)}
-                  placeholder="e.g. admin-portal"
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 font-mono text-xs disabled:opacity-50"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white font-mono text-xs placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all disabled:opacity-50"
                 />
-                <p className="text-[11px] text-slate-400">
-                  Slug unik nama project (akan menjadi ID di Obsidian Wiki & project registry).
-                </p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-200">
-                  Target Directory <span className="text-rose-400">*</span>
+                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <span>Target Directory</span>
+                  <span className="text-rose-400">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   disabled={isSubmitting}
+                  placeholder="/Users/username/ciniru/my-saas-app"
                   value={newTargetDir}
                   onChange={(e) => setNewTargetDir(e.target.value)}
-                  placeholder="/Users/username/Documents/projects/admin-portal"
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 font-mono text-xs disabled:opacity-50"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white font-mono text-xs placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all disabled:opacity-50"
                 />
-                <p className="text-[11px] text-slate-400">
-                  Path folder tujuan tempat scaffold project baru akan ditempatkan.
-                </p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-200">
-                  Blueprint Template
+                <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                  <span>Architecture Blueprint</span>
                 </label>
-                <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/60 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs">
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
                     <Layers className="h-4 w-4 text-indigo-400" />
                     <div>
-                      <div className="font-semibold text-slate-200 font-mono text-[11px]">
-                        {newBlueprint} (Vite + React + Tailwind + Shadcn UI)
+                      <div className="text-xs font-semibold text-white">
+                        Vite + React + TypeScript + Shadcn UI
                       </div>
                       <div className="text-[10px] text-slate-400">
                         Blueprint deterministik versi 2 dengan standard verification baseline.
@@ -258,34 +255,92 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
                   </span>
                 </div>
               </div>
-
-              <div className="p-3.5 rounded-lg bg-slate-950/40 border border-slate-800 text-xs text-slate-400 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-slate-300 font-semibold text-[11px]">
-                  <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
-                  <span>Fitur Otomatis Blueprint Baru:</span>
-                </div>
-                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-400">
-                  <li>Inisialisasi Vite + TypeScript + React + Shadcn UI komponen.</li>
-                  <li>Preflight verification (typecheck, lint, build) sebelum commit.</li>
-                  <li>Inisialisasi Git repository awal dan bootstrap Graphify.</li>
-                </ul>
-              </div>
             </form>
+          )}
+
+          {/* Tab 3: Archived Projects List */}
+          {activeTab === "archive" && (
+            <div className="space-y-3">
+              {isLoadingArchived ? (
+                <div className="p-8 text-center text-slate-400 flex items-center justify-center gap-2 text-xs">
+                  <Loader2 className="h-4 w-4 animate-spin text-indigo-400" />
+                  <span>Memuat daftar arsip project...</span>
+                </div>
+              ) : archivedProjects.length === 0 ? (
+                <div className="p-8 rounded-xl bg-slate-950/40 border border-slate-800/80 text-center space-y-2">
+                  <Archive className="h-8 w-8 text-slate-600 mx-auto" />
+                  <h4 className="text-sm font-semibold text-slate-300">Tidak Ada Project yang Diarsipkan</h4>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    Semua project aktif atau sudah dibersihkan permanen dari Vault.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {archivedProjects.map((p) => (
+                    <div
+                      key={p.projectId}
+                      className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700/80 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-white text-sm">{p.projectId}</h4>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {p.versionCount} snapshot arsip
+                          </span>
+                        </div>
+                        {p.repository && (
+                          <p className="text-[11px] font-mono text-slate-400 truncate max-w-md">
+                            {p.repository}
+                          </p>
+                        )}
+                        {p.removedAt && (
+                          <p className="text-[10px] text-slate-500">
+                            Diarsipkan: {new Date(p.removedAt).toLocaleString("id-ID")}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => handleRestoreProject(p.projectId)}
+                          className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                          <span>Restore Project</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => handlePurgeProject(p.projectId)}
+                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 text-xs transition-all cursor-pointer disabled:opacity-50"
+                          title="Purge Permanently from Vault"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
         {/* Footer Actions */}
-        <DialogFooter className="m-0 border-t border-slate-800 bg-slate-900/90 flex flex-row items-center justify-between gap-3">
+        <DialogFooter className="m-0 p-4 border-t border-slate-800 bg-slate-900/90 flex flex-row items-center justify-between gap-3 shrink-0">
           <button
             type="button"
             disabled={isSubmitting}
             onClick={handleClose}
             className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 text-xs font-medium border border-slate-700 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
-            Batal
+            Tutup
           </button>
 
-          {activeTab === "existing" ? (
+          {activeTab === "existing" && (
             <button
               type="submit"
               form="form-onboard-existing"
@@ -304,7 +359,9 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
                 </>
               )}
             </button>
-          ) : (
+          )}
+
+          {activeTab === "new" && (
             <button
               type="submit"
               form="form-onboard-new"
