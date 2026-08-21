@@ -8,8 +8,8 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
   onSelectProject,
   prompt,
   onPromptChange,
-  autoStart,
-  onAutoStartChange,
+  queueAfterConfirmation,
+  onQueueAfterConfirmationChange,
   attachedAssets = [],
   onRemoveAsset,
   isUploadingAsset,
@@ -229,14 +229,14 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
-              id="autoStart"
-              checked={autoStart}
-              onChange={(e) => onAutoStartChange(e.target.checked)}
+              id="queueAfterConfirmation"
+              checked={queueAfterConfirmation}
+              onChange={(e) => onQueueAfterConfirmationChange(e.target.checked)}
               className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             />
-            <label htmlFor="autoStart" className="text-xs text-slate-300">
-              <span className="font-medium block text-slate-200">Auto-Start Execution</span>
-              Langsung klaim dan jalankan di isolated git worktree setelah lolos readiness gate
+            <label htmlFor="queueAfterConfirmation" className="text-xs text-slate-300">
+              <span className="font-medium block text-slate-200">Queue setelah konfirmasi</span>
+              Canonical plan selalu ditampilkan dahulu; eksekusi hanya dimulai setelah Approve &amp; Queue
             </label>
           </div>
         </div>
@@ -272,7 +272,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
             ) : (
               <>
                 <Play className="h-4 w-4 fill-white" />
-                <span>Submit & Queue Task</span>
+                <span>Generate Canonical Plan</span>
               </>
             )}
           </button>

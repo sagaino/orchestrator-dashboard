@@ -221,6 +221,26 @@ export function useRequestTask() {
   })
 }
 
+export function useConfirmTaskQueue() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      projectId,
+      taskInput,
+      approvedBy = "user",
+    }: {
+      projectId: string
+      taskInput: string
+      approvedBy?: string
+    }) => OrchestratorApi.confirmTaskQueue(projectId, taskInput, approvedBy),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+      queryClient.invalidateQueries({ queryKey: queryKeys.runs })
+      queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
+    },
+  })
+}
+
 export function useAcceptRun() {
   const queryClient = useQueryClient()
   return useMutation({

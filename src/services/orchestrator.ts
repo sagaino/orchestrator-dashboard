@@ -84,6 +84,67 @@ export interface ProjectInfo {
   projectPagePath: string
 }
 
+export interface TaskReadinessSummary {
+  verdict: string
+  ready: boolean
+  summary: {
+    passed: number
+    blockers: number
+    warnings: number
+  }
+  checks: Array<{
+    id: string
+    status: string
+    message: string
+    details?: unknown
+  }>
+  nextActions: string[]
+}
+
+export interface TaskConfirmation {
+  schemaVersion: number
+  status: string
+  approvalMode: string
+  allowedPaths: string[]
+  verification: string[]
+  acceptanceCriteria: string[]
+  risk: string
+  requiresChanges: boolean
+  readiness: TaskReadinessSummary | null
+}
+
+export interface TaskRequestResult {
+  schemaVersion: number
+  action: string
+  project: string
+  task: {
+    id: string
+    title: string
+    path: string
+    status: string
+    risk: string
+  }
+  job: unknown | null
+  readiness: TaskReadinessSummary | null
+  confirmation: TaskConfirmation
+  nextAction: string
+}
+
+export interface ConfirmTaskQueueResult {
+  schemaVersion: number
+  action: "TASK_CONFIRMED_AND_QUEUED" | "TASK_ALREADY_QUEUED"
+  approvedBy: string
+  readiness: TaskReadinessSummary
+  job: {
+    jobId: string
+    taskId: string
+    project: string
+    state: string
+    runId?: string | null
+  }
+  nextAction: string
+}
+
 export interface ArchivedProject {
   projectId: string
   title: string
@@ -613,7 +674,15 @@ export const OrchestratorApi = {
     requestedBy?: string
     attachedAssets?: AttachedAsset[]
   }) {
-    const res = await axios.post<{ success: boolean; data: any }>("/api/tasks/request", payload)
+    const res = await axios.post<{ success: boolean; data: TaskRequestResult }>("/api/tasks/request", payload)
+    return res.data.data
+  },
+
+  async confirmTaskQueue(projectId: string, taskInput: string, approvedBy = "user") {
+    const res = await axios.post<{ success: boolean; data: ConfirmTaskQueueResult }>(
+      `/api/tasks/${projectId}/${taskInput}/queue`,
+      { approvedBy },
+    )
     return res.data.data
   },
 

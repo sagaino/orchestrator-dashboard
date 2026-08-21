@@ -8,6 +8,7 @@ import {
   QuickTaskIntake,
 } from "./components"
 import { RemoveProjectModal } from "@/components/project/RemoveProjectModal"
+import { TaskConfirmationModal } from "@/pages/Tasks/components"
 
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate()
@@ -26,6 +27,11 @@ export const OverviewPage: React.FC = () => {
     reviewRuns,
     completedRuns,
     handleQuickSubmit,
+    confirmationOpen,
+    confirmationResult,
+    confirming,
+    handleCloseConfirmation,
+    handleConfirmQueue,
   } = useOverview()
 
   const handleLaunchTask = () => {
@@ -90,6 +96,15 @@ export const OverviewPage: React.FC = () => {
         }}
         projectId={targetProject?.id ?? null}
         projectRepo={targetProject?.repo}
+      />
+
+      <TaskConfirmationModal
+        isOpen={confirmationOpen}
+        result={confirmationResult}
+        queueAfterConfirmation
+        confirming={confirming}
+        onClose={handleCloseConfirmation}
+        onConfirm={handleConfirmQueue}
       />
     </div>
   )

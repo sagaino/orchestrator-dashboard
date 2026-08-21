@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react"
-import { useProjects, useDaemonStatus, useJobs, useRequestTask, useUploadAsset, useDeleteAsset } from "@/hooks/use-orchestrator"
+import { useProjects, useDaemonStatus, useJobs, useRequestTask, useConfirmTaskQueue, useUploadAsset, useDeleteAsset } from "@/hooks/use-orchestrator"
 import { toast } from "@/components/ui/toast"
-import type { AttachedAsset } from "@/services/orchestrator"
+import type { AttachedAsset, TaskRequestResult } from "@/services/orchestrator"
 import type { UseTasksReturn, TaskStatusMessage } from "../types"
 
 const isClarificationNeeded = (res: any): boolean => {
@@ -38,14 +38,17 @@ export const useTasks = (): UseTasksReturn => {
   const { data: daemon = null, refetch: refetchDaemon } = useDaemonStatus()
   const { data: jobs = [] } = useJobs()
   const { mutateAsync: requestTask, isPending: submitting } = useRequestTask()
+  const { mutateAsync: confirmTaskQueue, isPending: confirming } = useConfirmTaskQueue()
   const { mutateAsync: uploadAsset, isPending: isUploadingAsset } = useUploadAsset()
   const { mutateAsync: deleteAsset } = useDeleteAsset()
 
   const [selectedProject, setSelectedProject] = useState("orchestrator-dashboard")
   const [prompt, setPrompt] = useState("")
-  const [autoStart, setAutoStart] = useState(true)
+  const [queueAfterConfirmation, setQueueAfterConfirmation] = useState(true)
   const [statusMessage, setStatusMessage] = useState<TaskStatusMessage | null>(null)
   const [attachedAssets, setAttachedAssets] = useState<AttachedAsset[]>([])
+  const [confirmationOpen, setConfirmationOpen] = useState(false)
+  const [confirmationResult, setConfirmationResult] = useState<TaskRequestResult | null>(null)
 
   // Clarification state
   const [clarificationOpen, setClarificationOpen] = useState(false)
@@ -118,7 +121,7 @@ export const useTasks = (): UseTasksReturn => {
       const res = await requestTask({
         project: selectedProject,
         request: trimmedPrompt,
-        autoStart,
+        autoStart: false,
         attachedAssets,
       })
 
@@ -137,7 +140,9 @@ export const useTasks = (): UseTasksReturn => {
         return
       }
 
-      const successText = `Task canonical berhasil dibuat: ${res?.task?.id || "Task"} (${res?.autoStart ? "Otomatis diantrekan" : "Tersimpan di Backlog"}).`
+      const successText = `Task canonical berhasil dibuat: ${res.task.id}. Menunggu review dan persetujuan Anda.`
+      setConfirmationResult(res)
+      setConfirmationOpen(true)
       setStatusMessage({
         type: "success",
         text: successText,
@@ -183,7 +188,7 @@ export const useTasks = (): UseTasksReturn => {
       const res = await requestTask({
         project: selectedProject,
         request: combinedRequest,
-        autoStart,
+        autoStart: false,
       })
 
       if (isClarificationNeeded(res)) {
@@ -207,7 +212,9 @@ export const useTasks = (): UseTasksReturn => {
       setPrompt("")
       setPendingPrompt("")
 
-      const successText = `Task canonical berhasil dibuat: ${res?.task?.id || "Task"} (${res?.autoStart ? "Otomatis diantrekan" : "Tersimpan di Backlog"}).`
+      const successText = `Task canonical berhasil dibuat: ${res.task.id}. Menunggu review dan persetujuan Anda.`
+      setConfirmationResult(res)
+      setConfirmationOpen(true)
       setStatusMessage({
         type: "success",
         text: successText,
@@ -232,6 +239,41 @@ export const useTasks = (): UseTasksReturn => {
     }
   }
 
+  const handleCloseConfirmation = () => {
+    if (confirming) return
+    setConfirmationOpen(false)
+    setStatusMessage({
+      type: "success",
+      text: confirmationResult
+        ? `${confirmationResult.task.id} disimpan di Backlog dan belum dieksekusi.`
+        : "Task disimpan di Backlog.",
+    })
+  }
+
+  const handleConfirmQueue = async () => {
+    if (!confirmationResult) return
+
+    try {
+      const queued = await confirmTaskQueue({
+        projectId: confirmationResult.project,
+        taskInput: confirmationResult.task.id,
+        approvedBy: "user",
+      })
+      setConfirmationOpen(false)
+      setStatusMessage({ type: "success", text: `${confirmationResult.task.id} disetujui dan masuk antrean.` })
+      refetchDaemon?.()
+      toast.add({
+        title: queued.action === "TASK_ALREADY_QUEUED" ? "Task Sudah Diantrekan" : "Task Disetujui",
+        description: queued.nextAction,
+        type: "success",
+      })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      setStatusMessage({ type: "error", text: `Gagal mengantrekan task: ${errorMessage}` })
+      toast.add({ title: "Approval Gagal", description: errorMessage, type: "error" })
+    }
+  }
+
   const queueJobs = daemon?.queue.latestJobs || jobs || []
 
   return {
@@ -243,8 +285,8 @@ export const useTasks = (): UseTasksReturn => {
     setSelectedProject,
     prompt,
     setPrompt,
-    autoStart,
-    setAutoStart,
+    queueAfterConfirmation,
+    setQueueAfterConfirmation,
     attachedAssets,
     handleAddAsset,
     handleRemoveAsset,
@@ -264,5 +306,10 @@ export const useTasks = (): UseTasksReturn => {
     handleCloseClarification,
     handleSubmitClarification,
     pendingPrompt,
+    confirmationOpen,
+    confirmationResult,
+    confirming,
+    handleCloseConfirmation,
+    handleConfirmQueue,
   }
 }

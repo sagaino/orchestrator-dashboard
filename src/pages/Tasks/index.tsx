@@ -1,6 +1,6 @@
 import React from "react"
 import { useTasks } from "./hooks"
-import { TaskIntakeForm, LiveJobQueue, ClarificationModal } from "./components"
+import { TaskIntakeForm, LiveJobQueue, ClarificationModal, TaskConfirmationModal } from "./components"
 
 export const TasksPage: React.FC = () => {
   const {
@@ -10,8 +10,8 @@ export const TasksPage: React.FC = () => {
     setSelectedProject,
     prompt,
     setPrompt,
-    autoStart,
-    setAutoStart,
+    queueAfterConfirmation,
+    setQueueAfterConfirmation,
     attachedAssets,
     handleAddAsset,
     handleRemoveAsset,
@@ -28,6 +28,11 @@ export const TasksPage: React.FC = () => {
     handleCloseClarification,
     handleSubmitClarification,
     pendingPrompt,
+    confirmationOpen,
+    confirmationResult,
+    confirming,
+    handleCloseConfirmation,
+    handleConfirmQueue,
   } = useTasks()
 
   return (
@@ -48,8 +53,8 @@ export const TasksPage: React.FC = () => {
             onSelectProject={setSelectedProject}
             prompt={prompt}
             onPromptChange={setPrompt}
-            autoStart={autoStart}
-            onAutoStartChange={setAutoStart}
+            queueAfterConfirmation={queueAfterConfirmation}
+            onQueueAfterConfirmationChange={setQueueAfterConfirmation}
             attachedAssets={attachedAssets}
             onAddAsset={handleAddAsset}
             onRemoveAsset={handleRemoveAsset}
@@ -77,6 +82,15 @@ export const TasksPage: React.FC = () => {
         onClose={handleCloseClarification}
         onSubmit={handleSubmitClarification}
         originalPrompt={pendingPrompt || prompt}
+      />
+
+      <TaskConfirmationModal
+        isOpen={confirmationOpen}
+        result={confirmationResult}
+        queueAfterConfirmation={queueAfterConfirmation}
+        confirming={confirming}
+        onClose={handleCloseConfirmation}
+        onConfirm={handleConfirmQueue}
       />
     </div>
   )
