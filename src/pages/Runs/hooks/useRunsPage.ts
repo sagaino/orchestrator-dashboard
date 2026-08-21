@@ -130,7 +130,6 @@ export const useRunsPage = (): UseRunsPageReturn => {
         autoCommit: options?.autoCommit,
         commitMessage: options?.commitMessage,
       })
-      setAcceptModalOpen(false)
       toast.add({
         title: "Run Accepted",
         description: options?.autoCommit
@@ -138,6 +137,7 @@ export const useRunsPage = (): UseRunsPageReturn => {
           : "Run berhasil di-accept dan disinkronkan ke branch utama & Wiki!",
         type: "success",
       })
+      setAcceptModalOpen(false)
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err)
       toast.add({
@@ -158,12 +158,12 @@ export const useRunsPage = (): UseRunsPageReturn => {
     if (!selectedRun) return
     try {
       await rejectRun({ runId: selectedRun.runId, reason: rejectReason.trim() || "Rejected by user" })
-      setRejectModalOpen(false)
       toast.add({
         title: "Run Ditolak",
         description: "Run berhasil ditolak dan worktree dibersihkan.",
         type: "info",
       })
+      setRejectModalOpen(false)
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err)
       toast.add({
@@ -267,15 +267,15 @@ export const useRunsPage = (): UseRunsPageReturn => {
         reason: compiledReason,
         inlineComments: inlineComments.map(({ file, line, comment }) => ({ file, line, comment })),
       })
-      setRevisionModalOpen(false)
-      setRevisionReason("")
-      setInlineComments([])
-      setVisualAnnotations([])
       toast.add({
         title: "Revisi Terkirim",
         description: "Revisi & anotasi visual berhasil dikirim ke agent di worktree terisolasi!",
         type: "success",
       })
+      setRevisionModalOpen(false)
+      setRevisionReason("")
+      setInlineComments([])
+      setVisualAnnotations([])
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err)
       toast.add({

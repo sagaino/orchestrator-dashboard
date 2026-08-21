@@ -30,15 +30,27 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
     }
   }, [run, isOpen])
 
-  const handleConfirmSubmit = () => {
-    onConfirm({
-      autoCommit,
-      commitMessage: autoCommit ? commitMessage : undefined,
-    })
+  const handleConfirmSubmit = async () => {
+    if (actionLoading || (autoCommit && !commitMessage.trim())) return
+    try {
+      await onConfirm({
+        autoCommit,
+        commitMessage: autoCommit ? commitMessage.trim() : undefined,
+      })
+    } catch {
+      // Error handling is handled in the onConfirm caller
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      handleConfirmSubmit()
+    }
   }
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && !actionLoading && onClose()}>
       <AlertDialogContent className="bg-slate-900 border border-slate-800 text-slate-100 max-w-lg">
         <AlertDialogHeader className="space-y-3">
           <div className="flex items-center gap-2 text-emerald-400 font-semibold text-base">
@@ -61,6 +73,7 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
                   type="checkbox"
                   checked={autoCommit}
                   onChange={(e) => setAutoCommit(e.target.checked)}
+                  disabled={actionLoading}
                   className="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
                 />
                 <GitCommit className="h-4 w-4 text-indigo-400" />
@@ -76,8 +89,10 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
                     type="text"
                     value={commitMessage}
                     onChange={(e) => setCommitMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    disabled={actionLoading}
                     placeholder="e.g. feat(FE-019): deskripsi commit"
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-slate-200 placeholder:text-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-slate-200 placeholder:text-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50"
                   />
                 </div>
               )}
