@@ -26,6 +26,7 @@ export const queryKeys = {
   runs: ["runs"] as const,
   runDetail: (id: string) => ["runs", id] as const,
   runEvidence: (id: string) => ["runs", id, "evidence"] as const,
+  runVisualEvidence: (id: string) => ["runs", id, "visual-evidence"] as const,
   runDiff: (id: string) => ["runs", id, "diff"] as const,
   runLogs: (id: string) => ["runs", id, "logs"] as const,
   devServer: (id: string) => ["runs", id, "devServer"] as const,
@@ -93,6 +94,15 @@ export function useRunEvidence(runId: string | null) {
     enabled: !!runId,
     refetchInterval: runId ? 3_000 : false,
     staleTime: 1_000,
+  })
+}
+
+export function useRunVisualEvidence(runId: string | null) {
+  return useQuery<import("@/services/orchestrator").VisualEvidence[]>({
+    queryKey: queryKeys.runVisualEvidence(runId!),
+    queryFn: () => OrchestratorApi.getRunVisualEvidence(runId!),
+    enabled: !!runId,
+    staleTime: 5_000,
   })
 }
 

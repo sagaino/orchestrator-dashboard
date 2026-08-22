@@ -15,7 +15,7 @@ import {
   RotateCcw,
 } from "lucide-react"
 import type { RunOverviewTabProps } from "../types"
-import type { EvidenceStatus, RunEvidenceVerificationResult } from "@/services/orchestrator"
+import type { EvidenceStatus, RunEvidenceVerificationResult, VisualEvidence } from "@/services/orchestrator"
 
 const evidenceTone = (status: EvidenceStatus) => {
   if (status === "PASS") return "bg-emerald-500/15 text-emerald-300"
@@ -26,6 +26,7 @@ const evidenceTone = (status: EvidenceStatus) => {
 export const RunOverviewTab: React.FC<RunOverviewTabProps> = ({
   selectedRun,
   evidence,
+  visualEvidence = [],
   evidenceLoading = false,
   evidenceError = false,
 }) => {
@@ -94,6 +95,19 @@ export const RunOverviewTab: React.FC<RunOverviewTabProps> = ({
           </div>
         </div>
       )}
+
+      <div className="rounded-xl border border-slate-800 bg-slate-800/20 p-4 space-y-3" aria-label="Visual evidence contract">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">Visual Evidence Contract</span>
+          <span className="text-[10px] font-mono text-slate-500">{visualEvidence.length} artifact{visualEvidence.length === 1 ? "" : "s"}</span>
+        </div>
+        {visualEvidence.length === 0 ? <p className="text-xs text-slate-500">Belum ada screenshot evidence untuk run ini. Status visual tidak diasumsikan lulus.</p> : visualEvidence.map((item: VisualEvidence) => (
+          <div key={item.evidenceId} className="rounded-lg border border-slate-700/80 bg-slate-950/40 p-3 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-mono text-slate-200">{item.route}</span><span className={`rounded border px-2 py-0.5 ${item.comparison.status === "PASS" ? "border-emerald-500/30 text-emerald-300" : item.comparison.status === "FAIL" ? "border-rose-500/30 text-rose-300" : "border-amber-500/30 text-amber-300"}`}>{item.comparison.status}</span></div>
+            <div className="mt-2 grid gap-1 text-slate-400 md:grid-cols-2"><span>Viewport: <strong className="text-slate-200">{item.viewport.name} · {item.viewport.width}×{item.viewport.height}</strong></span><span>Accessibility: <strong className="text-slate-200">{item.accessibility.status}</strong></span><span>Revision: <strong className="text-slate-200">{item.revision.number}</strong></span><span>Checksum: <strong className="font-mono text-slate-200">{item.artifact.sha256 ? `${item.artifact.sha256.slice(0, 12)}…` : "unavailable"}</strong></span></div>
+          </div>
+        ))}
+      </div>
 
       {/* Scope Audit Card */}
       <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 space-y-2.5">
