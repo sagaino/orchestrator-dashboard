@@ -37,6 +37,7 @@ export const queryKeys = {
   telemetry: (projectId?: string) => ["telemetry", projectId ?? "all"] as const,
   rtk: ["telemetry", "rtk"] as const,
   operations: ["operations", "readiness"] as const,
+  releaseOperations: ["operations", "release"] as const,
   retentionTrash: ["operations", "retention", "trash"] as const,
 }
 
@@ -184,6 +185,15 @@ export function useOperationsReadiness() {
   return useQuery<import("@/services/orchestrator").OperationsReadiness>({
     queryKey: queryKeys.operations,
     queryFn: () => OrchestratorApi.getOperationsReadiness(),
+    refetchInterval: 15_000,
+    staleTime: 5_000,
+  })
+}
+
+export function useReleaseOperations() {
+  return useQuery<import("@/services/orchestrator").ReleaseOperations>({
+    queryKey: queryKeys.releaseOperations,
+    queryFn: () => OrchestratorApi.getReleaseOperations(),
     refetchInterval: 15_000,
     staleTime: 5_000,
   })

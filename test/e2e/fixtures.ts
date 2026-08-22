@@ -130,6 +130,28 @@ export async function installLifecycleFixtures(page: Page) {
     if (pathname === "/api/notifications") return json(route, [])
     if (pathname === "/api/projects-archive") return json(route, { archivedProjects: [] })
     if (pathname === "/api/jobs") return json(route, jobs)
+    if (pathname === "/api/operations/readiness") return json(route, {
+      schemaVersion: 1,
+      checkedAt: now,
+      status: "READY",
+      admission: { allowed: true, blockers: [] },
+      checks: [{ id: "backup", status: "PASS", severity: "INFO", message: "Backup verified.", action: "Tidak ada tindakan.", runbook: "fixture" }],
+      alerts: [],
+      signals: {},
+    })
+    if (pathname === "/api/operations/retention/trash") return json(route, [])
+    if (pathname === "/api/operations/release") return json(route, {
+      schemaVersion: 1,
+      checkedAt: now,
+      current: { runtimeVersion: "0.1.0" },
+      candidate: { configured: true, available: true, status: "VERIFIED", releaseId: "candidate-p64-fixture", runtimeVersion: "0.1.1", sourceCommit: "fixture123", builtAt: now, fileCount: 12, compatibility: { compatible: true, outcome: "ACTIVATION_ELIGIBLE", errors: [] } },
+      queueDrain: { drained: true, blockers: [], counts: { jobs: 0, runs: 0, invocations: 0 }, daemon: { running: false, pid: null } },
+      compatibility: { compatible: true, outcome: "ACTIVATION_ELIGIBLE", errors: [], contractVersion: "p6.0-2026-08-22" },
+      backup: { required: true, status: "AVAILABLE", backupId: "backup-fixture", verifiedAt: now, backedUpAt: now, filesCount: 42 },
+      health: { status: "PASS", daemon: { running: false, healthy: true, heartbeatAt: now, heartbeatAgeMs: 0 }, checks: [{ id: "daemon", status: "PASS", message: "Daemon healthy." }] },
+      rollback: { required: true, protocolVersion: 1, evidenceStatus: "READY", backupId: "backup-fixture", message: "Backup tersedia untuk rollback eksternal." },
+      activation: { eligible: true, state: "HUMAN_GATE_REQUIRED", requiresHumanConfirmation: true, authority: "EXTERNAL_SUPERVISOR", selfAcceptAllowed: false, inProcessActivationAllowed: false, confirmation: { confirmed: false, approvedBy: null, approvedAt: null } },
+    })
     if (pathname === "/api/runs" && method === "GET") return json(route, runs)
 
     if (pathname === "/api/tasks/request" && method === "POST") {
