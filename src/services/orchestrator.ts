@@ -336,6 +336,23 @@ export interface VisualEvidence {
   createdAt: string
 }
 
+export interface VisualRevisionRecord {
+  schemaVersion: number
+  mode: "visual-revision"
+  revisionId: string
+  runId: string
+  iteration: number
+  status: "AWAITING_AFTER_EVIDENCE" | "COMPLETED" | string
+  requestedAt: string
+  requestedBy: string
+  reason: string
+  inlineComments: Array<{ file: string; line: number | null; comment: string }>
+  visualAnnotations: Array<{ id: string; x: number; y: number; width: number | null; height: number | null; comment: string; createdAt: string }>
+  beforeEvidenceIds: string[]
+  afterEvidenceIds: string[]
+  updatedAt: string
+}
+
 export interface RunHistoryEntry {
   event: string
   state: string
@@ -844,6 +861,11 @@ export const OrchestratorApi = {
     return res.data.data
   },
 
+  async getRunVisualRevisions(runId: string) {
+    const res = await axios.get<{ success: boolean; data: VisualRevisionRecord[] }>(`/api/runs/${runId}/visual-revisions`)
+    return res.data.data
+  },
+
   async getJobs() {
     const res = await axios.get<{ success: boolean; data: any[] }>("/api/jobs")
     return res.data.data
@@ -854,11 +876,12 @@ export const OrchestratorApi = {
     return res.data.data
   },
 
-  async requestChanges(runId: string, reason: string, inlineComments: InlineDiffComment[] = [], requestedBy = "user") {
+  async requestChanges(runId: string, reason: string, inlineComments: InlineDiffComment[] = [], requestedBy = "user", visualAnnotations: Array<{ id?: string; x: number; y: number; width?: number; height?: number; comment: string; createdAt?: string }> = []) {
     const res = await axios.post<{ success: boolean; data: RunManifest }>(`/api/runs/${runId}/request-changes`, {
       reason,
       inlineComments,
       requestedBy,
+      visualAnnotations,
     })
     return res.data.data
   },

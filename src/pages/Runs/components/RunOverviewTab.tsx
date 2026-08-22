@@ -15,7 +15,7 @@ import {
   RotateCcw,
 } from "lucide-react"
 import type { RunOverviewTabProps } from "../types"
-import type { EvidenceStatus, RunEvidenceVerificationResult, VisualEvidence } from "@/services/orchestrator"
+import type { EvidenceStatus, RunEvidenceVerificationResult, VisualEvidence, VisualRevisionRecord } from "@/services/orchestrator"
 
 const evidenceTone = (status: EvidenceStatus) => {
   if (status === "PASS") return "bg-emerald-500/15 text-emerald-300"
@@ -27,6 +27,7 @@ export const RunOverviewTab: React.FC<RunOverviewTabProps> = ({
   selectedRun,
   evidence,
   visualEvidence = [],
+  visualRevisions = [],
   evidenceLoading = false,
   evidenceError = false,
 }) => {
@@ -122,6 +123,15 @@ export const RunOverviewTab: React.FC<RunOverviewTabProps> = ({
           )
         })}
       </div>
+
+      {visualRevisions.length > 0 && <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 space-y-3" aria-label="Visual feedback revision loop">
+        <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold uppercase tracking-wider text-indigo-200">Visual Feedback Revision Loop</span><span className="text-[10px] font-mono text-slate-500">{visualRevisions.length} revision{visualRevisions.length === 1 ? "" : "s"}</span></div>
+        {visualRevisions.map((revision: VisualRevisionRecord) => <div key={revision.revisionId} className="rounded-lg border border-indigo-500/15 bg-slate-950/40 p-3 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-mono text-slate-200">Iteration {revision.iteration}</span><span className={`rounded border px-2 py-0.5 ${revision.status === "COMPLETED" ? "border-emerald-500/30 text-emerald-300" : "border-amber-500/30 text-amber-300"}`}>{revision.status}</span></div>
+          <div className="mt-2 grid gap-1 text-slate-400 md:grid-cols-3"><span>Before: <strong className="text-slate-200">{revision.beforeEvidenceIds.length}</strong></span><span>After: <strong className="text-slate-200">{revision.afterEvidenceIds.length}</strong></span><span>Visual annotations: <strong className="text-slate-200">{revision.visualAnnotations.length}</strong></span></div>
+          <p className="mt-2 text-slate-300">{revision.reason || "Visual feedback tidak memiliki catatan teks tambahan."}</p>
+        </div>)}
+      </div>}
 
       {/* Scope Audit Card */}
       <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 space-y-2.5">

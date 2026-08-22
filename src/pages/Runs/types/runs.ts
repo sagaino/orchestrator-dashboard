@@ -5,6 +5,7 @@ import type {
   RunHistoryEntry,
   RunEvidence,
   VisualEvidence,
+  VisualRevisionRecord,
   InlineDiffComment,
 } from "@/services/orchestrator"
 
@@ -66,6 +67,7 @@ export interface RunOverviewTabProps {
   selectedRun: RunManifest
   evidence?: RunEvidence
   visualEvidence?: VisualEvidence[]
+  visualRevisions?: VisualRevisionRecord[]
   evidenceLoading?: boolean
   evidenceError?: boolean
 }
