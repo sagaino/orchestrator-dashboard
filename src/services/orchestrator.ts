@@ -330,7 +330,7 @@ export interface VisualEvidence {
   reference: { kind: string; path: string | null; checksum: string | null }
   actual: { status: "CAPTURED" | "UNAVAILABLE"; path: string | null; capturedAt: string | null; diagnostics?: Record<string, unknown> | null }
   comparison: { status: VisualEvidenceStatus; method: string; score: number | null; mismatchPixels: number | null; notes: string[]; diagnostics?: VisualComparisonDiagnostics | null }
-  accessibility: { status: VisualEvidenceStatus; findings: Array<{ id?: string; severity?: string; message: string; selector?: string | null }> }
+  accessibility: { schemaVersion?: number | null; status: VisualEvidenceStatus; findings: Array<{ id?: string; severity?: string; message: string; selector?: string | null }>; checks?: { controls?: number; images?: number; headings?: number; contrastEvaluated?: number; keyboardEvaluated?: boolean; bounded?: boolean; unavailable?: boolean } | null }
   revision: { number: number; requestedBy: string | null; reason: string | null; createdAt: string }
   artifact: { path: string | null; exists: boolean; sha256: string | null; bytes: number | null; contentType: string }
   createdAt: string
