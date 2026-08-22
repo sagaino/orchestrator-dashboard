@@ -18,6 +18,9 @@ import type {
   InlineDiffComment,
   KnowledgeMaintenance,
   KnowledgeMergePreview,
+  BackupRecoveryStatus,
+  BackupSchedulePreview,
+  BackupRotationPreview,
 } from "@/services/orchestrator"
 
 // --- Query Keys ---
@@ -45,6 +48,7 @@ export const queryKeys = {
   operations: ["operations", "readiness"] as const,
   releaseOperations: ["operations", "release"] as const,
   retentionTrash: ["operations", "retention", "trash"] as const,
+  backupRecovery: ["operations", "backups", "status"] as const,
 }
 
 // --- Query Hooks ---
@@ -247,6 +251,45 @@ export function useOperationsReadiness() {
     queryFn: () => OrchestratorApi.getOperationsReadiness(),
     refetchInterval: 15_000,
     staleTime: 5_000,
+  })
+}
+
+export function useBackupRecoveryStatus() {
+  return useQuery<BackupRecoveryStatus>({
+    queryKey: queryKeys.backupRecovery,
+    queryFn: () => OrchestratorApi.getBackupRecoveryStatus(),
+    refetchInterval: 15_000,
+    staleTime: 5_000,
+  })
+}
+
+export function usePreviewBackupSchedule() {
+  const client = useQueryClient()
+  return useMutation<BackupSchedulePreview, Error, { backupRoot: string; intervalHours: number }>({
+    mutationFn: ({ backupRoot, intervalHours }) => OrchestratorApi.previewBackupSchedule(backupRoot, intervalHours),
+    onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.backupRecovery }),
+  })
+}
+
+export function usePreviewBackupRotation() {
+  return useMutation<BackupRotationPreview, Error, { backupRoot: string; olderThanDays: number; keepLatest: number }>({
+    mutationFn: ({ backupRoot, olderThanDays, keepLatest }) => OrchestratorApi.previewBackupRotation(backupRoot, olderThanDays, keepLatest),
+  })
+}
+
+export function useVerifyRegisteredBackup() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: () => OrchestratorApi.verifyRegisteredBackup(),
+    onSuccess: () => { client.invalidateQueries({ queryKey: queryKeys.backupRecovery }); client.invalidateQueries({ queryKey: queryKeys.operations }) },
+  })
+}
+
+export function useRecordRecoveryDrill() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: ({ evidence, result }: { evidence: string; result: "PASS" | "FAIL" }) => OrchestratorApi.recordRecoveryDrill(evidence, result),
+    onSuccess: () => { client.invalidateQueries({ queryKey: queryKeys.backupRecovery }); client.invalidateQueries({ queryKey: queryKeys.operations }) },
   })
 }
 

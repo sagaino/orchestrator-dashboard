@@ -140,6 +140,16 @@ export async function installLifecycleFixtures(page: Page) {
       signals: {},
     })
     if (pathname === "/api/operations/retention/trash") return json(route, [])
+    if (pathname === "/api/operations/backups/status") return json(route, {
+      schemaVersion: 1,
+      action: "BACKUP_RECOVERY_STATUS",
+      generatedAt: now,
+      target: { configuredTarget: "/tmp/fixture-backups", exists: true, independentTarget: true, registeredBackup: { backupId: "backup-fixture" }, guardrail: "read-only" },
+      schedule: null,
+      drill: { status: "CURRENT", lastDrill: { performedBy: "fixture", performedAt: now, result: "PASS", evidence: { summary: "fixture" } }, dueAt: "2026-09-21T08:00:00.000Z", overdueByMs: 0, intervalDays: 30 },
+      registeredBackup: { backupId: "backup-fixture", independentTarget: true },
+      guardrails: { automaticRestore: false, automaticPromotion: false, permanentDelete: false },
+    })
     if (pathname === "/api/operations/release") return json(route, {
       schemaVersion: 1,
       checkedAt: now,
