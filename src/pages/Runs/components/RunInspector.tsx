@@ -8,7 +8,7 @@ import { RunExecutionTimeline } from "./RunExecutionTimeline"
 import { RunRetrospectiveTab } from "./RunRetrospectiveTab"
 import { LiveTerminalLogsTab } from "./LiveTerminalLogsTab"
 import type { RunInspectorProps } from "../types"
-import { useRunEvidence } from "@/hooks/use-orchestrator"
+import { useRunEvidence, useRunVisualEvidence } from "@/hooks/use-orchestrator"
 
 export const RunInspector: React.FC<RunInspectorProps> = ({
   selectedRun,
@@ -36,6 +36,7 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
     isLoading: evidenceLoading,
     isError: evidenceError,
   } = useRunEvidence(selectedRun?.runId ?? null)
+  const { data: visualEvidence = [] } = useRunVisualEvidence(selectedRun?.runId ?? null)
 
   if (!selectedRun) {
     return (
@@ -172,6 +173,7 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
         <RunOverviewTab
           selectedRun={selectedRun}
           evidence={evidence}
+          visualEvidence={visualEvidence}
           evidenceLoading={evidenceLoading}
           evidenceError={evidenceError}
         />

@@ -305,6 +305,24 @@ export interface RunEvidence {
   audit: { runId: string; createdAt: string | null; updatedAt: string | null }
 }
 
+export type VisualEvidenceStatus = "PASS" | "FAIL" | "UNKNOWN"
+
+export interface VisualEvidence {
+  schemaVersion: number
+  mode: "visual-evidence"
+  evidenceId: string
+  runId: string
+  route: string
+  viewport: { name: string; width: number; height: number; deviceScaleFactor?: number }
+  reference: { kind: string; path: string | null; checksum: string | null }
+  actual: { status: "CAPTURED" | "UNAVAILABLE"; path: string | null; capturedAt: string | null }
+  comparison: { status: VisualEvidenceStatus; method: string; score: number | null; mismatchPixels: number | null; notes: string[] }
+  accessibility: { status: VisualEvidenceStatus; findings: Array<{ id?: string; severity?: string; message: string; selector?: string | null }> }
+  revision: { number: number; requestedBy: string | null; reason: string | null; createdAt: string }
+  artifact: { path: string | null; exists: boolean; sha256: string | null; bytes: number | null; contentType: string }
+  createdAt: string
+}
+
 export interface RunHistoryEntry {
   event: string
   state: string
@@ -805,6 +823,11 @@ export const OrchestratorApi = {
 
   async getRunEvidence(runId: string) {
     const res = await axios.get<{ success: boolean; data: RunEvidence }>(`/api/runs/${runId}/evidence`)
+    return res.data.data
+  },
+
+  async getRunVisualEvidence(runId: string) {
+    const res = await axios.get<{ success: boolean; data: VisualEvidence[] }>(`/api/runs/${runId}/visual-evidence`)
     return res.data.data
   },
 
