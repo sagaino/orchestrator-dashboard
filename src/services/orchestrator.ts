@@ -567,6 +567,48 @@ export interface VaultHealth {
   orphanCandidatesCount: number
 }
 
+export interface KnowledgeDuplicateCandidate {
+  candidateId: string
+  kind: "EXACT_TITLE" | "NEAR_DUPLICATE" | string
+  left: { path: string; title: string; scope: string }
+  right: { path: string; title: string; scope: string }
+  score: number
+  titleScore: number
+  contentScore: number
+  contradictionCandidate: boolean
+}
+
+export interface KnowledgeStaleItem {
+  queueId: string
+  status: "STALE" | "DUE_SOON" | "LEGACY_REVIEW" | string
+  path: string
+  title: string
+  scope: string
+  reviewBy: string | null
+  updated: string | null
+  owner: string | null
+  supersession: string | null
+  reason: string
+}
+
+export interface KnowledgeMaintenance {
+  schemaVersion: number
+  action: string
+  generatedAt: string
+  duplicates: KnowledgeDuplicateCandidate[]
+  stale: KnowledgeStaleItem[]
+  summary: { duplicateCandidates: number; staleReviewItems: number; exactTitleDuplicates: number; contradictionCandidates: number }
+}
+
+export interface KnowledgeMergePreview {
+  action: "KNOWLEDGE_MERGE_PREVIEW"
+  source: { path: string; title: string; checksum: string; bytes: number }
+  target: { path: string; title: string; checksum: string; bytes: number }
+  similarity: KnowledgeDuplicateCandidate | null
+  proposedChanges: { targetAppend: string; sourceMetadata: Record<string, string>; sourceRetained: boolean; indexUpdate: string }
+  confirmation: { required: boolean; phrase: string; expectedSourceChecksum: string; expectedTargetChecksum: string }
+}
+
 export interface TelemetryReport {
   schemaVersion: number
   mode: string
@@ -1003,6 +1045,33 @@ export const OrchestratorApi = {
 
   async getKnowledgeHealth() {
     const res = await axios.get<{ success: boolean; data: VaultHealth }>("/api/knowledge/health")
+    return res.data.data
+  },
+
+  async getKnowledgeMaintenance() {
+    const res = await axios.get<{ success: boolean; data: KnowledgeMaintenance }>("/api/knowledge/maintenance")
+    return res.data.data
+  },
+
+  async previewKnowledgeMerge(sourcePath: string, targetPath: string) {
+    const res = await axios.get<{ success: boolean; data: KnowledgeMergePreview }>("/api/knowledge/merge/preview", { params: { source: sourcePath, target: targetPath } })
+    return res.data.data
+  },
+
+  async applyKnowledgeMerge(sourcePath: string, targetPath: string, preview: KnowledgeMergePreview, approvedBy = "user") {
+    const res = await axios.post<{ success: boolean; data: any }>("/api/knowledge/merge/apply", {
+      sourcePath,
+      targetPath,
+      approvedBy,
+      confirmed: true,
+      expectedSourceChecksum: preview.confirmation.expectedSourceChecksum,
+      expectedTargetChecksum: preview.confirmation.expectedTargetChecksum,
+    })
+    return res.data.data
+  },
+
+  async revertKnowledgeMerge(planId: string, revertedBy = "user") {
+    const res = await axios.post<{ success: boolean; data: any }>("/api/knowledge/merge/revert", { planId, revertedBy, confirmed: true })
     return res.data.data
   },
 

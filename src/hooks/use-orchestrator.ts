@@ -16,6 +16,8 @@ import type {
   IngestKnowledgePayload,
   HarvestKnowledgePayload,
   InlineDiffComment,
+  KnowledgeMaintenance,
+  KnowledgeMergePreview,
 } from "@/services/orchestrator"
 
 // --- Query Keys ---
@@ -36,6 +38,7 @@ export const queryKeys = {
   knowledgeCandidates: ["knowledge", "candidates"] as const,
   knowledgeHarvests: ["knowledge", "harvests"] as const,
   knowledgeHealth: ["knowledge", "health"] as const,
+  knowledgeMaintenance: ["knowledge", "maintenance"] as const,
   notifications: ["notifications"] as const,
   telemetry: (projectId?: string) => ["telemetry", projectId ?? "all"] as const,
   rtk: ["telemetry", "rtk"] as const,
@@ -185,6 +188,32 @@ export function useKnowledgeHealth() {
     queryKey: queryKeys.knowledgeHealth,
     queryFn: () => OrchestratorApi.getKnowledgeHealth(),
     staleTime: 30_000,
+  })
+}
+
+export function useKnowledgeMaintenance() {
+  return useQuery<KnowledgeMaintenance>({
+    queryKey: queryKeys.knowledgeMaintenance,
+    queryFn: () => OrchestratorApi.getKnowledgeMaintenance(),
+    staleTime: 30_000,
+  })
+}
+
+export function usePreviewKnowledgeMerge() {
+  return useMutation<KnowledgeMergePreview, Error, { sourcePath: string; targetPath: string }>({
+    mutationFn: ({ sourcePath, targetPath }) => OrchestratorApi.previewKnowledgeMerge(sourcePath, targetPath),
+  })
+}
+
+export function useApplyKnowledgeMerge() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sourcePath, targetPath, preview, approvedBy }: { sourcePath: string; targetPath: string; preview: KnowledgeMergePreview; approvedBy?: string }) =>
+      OrchestratorApi.applyKnowledgeMerge(sourcePath, targetPath, preview, approvedBy),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeMaintenance })
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHealth })
+    },
   })
 }
 
