@@ -28,6 +28,7 @@ export const queryKeys = {
   runEvidence: (id: string) => ["runs", id, "evidence"] as const,
   runVisualEvidence: (id: string) => ["runs", id, "visual-evidence"] as const,
   runVisualRevisions: (id: string) => ["runs", id, "visual-revisions"] as const,
+  runVisualCertification: (id: string) => ["runs", id, "visual-certification"] as const,
   runDiff: (id: string) => ["runs", id, "diff"] as const,
   runLogs: (id: string) => ["runs", id, "logs"] as const,
   devServer: (id: string) => ["runs", id, "devServer"] as const,
@@ -114,6 +115,15 @@ export function useRunVisualRevisions(runId: string | null) {
     enabled: !!runId,
     refetchInterval: runId ? 3_000 : false,
     staleTime: 1_000,
+  })
+}
+
+export function useRunVisualCertification(runId: string | null) {
+  return useQuery<import("@/services/orchestrator").VisualQACertification | null>({
+    queryKey: queryKeys.runVisualCertification(runId!),
+    queryFn: () => OrchestratorApi.getRunVisualCertification(runId!),
+    enabled: !!runId,
+    staleTime: 5_000,
   })
 }
 

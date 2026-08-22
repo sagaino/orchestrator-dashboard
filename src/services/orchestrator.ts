@@ -353,6 +353,21 @@ export interface VisualRevisionRecord {
   updatedAt: string
 }
 
+export interface VisualQACertification {
+  schemaVersion: number
+  mode: "visual-qa-certification"
+  certificationId: string
+  runId: string
+  createdAt: string
+  status: "CERTIFIED" | "HUMAN_GATE_REQUIRED" | "BLOCKED" | string
+  blockers: string[]
+  humanGate: { required: boolean; confirmed: boolean; confirmedBy: string | null; confirmedAt: string | null }
+  scope: { projectId: string | null; taskId: string | null }
+  captureIds: { baseline: string; postChange: string }
+  revisionIteration: number
+  checks: Record<string, { status: string; [key: string]: unknown }>
+}
+
 export interface RunHistoryEntry {
   event: string
   state: string
@@ -863,6 +878,11 @@ export const OrchestratorApi = {
 
   async getRunVisualRevisions(runId: string) {
     const res = await axios.get<{ success: boolean; data: VisualRevisionRecord[] }>(`/api/runs/${runId}/visual-revisions`)
+    return res.data.data
+  },
+
+  async getRunVisualCertification(runId: string) {
+    const res = await axios.get<{ success: boolean; data: VisualQACertification | null }>(`/api/runs/${runId}/visual-certification`)
     return res.data.data
   },
 

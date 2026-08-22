@@ -6,6 +6,7 @@ import type {
   RunEvidence,
   VisualEvidence,
   VisualRevisionRecord,
+  VisualQACertification,
   InlineDiffComment,
 } from "@/services/orchestrator"
 
@@ -68,6 +69,7 @@ export interface RunOverviewTabProps {
   evidence?: RunEvidence
   visualEvidence?: VisualEvidence[]
   visualRevisions?: VisualRevisionRecord[]
+  visualCertification?: VisualQACertification | null
   evidenceLoading?: boolean
   evidenceError?: boolean
 }
