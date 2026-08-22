@@ -307,6 +307,19 @@ export interface RunEvidence {
 
 export type VisualEvidenceStatus = "PASS" | "FAIL" | "UNKNOWN"
 
+export interface VisualComparisonDiagnostics {
+  reason?: string
+  issues?: string[]
+  pixelThreshold?: number
+  maxMismatchRatio?: number
+  mismatchRatio?: number
+  dimensions?: { actual: { width: number; height: number }; reference: { width: number; height: number } }
+  layout?: { horizontalOverflow?: boolean; scrollWidth?: number; clientWidth?: number; clippedElements?: Array<Record<string, unknown>> } | null
+  route?: { status?: string; httpStatus?: number | null; title?: string | null } | null
+  viewport?: { width?: number; height?: number } | null
+  artifacts?: { sideBySidePath?: string; overlayPath?: string } | null
+}
+
 export interface VisualEvidence {
   schemaVersion: number
   mode: "visual-evidence"
@@ -315,8 +328,8 @@ export interface VisualEvidence {
   route: string
   viewport: { name: string; width: number; height: number; deviceScaleFactor?: number }
   reference: { kind: string; path: string | null; checksum: string | null }
-  actual: { status: "CAPTURED" | "UNAVAILABLE"; path: string | null; capturedAt: string | null }
-  comparison: { status: VisualEvidenceStatus; method: string; score: number | null; mismatchPixels: number | null; notes: string[] }
+  actual: { status: "CAPTURED" | "UNAVAILABLE"; path: string | null; capturedAt: string | null; diagnostics?: Record<string, unknown> | null }
+  comparison: { status: VisualEvidenceStatus; method: string; score: number | null; mismatchPixels: number | null; notes: string[]; diagnostics?: VisualComparisonDiagnostics | null }
   accessibility: { status: VisualEvidenceStatus; findings: Array<{ id?: string; severity?: string; message: string; selector?: string | null }> }
   revision: { number: number; requestedBy: string | null; reason: string | null; createdAt: string }
   artifact: { path: string | null; exists: boolean; sha256: string | null; bytes: number | null; contentType: string }
