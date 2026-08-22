@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import {
   Play,
   Square,
@@ -75,7 +75,7 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
     if (!activeMockup && viewMode === "SPLIT") {
       setViewMode("WEB_ONLY")
     }
-  }, [activeMockup])
+  }, [activeMockup, viewMode])
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isPinModeActive || pendingPin) return
@@ -142,20 +142,20 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
     setPinComment("")
   }
 
-  const checkStatus = async () => {
+  const checkStatus = useCallback(async () => {
     try {
       const data = await OrchestratorApi.getDevServerStatus(runId)
       setStatus(data)
     } catch (err) {
       console.error(err)
     }
-  }
+  }, [runId])
 
   useEffect(() => {
     checkStatus()
     const interval = setInterval(checkStatus, 3000)
     return () => clearInterval(interval)
-  }, [runId])
+  }, [runId, checkStatus])
 
   const handleStart = async () => {
     try {

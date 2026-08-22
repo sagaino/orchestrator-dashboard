@@ -15,7 +15,7 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { useDaemonStatus, useNotifications, useMarkNotificationsRead } from "@/hooks/use-orchestrator"
-import { useSSEEvents } from "@/providers/EventsProvider"
+import { useSSEEvents } from "@/providers/EventsContext"
 import { AddProjectModal } from "@/components/project/AddProjectModal"
 import { FloatingHarvestProgress } from "@/components/knowledge/FloatingHarvestProgress"
 import {

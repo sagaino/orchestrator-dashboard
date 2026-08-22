@@ -1,18 +1,8 @@
-import React, { createContext, useContext, useEffect, useRef, useCallback } from "react"
+import React, { useEffect, useRef, useCallback } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { subscribeToEvents, type OrchestratorEvent } from "@/services/events"
 import { queryKeys } from "@/hooks/use-orchestrator"
-
-interface EventsContextValue {
-  /** Last received SSE event (for display in header) */
-  lastEvent: OrchestratorEvent | null
-}
-
-const EventsContext = createContext<EventsContextValue>({ lastEvent: null })
-
-export function useSSEEvents() {
-  return useContext(EventsContext)
-}
+import { EventsContext } from "./EventsContext"
 
 /**
  * Single SSE connection provider that invalidates TanStack Query caches

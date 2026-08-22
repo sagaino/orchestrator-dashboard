@@ -12,7 +12,7 @@ const DEFAULT_KNOWLEDGE_SECTIONS: KnowledgeSectionItem[] = [
   { title: "Debugging", path: "01-Knowledge/debugging/", desc: "Catatan investigasi root-cause dan cara perbaikan bug." },
 ]
 
-import { getSuggestedTargetPath } from "../components/CandidatePreviewModal"
+import { getSuggestedTargetPath } from "../utils/knowledge-path"
 
 export const useKnowledge = (): UseKnowledgeReturn => {
   const { data: candidates = [], isLoading: candidatesLoading, refetch: refetchCandidates } = useKnowledgeCandidates()
@@ -138,4 +138,3 @@ export const useKnowledge = (): UseKnowledgeReturn => {
     knowledgeSections: DEFAULT_KNOWLEDGE_SECTIONS,
   }
 }
-
