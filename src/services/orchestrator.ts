@@ -85,8 +85,24 @@ export interface OperationsReadiness {
   status: "READY" | "DEGRADED" | "BLOCKED"
   admission: { allowed: boolean; blockers: Array<{ id: string; message: string; action: string }> }
   checks: OperationsCheck[]
-  alerts: Array<{ alertId: string; severity: string; dedupeKey: string; acknowledgement: string; runbook: string; message: string }>
+  alerts: Array<OperationsAlert>
   signals: Record<string, unknown>
+}
+
+export interface OperationsAlert {
+  alertId: string
+  severity: string
+  dedupeKey: string
+  acknowledgement: string
+  runbook: string
+  runbookSteps?: string[]
+  message: string
+  owner?: string | null
+  ownerRole?: string | null
+  acknowledgementState?: "ACKNOWLEDGED" | "SNOOZED" | "UNACKNOWLEDGED" | string
+  snoozeUntil?: string | null
+  resolution?: { resolvedBy?: string; resolvedAt?: string; evidence?: Record<string, unknown>; note?: string } | null
+  resolutionEvidenceRequired?: boolean
 }
 
 export interface ReleaseOperations {
@@ -734,6 +750,16 @@ export const OrchestratorApi = {
   // Operations Center & resource governance
   async getOperationsReadiness() {
     const res = await axios.get<{ success: boolean; data: OperationsReadiness }>("/api/operations/readiness")
+    return res.data.data
+  },
+
+  async acknowledgeOperationsAlert(alertId: string, owner: string, note?: string, snoozeMinutes?: number) {
+    const res = await axios.post<{ success: boolean; data: any }>("/api/operations/alerts/acknowledge", { alertId, acknowledgedBy: owner, owner, note, snoozeMinutes })
+    return res.data.data
+  },
+
+  async resolveOperationsAlert(alertId: string, resolvedBy: string, evidence: string, note?: string) {
+    const res = await axios.post<{ success: boolean; data: any }>("/api/operations/alerts/resolve", { alertId, resolvedBy, evidence: { summary: evidence }, note })
     return res.data.data
   },
 

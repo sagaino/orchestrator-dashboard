@@ -250,6 +250,24 @@ export function useOperationsReadiness() {
   })
 }
 
+export function useAcknowledgeOperationsAlert() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ alertId, owner, note, snoozeMinutes }: { alertId: string; owner: string; note?: string; snoozeMinutes?: number }) =>
+      OrchestratorApi.acknowledgeOperationsAlert(alertId, owner, note, snoozeMinutes),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.operations }),
+  })
+}
+
+export function useResolveOperationsAlert() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ alertId, resolvedBy, evidence, note }: { alertId: string; resolvedBy: string; evidence: string; note?: string }) =>
+      OrchestratorApi.resolveOperationsAlert(alertId, resolvedBy, evidence, note),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.operations }),
+  })
+}
+
 export function useReleaseOperations() {
   return useQuery<import("@/services/orchestrator").ReleaseOperations>({
     queryKey: queryKeys.releaseOperations,
