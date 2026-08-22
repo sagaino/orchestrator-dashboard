@@ -143,6 +143,41 @@ export interface RetentionPlan {
   moved?: Array<{ category: string; name: string; bytes: number }>
 }
 
+export interface BackupSchedulePreview {
+  action: string
+  generatedAt: string
+  label: string
+  intervalHours: number
+  backupRoot: string
+  independentTarget: boolean
+  launchd: { plist: string; installCommand: string; activated: boolean }
+  operations: string[]
+  forbiddenAutomaticActions: string[]
+}
+
+export interface BackupRotationPreview {
+  action: string
+  generatedAt: string
+  backupRoot: string
+  olderThanDays: number
+  keepLatest: number
+  backups: Array<{ backupId: string; backupPath: string; status: string; createdAt: string | null; modifiedAt: string; verified: boolean }>
+  candidates: Array<{ backupId: string; backupPath: string; status: string; createdAt: string | null; modifiedAt: string; verified: boolean }>
+  summary: { backupCount: number; candidateCount: number }
+  guardrail: string
+}
+
+export interface BackupRecoveryStatus {
+  schemaVersion: number
+  action: string
+  generatedAt: string
+  target: { configuredTarget: string | null; exists: boolean; independentTarget: boolean | null; registeredBackup: Record<string, unknown> | null; guardrail: string }
+  schedule: (BackupSchedulePreview & { action: string; installedAt?: string; launchctlActivated?: boolean }) | null
+  drill: { status: "MISSING" | "FAILED" | "OVERDUE" | "CURRENT"; lastDrill: { performedBy: string; performedAt: string; result: string; evidence: unknown } | null; dueAt: string | null; overdueByMs: number | null; intervalDays: number }
+  registeredBackup: Record<string, unknown> | null
+  guardrails: { automaticRestore: boolean; automaticPromotion: boolean; permanentDelete: boolean }
+}
+
 export interface ProjectInfo {
   id: string
   projectPage: string
@@ -750,6 +785,31 @@ export const OrchestratorApi = {
   // Operations Center & resource governance
   async getOperationsReadiness() {
     const res = await axios.get<{ success: boolean; data: OperationsReadiness }>("/api/operations/readiness")
+    return res.data.data
+  },
+
+  async getBackupRecoveryStatus() {
+    const res = await axios.get<{ success: boolean; data: BackupRecoveryStatus }>("/api/operations/backups/status")
+    return res.data.data
+  },
+
+  async previewBackupSchedule(backupRoot: string, intervalHours = 24) {
+    const res = await axios.post<{ success: boolean; data: BackupSchedulePreview }>("/api/operations/backups/schedule/preview", { backupRoot, intervalHours })
+    return res.data.data
+  },
+
+  async previewBackupRotation(backupRoot: string, olderThanDays = 30, keepLatest = 2) {
+    const res = await axios.post<{ success: boolean; data: BackupRotationPreview }>("/api/operations/backups/rotation/preview", { backupRoot, olderThanDays, keepLatest })
+    return res.data.data
+  },
+
+  async verifyRegisteredBackup() {
+    const res = await axios.post<{ success: boolean; data: { action: string; status: Record<string, unknown> } }>("/api/operations/backups/verify", {})
+    return res.data.data
+  },
+
+  async recordRecoveryDrill(evidence: string, result: "PASS" | "FAIL" = "PASS") {
+    const res = await axios.post<{ success: boolean; data: Record<string, unknown> }>("/api/operations/recovery-drill/record", { evidence, result })
     return res.data.data
   },
 
