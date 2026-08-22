@@ -1,15 +1,20 @@
+/* eslint-disable react-refresh/only-export-components -- route modules intentionally export the router. */
 import { createBrowserRouter } from "react-router-dom"
+import { lazy, Suspense, type ComponentType } from "react"
 import { DashboardLayout } from "@/components/layout/DashboardLayout"
-import { OverviewPage } from "@/pages/Overview"
-import { TasksPage } from "@/pages/Tasks"
-import { RunsPage } from "@/pages/Runs"
-import { KnowledgePage } from "@/pages/Knowledge"
-import { TelemetryPage } from "@/pages/Telemetry"
-import { OperationsPage } from "@/pages/Operations"
 import NotFound from "@/pages/NotFound"
 import { ROUTES } from "@/lib/constant/routes"
 import PrivateRoute from "./PrivateRoute"
 import ErrorBoundary from "@/components/ErrorBoundary"
+
+const OverviewPage = lazy(() => import("@/pages/Overview").then((module) => ({ default: module.OverviewPage })))
+const TasksPage = lazy(() => import("@/pages/Tasks").then((module) => ({ default: module.TasksPage })))
+const RunsPage = lazy(() => import("@/pages/Runs").then((module) => ({ default: module.RunsPage })))
+const KnowledgePage = lazy(() => import("@/pages/Knowledge").then((module) => ({ default: module.KnowledgePage })))
+const TelemetryPage = lazy(() => import("@/pages/Telemetry").then((module) => ({ default: module.TelemetryPage })))
+const OperationsPage = lazy(() => import("@/pages/Operations").then((module) => ({ default: module.OperationsPage })))
+const RouteFallback = () => <div className="p-6 text-slate-400">Loading…</div>
+const routeElement = (Page: ComponentType) => <Suspense fallback={<RouteFallback />}><Page /></Suspense>
 
 export const router = createBrowserRouter([
   {
@@ -23,27 +28,27 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <OverviewPage />,
+        element: routeElement(OverviewPage),
       },
       {
         path: ROUTES.TASK,
-        element: <TasksPage />,
+        element: routeElement(TasksPage),
       },
       {
         path: ROUTES.RUNS,
-        element: <RunsPage />,
+        element: routeElement(RunsPage),
       },
       {
         path: ROUTES.KNOWLEDGE,
-        element: <KnowledgePage />,
+        element: routeElement(KnowledgePage),
       },
       {
         path: ROUTES.TELEMETRY,
-        element: <TelemetryPage />,
+        element: routeElement(TelemetryPage),
       },
       {
         path: ROUTES.OPERATIONS,
-        element: <OperationsPage />,
+        element: routeElement(OperationsPage),
       },
     ],
   },

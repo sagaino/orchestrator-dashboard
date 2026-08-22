@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useMemo } from "react"
 import { Terminal, RefreshCw, Copy, Check, ArrowDown, CheckCircle2, AlertCircle } from "lucide-react"
 import { useRunLogs } from "@/hooks/use-orchestrator"
 import type { RunManifest } from "@/services/orchestrator"
@@ -16,7 +16,7 @@ export const LiveTerminalLogsTab: React.FC<LiveTerminalLogsTabProps> = ({ select
   const [autoScroll, setAutoScroll] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const lines = logData?.lines || []
+  const lines = useMemo(() => logData?.lines || [], [logData?.lines])
 
   useEffect(() => {
     if (autoScroll && scrollRef.current) {

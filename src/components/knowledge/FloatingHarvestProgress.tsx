@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { useSSEEvents } from "@/providers/EventsProvider"
+import { useSSEEvents } from "@/providers/EventsContext"
 import { Sparkles, Loader2, CheckCircle2, AlertCircle, X, ChevronDown, ChevronUp, Folder } from "lucide-react"
 
 interface HarvestProgressState {
