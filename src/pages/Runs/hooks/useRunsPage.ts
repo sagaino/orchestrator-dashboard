@@ -266,6 +266,7 @@ export const useRunsPage = (): UseRunsPageReturn => {
         runId: selectedRun.runId,
         reason: compiledReason,
         inlineComments: inlineComments.map(({ file, line, comment }) => ({ file, line, comment })),
+        visualAnnotations,
       })
       toast.add({
         title: "Revisi Terkirim",
@@ -370,4 +371,3 @@ export const useRunsPage = (): UseRunsPageReturn => {
     handleRetry,
   }
 }
-

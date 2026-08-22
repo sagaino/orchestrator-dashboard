@@ -27,6 +27,7 @@ export const queryKeys = {
   runDetail: (id: string) => ["runs", id] as const,
   runEvidence: (id: string) => ["runs", id, "evidence"] as const,
   runVisualEvidence: (id: string) => ["runs", id, "visual-evidence"] as const,
+  runVisualRevisions: (id: string) => ["runs", id, "visual-revisions"] as const,
   runDiff: (id: string) => ["runs", id, "diff"] as const,
   runLogs: (id: string) => ["runs", id, "logs"] as const,
   devServer: (id: string) => ["runs", id, "devServer"] as const,
@@ -103,6 +104,16 @@ export function useRunVisualEvidence(runId: string | null) {
     queryFn: () => OrchestratorApi.getRunVisualEvidence(runId!),
     enabled: !!runId,
     staleTime: 5_000,
+  })
+}
+
+export function useRunVisualRevisions(runId: string | null) {
+  return useQuery<import("@/services/orchestrator").VisualRevisionRecord[]>({
+    queryKey: queryKeys.runVisualRevisions(runId!),
+    queryFn: () => OrchestratorApi.getRunVisualRevisions(runId!),
+    enabled: !!runId,
+    refetchInterval: runId ? 3_000 : false,
+    staleTime: 1_000,
   })
 }
 
@@ -342,17 +353,20 @@ export function useRequestChanges() {
       runId,
       reason,
       inlineComments,
+      visualAnnotations,
       requestedBy,
     }: {
       runId: string
       reason: string
       inlineComments?: InlineDiffComment[]
+      visualAnnotations?: Array<{ id?: string; x: number; y: number; width?: number; height?: number; comment: string; createdAt?: string }>
       requestedBy?: string
     }) =>
-      OrchestratorApi.requestChanges(runId, reason, inlineComments, requestedBy),
-    onSuccess: () => {
+      OrchestratorApi.requestChanges(runId, reason, inlineComments, requestedBy, visualAnnotations),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.runs })
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+      queryClient.invalidateQueries({ queryKey: queryKeys.runVisualRevisions(variables.runId) })
     },
   })
 }
