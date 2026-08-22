@@ -124,6 +124,8 @@ export interface ReleaseOperations {
     drained: boolean
     blockers: Array<{ code: string; reason: string; [key: string]: unknown }>
     counts: { jobs: number; runs: number; invocations: number }
+    pending?: { jobs: number; runs: number; invocations: number; total: number }
+    activation?: { state: string; daemonStopRequired: boolean; daemonStopOnly: boolean }
     daemon: { running: boolean; pid: number | null }
   }
   compatibility: { compatible: boolean; outcome: string; errors: string[]; contractVersion: string | null }
@@ -660,6 +662,35 @@ export interface KnowledgeMergePreview {
   confirmation: { required: boolean; phrase: string; expectedSourceChecksum: string; expectedTargetChecksum: string }
 }
 
+export interface KnowledgeProvenanceMigrationPreview {
+  schemaVersion: number
+  action: string
+  status: "PREVIEW" | string
+  planId: string
+  createdAt: string
+  scope: string
+  reviewDays: number
+  summary: { candidateCount: number; changedFieldCount: number; inferredFieldCount: number }
+  files: Array<{ path: string; title: string; beforeChecksum: string; afterChecksum: string; changedFields: string[]; inferredFields: string[] }>
+  auditPath: string
+  confirmation: { required: boolean; phrase: string; expectedStatus: string }
+  guardrail: string
+}
+
+export interface KnowledgeProvenanceMigrationResult {
+  schemaVersion: number
+  action: string
+  status: "APPLIED" | "ROLLED_BACK" | string
+  planId: string
+  appliedAt?: string
+  rolledBackAt?: string
+  approvedBy?: string
+  revertedBy?: string
+  summary: { candidateCount: number; changedFieldCount: number; inferredFieldCount: number }
+  auditPath: string
+  rollback?: { available: boolean; command: string }
+}
+
 export interface TelemetryReport {
   schemaVersion: number
   mode: string
@@ -1136,6 +1167,21 @@ export const OrchestratorApi = {
 
   async getKnowledgeMaintenance() {
     const res = await axios.get<{ success: boolean; data: KnowledgeMaintenance }>("/api/knowledge/maintenance")
+    return res.data.data
+  },
+
+  async previewKnowledgeProvenanceMigration(reviewDays = 180) {
+    const res = await axios.post<{ success: boolean; data: KnowledgeProvenanceMigrationPreview }>("/api/knowledge/provenance/migration/preview", { reviewDays })
+    return res.data.data
+  },
+
+  async applyKnowledgeProvenanceMigration(planId: string, approvedBy = "user") {
+    const res = await axios.post<{ success: boolean; data: KnowledgeProvenanceMigrationResult }>("/api/knowledge/provenance/migration/apply", { planId, approvedBy, confirmed: true })
+    return res.data.data
+  },
+
+  async rollbackKnowledgeProvenanceMigration(planId: string, revertedBy = "user") {
+    const res = await axios.post<{ success: boolean; data: KnowledgeProvenanceMigrationResult }>("/api/knowledge/provenance/migration/rollback", { planId, revertedBy, confirmed: true })
     return res.data.data
   },
 

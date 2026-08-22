@@ -18,6 +18,8 @@ import type {
   InlineDiffComment,
   KnowledgeMaintenance,
   KnowledgeMergePreview,
+  KnowledgeProvenanceMigrationPreview,
+  KnowledgeProvenanceMigrationResult,
   BackupRecoveryStatus,
   BackupSchedulePreview,
   BackupRotationPreview,
@@ -200,6 +202,34 @@ export function useKnowledgeMaintenance() {
     queryKey: queryKeys.knowledgeMaintenance,
     queryFn: () => OrchestratorApi.getKnowledgeMaintenance(),
     staleTime: 30_000,
+  })
+}
+
+export function usePreviewKnowledgeProvenanceMigration() {
+  return useMutation<KnowledgeProvenanceMigrationPreview, Error, { reviewDays?: number }>({
+    mutationFn: ({ reviewDays } = {}) => OrchestratorApi.previewKnowledgeProvenanceMigration(reviewDays),
+  })
+}
+
+export function useApplyKnowledgeProvenanceMigration() {
+  const queryClient = useQueryClient()
+  return useMutation<KnowledgeProvenanceMigrationResult, Error, { planId: string; approvedBy?: string }>({
+    mutationFn: ({ planId, approvedBy }) => OrchestratorApi.applyKnowledgeProvenanceMigration(planId, approvedBy),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHealth })
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeMaintenance })
+    },
+  })
+}
+
+export function useRollbackKnowledgeProvenanceMigration() {
+  const queryClient = useQueryClient()
+  return useMutation<KnowledgeProvenanceMigrationResult, Error, { planId: string; revertedBy?: string }>({
+    mutationFn: ({ planId, revertedBy }) => OrchestratorApi.rollbackKnowledgeProvenanceMigration(planId, revertedBy),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeHealth })
+      queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeMaintenance })
+    },
   })
 }
 
