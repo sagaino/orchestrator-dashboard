@@ -66,7 +66,7 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
           </div>
 
           {/* Optional Auto Git Commit Controls */}
-          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5">
+          <div className="w-full p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5">
               <label className="flex items-center gap-2 text-xs font-semibold text-slate-200 cursor-pointer select-none">
                 <input
                   type="checkbox"
