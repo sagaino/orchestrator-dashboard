@@ -57,6 +57,7 @@ export const DashboardLayout: React.FC = () => {
     { label: "Runs & Review", to: "/runs", icon: History },
     { label: "Knowledge Center", to: "/knowledge", icon: BookOpen },
     { label: "Telemetry", to: "/telemetry", icon: BarChart3 },
+    { label: "Operations", to: "/operations", icon: ShieldCheck },
   ]
 
   const notificationList: NotificationItem[] = Array.isArray(notificationsData)

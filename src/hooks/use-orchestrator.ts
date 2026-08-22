@@ -36,6 +36,8 @@ export const queryKeys = {
   notifications: ["notifications"] as const,
   telemetry: (projectId?: string) => ["telemetry", projectId ?? "all"] as const,
   rtk: ["telemetry", "rtk"] as const,
+  operations: ["operations", "readiness"] as const,
+  retentionTrash: ["operations", "retention", "trash"] as const,
 }
 
 // --- Query Hooks ---
@@ -176,6 +178,38 @@ export function useRtkAnalytics() {
     queryFn: () => OrchestratorApi.getRtkTelemetry(),
     staleTime: 30_000,
   })
+}
+
+export function useOperationsReadiness() {
+  return useQuery<import("@/services/orchestrator").OperationsReadiness>({
+    queryKey: queryKeys.operations,
+    queryFn: () => OrchestratorApi.getOperationsReadiness(),
+    refetchInterval: 15_000,
+    staleTime: 5_000,
+  })
+}
+
+export function useRetentionTrash() {
+  return useQuery<import("@/services/orchestrator").RetentionPlan[]>({
+    queryKey: queryKeys.retentionTrash,
+    queryFn: () => OrchestratorApi.getRetentionTrash(),
+    staleTime: 5_000,
+  })
+}
+
+export function usePreviewRetention() {
+  const client = useQueryClient()
+  return useMutation({ mutationFn: (days: number) => OrchestratorApi.previewRetention(days), onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.operations }) })
+}
+
+export function usePurgeRetention() {
+  const client = useQueryClient()
+  return useMutation({ mutationFn: (planId: string) => OrchestratorApi.purgeRetention(planId), onSuccess: () => { client.invalidateQueries({ queryKey: queryKeys.operations }); client.invalidateQueries({ queryKey: queryKeys.retentionTrash }) } })
+}
+
+export function useRestoreRetention() {
+  const client = useQueryClient()
+  return useMutation({ mutationFn: (trashId: string) => OrchestratorApi.restoreRetention(trashId), onSuccess: () => { client.invalidateQueries({ queryKey: queryKeys.operations }); client.invalidateQueries({ queryKey: queryKeys.retentionTrash }) } })
 }
 
 // --- Mutation Hooks ---

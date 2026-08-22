@@ -5,6 +5,7 @@ import { TasksPage } from "@/pages/Tasks"
 import { RunsPage } from "@/pages/Runs"
 import { KnowledgePage } from "@/pages/Knowledge"
 import { TelemetryPage } from "@/pages/Telemetry"
+import { OperationsPage } from "@/pages/Operations"
 import NotFound from "@/pages/NotFound"
 import { ROUTES } from "@/lib/constant/routes"
 import PrivateRoute from "./PrivateRoute"
@@ -39,6 +40,10 @@ export const router = createBrowserRouter([
       {
         path: ROUTES.TELEMETRY,
         element: <TelemetryPage />,
+      },
+      {
+        path: ROUTES.OPERATIONS,
+        element: <OperationsPage />,
       },
     ],
   },
