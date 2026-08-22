@@ -12,6 +12,7 @@ import {
   KnowledgeIngestModal,
   HarvestRunsOverview,
   KnowledgeMaintenancePanel,
+  KnowledgeProvenanceMigrationPanel,
 } from "./components"
 
 export const KnowledgePage: React.FC = () => {
@@ -67,6 +68,7 @@ export const KnowledgePage: React.FC = () => {
       <VaultHealthCard health={health} onRefresh={refetchHealth} />
 
       <KnowledgeMaintenancePanel />
+      <KnowledgeProvenanceMigrationPanel />
 
       {/* Harvested Repositories & Discovered Patterns Overview */}
       <HarvestRunsOverview harvests={harvests} isLoading={harvestsLoading} />

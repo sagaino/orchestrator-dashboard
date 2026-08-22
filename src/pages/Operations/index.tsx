@@ -58,14 +58,25 @@ export const OperationsPage: React.FC = () => {
         {release && <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${release.activation.eligible ? "border-amber-400/40 text-amber-200" : "border-rose-400/40 text-rose-200"}`}>{release.activation.state}</span>}
       </div>
       {releaseLoading ? <div className="mt-5 text-sm text-slate-400">Memuat release evidence…</div> : release && <>
+        {(() => {
+          const pendingTotal = release.queueDrain.pending?.total ?? 0
+          const stopDaemonOnly = release.queueDrain.activation?.daemonStopOnly === true
+          const queueMetric = release.queueDrain.drained
+            ? { value: "DRAINED", detail: "Tidak ada pekerjaan aktif." }
+            : stopDaemonOnly
+              ? { value: "STOP REQUIRED", detail: "Ledger kosong; daemon perlu dihentikan supervisor eksternal." }
+              : pendingTotal > 0
+                ? { value: "PENDING WORK", detail: `${pendingTotal} pekerjaan aktif/uncertain.` }
+                : { value: "BLOCKED", detail: `${release.queueDrain.blockers.length} blocker evidence.` }
+          return <>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <ReleaseMetric label="Current runtime" value={release.current.runtimeVersion} detail="stable" />
           <ReleaseMetric label="Candidate" value={release.candidate.runtimeVersion || "Tidak tersedia"} detail={release.candidate.releaseId || release.candidate.status} />
           <ReleaseMetric label="Compatibility" value={release.compatibility.outcome} detail={release.compatibility.errors.length ? `${release.compatibility.errors.length} error` : "contract valid"} tone={release.compatibility.compatible ? "good" : "bad"} />
-          <ReleaseMetric label="Queue drain" value={release.queueDrain.drained ? "DRAINED" : "BLOCKED"} detail={`${release.queueDrain.blockers.length} blocker`} tone={release.queueDrain.drained ? "good" : "bad"} />
+          <ReleaseMetric label="Queue drain" value={queueMetric.value} detail={queueMetric.detail} tone={release.queueDrain.drained ? "good" : "bad"} />
         </div>
         <div className="mt-4 grid gap-3 lg:grid-cols-3">
-          <ReleaseEvidenceCard title="Backup" status={release.backup.status} body={release.backup.backupId || "Belum ada backup runtime"} detail={release.backup.verifiedAt ? `Verified ${new Date(release.backup.verifiedAt).toLocaleString("id-ID")}` : "Rollback belum siap"} />
+          <ReleaseEvidenceCard title="Backup" status={release.backup.status} body={release.backup.backupId || "Belum ada backup runtime"} detail={release.backup.backedUpAt ? `Backed up ${new Date(release.backup.backedUpAt).toLocaleString("id-ID")}${release.backup.verifiedAt ? ` · verified ${new Date(release.backup.verifiedAt).toLocaleString("id-ID")}` : ""}` : "Rollback belum siap"} />
           <ReleaseEvidenceCard title="Health checks" status={release.health.status} body={release.health.daemon.healthy ? "Daemon healthy" : "Daemon belum healthy"} detail={release.health.daemon.heartbeatAgeMs === null ? "Heartbeat tidak tersedia" : `Heartbeat ${Math.round(release.health.daemon.heartbeatAgeMs / 1000)}s lalu`} />
           <ReleaseEvidenceCard title="Rollback evidence" status={release.rollback.evidenceStatus} body={release.rollback.backupId || "Missing"} detail={release.rollback.message} />
         </div>
@@ -75,6 +86,8 @@ export const OperationsPage: React.FC = () => {
           <Button className="mt-3" disabled={!release.activation.eligible || !confirmed} onClick={() => setActivationNotice("Konfirmasi UI siap diteruskan ke external supervisor; tidak ada aktivasi yang dijalankan dari dashboard.")}>Siapkan konfirmasi aktivasi</Button>
           {activationNotice && <p role="status" className="mt-3 text-sm text-emerald-300">{activationNotice}</p>}
         </div>
+          </>
+        })()}
       </>}
     </section>
     <section className="rounded-xl border border-slate-800 bg-slate-950/40 p-5"><h3 className="text-lg font-semibold text-white">Retention aman</h3><p className="mt-1 text-sm text-slate-400">Preview hanya memilih artefak lama. Purge memindahkan data ke trash yang dapat dipulihkan—tidak ada penghapusan otomatis.</p><div className="mt-4 flex flex-wrap items-center gap-3"><label className="text-sm text-slate-300">Usia minimum <input className="ml-2 w-20 rounded border border-slate-700 bg-slate-900 px-2 py-1" type="number" min="1" value={days} onChange={(event) => setDays(Number(event.target.value))} /> hari</label><Button onClick={() => preview.mutate(days)} disabled={preview.isPending}>{preview.isPending ? "Membuat preview…" : "Buat preview"}</Button></div>
