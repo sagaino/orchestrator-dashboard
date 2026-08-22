@@ -108,6 +108,7 @@ export async function installLifecycleFixtures(page: Page) {
     run("E2E-RESTART", "FAILED"),
   ]
   const jobs: Array<Record<string, unknown>> = []
+  let provenancePlanId: string | null = null
 
   await page.route("**/api/**", async (route) => {
     const request = route.request()
@@ -125,7 +126,7 @@ export async function installLifecycleFixtures(page: Page) {
       return json(route, { projects: [{ id: "e2e-project", repository: "/tmp/e2e-project", projectPage: "fixture.md", agent: "fixture", graphify: false, graphifyOutput: "", repositoryExists: true, projectPageExists: true, verificationDefaults: ["typecheck", "build"], graphOutputExists: false, valid: true, projectPagePath: "fixture.md" }] })
     }
     if (pathname === "/api/daemon/status") {
-      return json(route, { service: "fixture", running: true, healthy: true, pid: 1, startedAt: now, heartbeatAt: now, heartbeatAgeMs: 0, counters: { readyEvents: 0, manifestsCreated: 0, deduplicated: 0, jobsStarted: 0, jobsCompleted: 0, jobsFailed: 0, errors: 0 }, parallel: { strategy: "fixture", maxWorkers: 2, activeWorkers: 0, availableWorkerSlots: 2, activeProjects: [], reservedProjects: [], eligibleQueuedJobCount: jobs.length, blockedQueuedJobCount: 0, blockedQueuedJobs: [] }, durability: { strategy: "fixture", sourceOfTruth: "fixture", activeLeaseCount: 0, invocationCount: 0, invocationCounts: {}, guarantees: { atomicJobAdmission: true, projectExclusiveClaim: true, manifestRevisionGuard: true, stableInvocationIdentity: true, uncertainInvocationNeverAutoReplayed: true } }, notifications: { total: 0, unreadCount: 0, latest: [] }, queue: { queuedJobCount: jobs.length, runningJobCount: 0, reviewJobCount: 0, latestJobs: jobs } })
+      return json(route, { service: "fixture", running: true, healthy: true, pid: 1, startedAt: now, heartbeatAt: now, heartbeatAgeMs: 0, restartReconciliation: { status: "COMPLETE", startedAt: now, completedAt: now, runs: 0, jobs: 0, error: null }, counters: { readyEvents: 0, manifestsCreated: 0, deduplicated: 0, jobsStarted: 0, jobsCompleted: 0, jobsFailed: 0, errors: 0 }, parallel: { strategy: "fixture", maxWorkers: 2, activeWorkers: 0, availableWorkerSlots: 2, activeProjects: [], reservedProjects: [], eligibleQueuedJobCount: jobs.length, blockedQueuedJobCount: 0, blockedQueuedJobs: [] }, durability: { strategy: "fixture", sourceOfTruth: "fixture", activeLeaseCount: 0, invocationCount: 0, invocationCounts: {}, guarantees: { atomicJobAdmission: true, projectExclusiveClaim: true, manifestRevisionGuard: true, stableInvocationIdentity: true, uncertainInvocationNeverAutoReplayed: true } }, notifications: { total: 0, unreadCount: 0, latest: [] }, queue: { queuedJobCount: jobs.length, runningJobCount: 0, reviewJobCount: 0, latestJobs: jobs } })
     }
     if (pathname === "/api/notifications") return json(route, [])
     if (pathname === "/api/projects-archive") return json(route, { archivedProjects: [] })
@@ -133,11 +134,11 @@ export async function installLifecycleFixtures(page: Page) {
     if (pathname === "/api/operations/readiness") return json(route, {
       schemaVersion: 1,
       checkedAt: now,
-      status: "READY",
+      status: "DEGRADED",
       admission: { allowed: true, blockers: [] },
-      checks: [{ id: "backup", status: "PASS", severity: "INFO", message: "Backup verified.", action: "Tidak ada tindakan.", runbook: "fixture" }],
-      alerts: [],
-      signals: {},
+      checks: [{ id: "backup", status: "PASS", severity: "INFO", message: "Backup verified.", action: "Tidak ada tindakan.", runbook: "fixture" }, { id: "backup-schedule", status: "WARN", severity: "WARNING", message: "Backup schedule belum dipasang; freshness masih bergantung pada backup manual.", action: "Review schedule artifact.", runbook: "fixture" }],
+      alerts: [{ alertId: "OPS_BACKUP_SCHEDULE", severity: "WARNING", dedupeKey: "backup-schedule:WARN", acknowledgement: "fixture", runbook: "fixture", runbookSteps: ["Review schedule artifact."], message: "Backup schedule belum dipasang; freshness masih bergantung pada backup manual.", ownerRole: "recovery-operator", acknowledgementState: "UNACKNOWLEDGED", resolutionEvidenceRequired: true }],
+      signals: { backupSchedule: { configured: false, launchctlActivated: false, intervalHours: null } },
     })
     if (pathname === "/api/operations/retention/trash") return json(route, [])
     if (pathname === "/api/operations/backups/status") return json(route, {
@@ -150,6 +151,24 @@ export async function installLifecycleFixtures(page: Page) {
       registeredBackup: { backupId: "backup-fixture", independentTarget: true },
       guardrails: { automaticRestore: false, automaticPromotion: false, permanentDelete: false },
     })
+    if (pathname === "/api/knowledge/health") return json(route, {
+      schemaVersion: 1, timestamp: now, healthy: true, errors: [], warnings: [], findings: [], summary: { pagesScanned: 3, errors: 0, warnings: 0, info: 0, safeFixesAvailable: 0 }, unindexedCount: 0, brokenLinksCount: 0, orphanCandidatesCount: 0,
+    })
+    if (pathname === "/api/knowledge/maintenance") return json(route, {
+      schemaVersion: 1, action: "KNOWLEDGE_MAINTENANCE_STATUS", generatedAt: now, duplicates: [], stale: [], summary: { duplicateCandidates: 0, staleReviewItems: 0, exactTitleDuplicates: 0, contradictionCandidates: 0 },
+    })
+    if (pathname === "/api/knowledge/candidates") return json(route, [])
+    if (pathname === "/api/knowledge/harvests") return json(route, [])
+    if (pathname === "/api/knowledge/provenance/migration/preview" && method === "POST") {
+      provenancePlanId = "provenance-fixture-plan"
+      return json(route, { schemaVersion: 1, action: "KNOWLEDGE_PROVENANCE_MIGRATION_PREVIEW", status: "PREVIEW", planId: provenancePlanId, createdAt: now, scope: "legacy pages", reviewDays: 180, summary: { candidateCount: 1, changedFieldCount: 2, inferredFieldCount: 1 }, files: [{ path: "01-Knowledge/fixture.md", title: "Fixture knowledge", beforeChecksum: "before", afterChecksum: "after", changedFields: ["source", "review"], inferredFields: ["owner"] }], auditPath: "runtime/knowledge/provenance-fixture-plan.json", confirmation: { required: true, phrase: "MIGRATE PROVENANCE", expectedStatus: "PREVIEW" }, guardrail: "Fixture preview only." })
+    }
+    if (pathname === "/api/knowledge/provenance/migration/apply" && method === "POST") {
+      return json(route, { schemaVersion: 1, action: "KNOWLEDGE_PROVENANCE_MIGRATION_APPLIED", status: "APPLIED", planId: provenancePlanId, appliedAt: now, approvedBy: "dashboard-user", summary: { candidateCount: 1, changedFieldCount: 2, inferredFieldCount: 1 }, auditPath: "runtime/knowledge/provenance-fixture-plan.json", rollback: { available: true, command: "rollback" } })
+    }
+    if (pathname === "/api/knowledge/provenance/migration/rollback" && method === "POST") {
+      return json(route, { schemaVersion: 1, action: "KNOWLEDGE_PROVENANCE_MIGRATION_ROLLED_BACK", status: "ROLLED_BACK", planId: provenancePlanId, rolledBackAt: now, revertedBy: "dashboard-user", summary: { candidateCount: 1, changedFieldCount: 2, inferredFieldCount: 1 }, auditPath: "runtime/knowledge/provenance-fixture-plan.json" })
+    }
     if (pathname === "/api/operations/release") return json(route, {
       schemaVersion: 1,
       checkedAt: now,

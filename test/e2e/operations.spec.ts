@@ -18,3 +18,14 @@ test("release operations keeps activation behind an explicit human gate", async 
   await expect(page.getByRole("status")).toContainText("tidak ada aktivasi yang dijalankan")
 })
 
+test("operations exposes backup freshness reminder and restart reconciliation", async ({ page }) => {
+  await installLifecycleFixtures(page)
+  await page.goto("/operations")
+
+  await expect(page.getByRole("heading", { name: "Restart reconciliation" })).toBeVisible()
+  await expect(page.getByText("COMPLETE", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("backup-schedule", { exact: true })).toBeVisible()
+  await expect(page.getByText("Backup schedule belum dipasang; freshness masih bergantung pada backup manual.").first()).toBeVisible()
+  await expect(page.getByText("DEGRADED", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("ARTIFACT ONLY", { exact: true })).toBeVisible()
+})

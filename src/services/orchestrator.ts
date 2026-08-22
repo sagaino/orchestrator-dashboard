@@ -8,6 +8,14 @@ export interface DaemonStatus {
   startedAt: string | null
   heartbeatAt: string | null
   heartbeatAgeMs: number | null
+  restartReconciliation?: {
+    status: "PENDING" | "COMPLETE" | "FAILED" | string
+    startedAt: string | null
+    completedAt: string | null
+    runs: number
+    jobs: number
+    error: string | null
+  } | null
   counters: {
     readyEvents: number
     manifestsCreated: number
