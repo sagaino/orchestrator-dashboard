@@ -89,6 +89,34 @@ export interface OperationsReadiness {
   signals: Record<string, unknown>
 }
 
+export interface ReleaseOperations {
+  schemaVersion: number
+  checkedAt: string
+  current: { runtimeVersion: string }
+  candidate: {
+    configured: boolean
+    available: boolean
+    status: string
+    releaseId: string | null
+    runtimeVersion: string | null
+    sourceCommit: string | null
+    builtAt: string | null
+    fileCount?: number
+    compatibility: { compatible: boolean; outcome: string; errors: string[] }
+  }
+  queueDrain: {
+    drained: boolean
+    blockers: Array<{ code: string; reason: string; [key: string]: unknown }>
+    counts: { jobs: number; runs: number; invocations: number }
+    daemon: { running: boolean; pid: number | null }
+  }
+  compatibility: { compatible: boolean; outcome: string; errors: string[]; contractVersion: string | null }
+  backup: { required: boolean; status: string; backupId: string | null; verifiedAt: string | null; backedUpAt: string | null; filesCount: number | null }
+  health: { status: string; daemon: { running: boolean; healthy: boolean; heartbeatAt: string | null; heartbeatAgeMs: number | null }; checks: Array<{ id: string; status: string; message: string }> }
+  rollback: { required: boolean; protocolVersion: number; evidenceStatus: string; backupId: string | null; message: string }
+  activation: { eligible: boolean; state: string; requiresHumanConfirmation: boolean; authority: string; selfAcceptAllowed: boolean; inProcessActivationAllowed: boolean; confirmation: { confirmed: boolean; approvedBy: string | null; approvedAt: string | null } }
+}
+
 export interface RetentionPlan {
   planId: string
   status: string
@@ -601,6 +629,11 @@ export const OrchestratorApi = {
   // Operations Center & resource governance
   async getOperationsReadiness() {
     const res = await axios.get<{ success: boolean; data: OperationsReadiness }>("/api/operations/readiness")
+    return res.data.data
+  },
+
+  async getReleaseOperations() {
+    const res = await axios.get<{ success: boolean; data: ReleaseOperations }>("/api/operations/release")
     return res.data.data
   },
 
