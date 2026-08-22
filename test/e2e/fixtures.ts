@@ -171,6 +171,8 @@ export async function installLifecycleFixtures(page: Page) {
     if (visualEvidenceMatch) return json(route, [])
     const visualRevisionsMatch = pathname.match(/^\/api\/runs\/([^/]+)\/visual-revisions$/)
     if (visualRevisionsMatch) return json(route, [])
+    const visualCertificationMatch = pathname.match(/^\/api\/runs\/([^/]+)\/visual-certification$/)
+    if (visualCertificationMatch) return json(route, null)
     const actionMatch = pathname.match(/^\/api\/runs\/([^/]+)\/(request-changes|reject|accept)$/)
     if (actionMatch && method === "POST") {
       const item = runs.find((candidate) => candidate.runId === actionMatch[1])

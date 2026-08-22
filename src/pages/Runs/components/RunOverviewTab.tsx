@@ -28,6 +28,7 @@ export const RunOverviewTab: React.FC<RunOverviewTabProps> = ({
   evidence,
   visualEvidence = [],
   visualRevisions = [],
+  visualCertification = null,
   evidenceLoading = false,
   evidenceError = false,
 }) => {
@@ -131,6 +132,12 @@ export const RunOverviewTab: React.FC<RunOverviewTabProps> = ({
           <div className="mt-2 grid gap-1 text-slate-400 md:grid-cols-3"><span>Before: <strong className="text-slate-200">{revision.beforeEvidenceIds.length}</strong></span><span>After: <strong className="text-slate-200">{revision.afterEvidenceIds.length}</strong></span><span>Visual annotations: <strong className="text-slate-200">{revision.visualAnnotations.length}</strong></span></div>
           <p className="mt-2 text-slate-300">{revision.reason || "Visual feedback tidak memiliki catatan teks tambahan."}</p>
         </div>)}
+      </div>}
+
+      {visualCertification && <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3" aria-label="Visual QA certification">
+        <div className="flex flex-wrap items-center justify-between gap-3"><span className="text-xs font-semibold uppercase tracking-wider text-emerald-200">Visual QA Certification</span><span className={`rounded border px-2 py-0.5 text-[10px] font-mono ${visualCertification.status === "CERTIFIED" ? "border-emerald-500/30 text-emerald-300" : visualCertification.status === "HUMAN_GATE_REQUIRED" ? "border-amber-500/30 text-amber-300" : "border-rose-500/30 text-rose-300"}`}>{visualCertification.status}</span></div>
+        <div className="grid gap-1 text-xs text-slate-400 md:grid-cols-3"><span>Baseline: <strong className="text-slate-200">{visualCertification.checks.baselineCapture?.status ?? "UNKNOWN"}</strong></span><span>Post-change: <strong className="text-slate-200">{visualCertification.checks.postChangeCapture?.status ?? "UNKNOWN"}</strong></span><span>Restart: <strong className="text-slate-200">{visualCertification.checks.restartReconstruction?.status ?? "UNKNOWN"}</strong></span></div>
+        {visualCertification.blockers.length > 0 && <p className="text-xs text-amber-200">Blocker: {visualCertification.blockers.join(", ")}</p>}
       </div>}
 
       {/* Scope Audit Card */}
