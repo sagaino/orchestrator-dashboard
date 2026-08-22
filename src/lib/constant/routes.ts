@@ -4,4 +4,5 @@ export const ROUTES = {
   RUNS: "runs",
   KNOWLEDGE: "knowledge",
   TELEMETRY: "telemetry",
+  OPERATIONS: "operations",
 }

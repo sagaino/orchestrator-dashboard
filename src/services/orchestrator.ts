@@ -69,6 +69,36 @@ export interface DaemonStatus {
   }
 }
 
+export interface OperationsCheck {
+  id: string
+  status: "PASS" | "WARN" | "FAIL"
+  severity: "INFO" | "WARNING" | "CRITICAL"
+  message: string
+  action: string
+  runbook: string
+  metrics?: Record<string, unknown>
+}
+
+export interface OperationsReadiness {
+  schemaVersion: number
+  checkedAt: string
+  status: "READY" | "DEGRADED" | "BLOCKED"
+  admission: { allowed: boolean; blockers: Array<{ id: string; message: string; action: string }> }
+  checks: OperationsCheck[]
+  alerts: Array<{ alertId: string; severity: string; dedupeKey: string; acknowledgement: string; runbook: string; message: string }>
+  signals: Record<string, unknown>
+}
+
+export interface RetentionPlan {
+  planId: string
+  status: string
+  createdAt: string
+  expiresAt?: string
+  summary: { candidateCount: number; bytes: number; fileCount: number }
+  candidates: Array<{ category: string; name: string; modifiedAt: string; bytes: number; fileCount: number }>
+  moved?: Array<{ category: string; name: string; bytes: number }>
+}
+
 export interface ProjectInfo {
   id: string
   projectPage: string
@@ -568,6 +598,31 @@ export interface AttachedAsset {
 }
 
 export const OrchestratorApi = {
+  // Operations Center & resource governance
+  async getOperationsReadiness() {
+    const res = await axios.get<{ success: boolean; data: OperationsReadiness }>("/api/operations/readiness")
+    return res.data.data
+  },
+
+  async previewRetention(olderThanDays = 30) {
+    const res = await axios.post<{ success: boolean; data: RetentionPlan }>("/api/operations/retention/preview", { olderThanDays })
+    return res.data.data
+  },
+
+  async purgeRetention(planId: string) {
+    const res = await axios.post<{ success: boolean; data: RetentionPlan }>("/api/operations/retention/purge", { planId, confirm: true })
+    return res.data.data
+  },
+
+  async getRetentionTrash() {
+    const res = await axios.get<{ success: boolean; data: RetentionPlan[] }>("/api/operations/retention/trash")
+    return res.data.data
+  },
+
+  async restoreRetention(trashId: string) {
+    const res = await axios.post<{ success: boolean; data: RetentionPlan }>("/api/operations/retention/restore", { trashId, confirm: true })
+    return res.data.data
+  },
   // RTK & Telemetry
   async getRtkTelemetry() {
     const res = await axios.get<{ success: boolean; data: RtkAnalytics }>("/api/telemetry/rtk")
