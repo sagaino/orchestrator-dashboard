@@ -12,13 +12,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useAcceptObjective, useAggregatePreview, useObjective, useObjectiveEvidence, useObjectives, usePreviewRun, useRequestObjectiveVisualChanges, useStopAggregatePreview } from "@/hooks/use-orchestrator"
-import type { AggregatePreview, ObjectiveEvidence, ObjectiveEvidenceNode, ObjectiveSummary, ObjectiveVisualEvidence } from "@/services/orchestrator"
+import { useAcceptDeliveryCertification, useAcceptObjective, useAggregatePreview, useCreateDeliveryCertification, useDeliveryCertification, useObjective, useObjectiveEvidence, useObjectives, usePreviewRun, useRequestObjectiveVisualChanges, useStopAggregatePreview } from "@/hooks/use-orchestrator"
+import type { AggregatePreview, DeliveryCertification, ObjectiveEvidence, ObjectiveEvidenceNode, ObjectiveSummary, ObjectiveVisualEvidence } from "@/services/orchestrator"
 import { CrossProjectIntegrationEvidence } from "./components/CrossProjectIntegrationEvidence"
 import { ObjectiveGraph } from "./components/ObjectiveGraph"
 
 const stateTone = (state: string) => {
-  if (["DONE", "ACCEPTED", "PASS", "PASSED"].includes(state)) return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+  if (["DONE", "ACCEPTED", "CERTIFIED", "PASS", "PASSED"].includes(state)) return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
   if (["FAILED", "BLOCKED", "FAIL"].includes(state)) return "border-rose-500/30 bg-rose-500/10 text-rose-300"
   return "border-amber-500/30 bg-amber-500/10 text-amber-300"
 }
@@ -115,6 +115,43 @@ function ObjectiveVisualEvidencePanel({ report, onRepair, repairing }: { report?
   </section>
 }
 
+function DeliveryCertificationPanel({ certification, canRun, onRun, onAccept, running, accepting }: { certification: DeliveryCertification | null; canRun: boolean; onRun: () => Promise<void>; onAccept: () => Promise<void>; running: boolean; accepting: boolean }) {
+  const [acceptOpen, setAcceptOpen] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const run = async () => {
+    try {
+      await onRun()
+      setMessage(null)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Delivery certification tidak dapat dibuat.")
+    }
+  }
+  const accept = async () => {
+    try {
+      await onAccept()
+      setAcceptOpen(false)
+      setMessage(null)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Delivery certification tidak dapat diterima.")
+    }
+  }
+  return <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-300" /><h2 className="text-sm font-semibold text-white">Delivery certification</h2>{certification && <StatusBadge state={certification.status} />}</div><p className="mt-2 max-w-2xl text-xs text-slate-400">Satu bundle durable yang memeriksa plan, execution, integration, preview, visual/E2E evidence, human acceptance, cleanup, dan knowledge capture.</p></div>
+      <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" size="sm" disabled={!canRun || running} onClick={() => void run()} className="border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10">{running ? "Checking…" : certification ? "Re-run certification" : "Run delivery certification"}</Button>{certification?.status === "HUMAN_GATE_REQUIRED" && <Button type="button" size="sm" disabled={accepting} onClick={() => setAcceptOpen(true)} className="bg-emerald-600 text-white hover:bg-emerald-500">Accept delivery certification</Button>}</div>
+    </div>
+    {!canRun && !certification && <p className="mt-3 text-xs text-amber-200">Jalankan setelah objective final acceptance berstatus ACCEPTED.</p>}
+    {certification && <>
+      <div className="mt-4 grid gap-2 text-xs sm:grid-cols-3"><div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3"><p className="text-slate-500">Certification ID</p><p className="mt-1 break-all font-mono text-slate-200">{certification.certificationId}</p></div><div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3"><p className="text-slate-500">Machine checks</p><p className="mt-1 font-semibold text-white">{certification.checks.filter((check) => check.passed).length} / {certification.checks.length} PASS</p></div><div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3"><p className="text-slate-500">Human gate</p><p className="mt-1 text-slate-200">{certification.humanGate.confirmed ? `Accepted by ${certification.humanGate.approvedBy ?? "operator"}` : "Required"}</p></div></div>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">{certification.checks.map((check) => <div key={check.id} className="flex items-start justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/30 p-3 text-xs"><div><p className="font-mono text-slate-200">{check.id}</p><p className="mt-1 text-slate-500">{check.message}</p></div><StatusBadge state={check.status} /></div>)}</div>
+      {certification.blockers.length > 0 && <p className="mt-3 text-xs text-rose-300">Blockers: {certification.blockers.join(", ")}</p>}
+      <p className="mt-3 text-xs text-slate-500">{certification.nextAction}</p>
+    </>}
+    {message && <p className="mt-3 text-xs text-rose-300">{message}</p>}
+    <AlertDialog open={acceptOpen} onOpenChange={setAcceptOpen}><AlertDialogContent className="border border-slate-800 bg-slate-950 text-slate-100"><AlertDialogHeader><AlertDialogTitle>Accept delivery certification</AlertDialogTitle><AlertDialogDescription className="text-slate-400">Human gate ini mengunci bundle certification setelah seluruh machine checks lulus. Pastikan evidence delivery sudah ditinjau.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={accepting}>Batal</AlertDialogCancel><AlertDialogAction disabled={accepting} onClick={(event) => { event.preventDefault(); void accept() }} className="bg-emerald-600 text-white hover:bg-emerald-500">{accepting ? "Menyimpan…" : "Accept certification"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+  </section>
+}
+
 function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
   const [acceptOpen, setAcceptOpen] = useState(false)
   const [previewMessage, setPreviewMessage] = useState<string | null>(null)
@@ -125,6 +162,9 @@ function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
   const stopAggregate = useStopAggregatePreview()
   const visualRepair = useRequestObjectiveVisualChanges()
   const objective = evidence.objective
+  const delivery = useDeliveryCertification(objective.objectiveId)
+  const createDelivery = useCreateDeliveryCertification()
+  const acceptDelivery = useAcceptDeliveryCertification()
   const handlePreview = async (runId: string) => {
     try {
       const result = await preview.mutateAsync(runId)
@@ -152,6 +192,12 @@ function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
     await visualRepair.mutateAsync({ objectiveId: objective.objectiveId, nodeId, reason })
     setPreviewMessage(`Visual repair untuk ${nodeId} disetujui.`)
   }
+  const handleDeliveryRun = async () => {
+    await createDelivery.mutateAsync(objective.objectiveId)
+  }
+  const handleDeliveryAccept = async () => {
+    await acceptDelivery.mutateAsync({ objectiveId: objective.objectiveId, certificationId: delivery.data?.latest?.certificationId })
+  }
   return (
     <div className="w-full space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -162,6 +208,7 @@ function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
       {previewMessage && <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs text-indigo-200">{previewMessage}</div>}
       <AggregatePreviewPanel preview={aggregatePreview} onStop={() => void handleStopAggregatePreview()} stopping={stopAggregate.isPending} />
       <ObjectiveVisualEvidencePanel report={evidence.visualEvidence} onRepair={handleVisualRepair} repairing={visualRepair.isPending} />
+      <DeliveryCertificationPanel certification={delivery.data?.latest ?? null} canRun={evidence.finalAcceptance.state === "ACCEPTED"} onRun={handleDeliveryRun} onAccept={handleDeliveryAccept} running={createDelivery.isPending} accepting={acceptDelivery.isPending} />
       {evidence.finalAcceptance.state !== "ACCEPTED" && evidence.blockers.length > 0 && <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4"><div className="flex items-center gap-2 text-amber-200"><AlertTriangle className="h-4 w-4" /><h2 className="text-sm font-semibold">Unresolved blockers</h2></div><div className="mt-3 space-y-2 text-xs text-amber-100/80">{evidence.blockers.map((blocker) => <div key={blocker.id} className="rounded-lg border border-amber-500/20 bg-slate-950/20 p-2"><span className="font-mono text-amber-200">{blocker.id}</span> · {blocker.message}</div>)}</div></section>}
 
       {objective.mode === "CROSS_PROJECT_INCIDENT" && evidence.integration && <CrossProjectIntegrationEvidence integration={evidence.integration} objectiveProjectIds={objective.projectIds} nodes={evidence.nodes} blockers={evidence.blockers} canAccept={evidence.finalAcceptance.canAccept} />}
