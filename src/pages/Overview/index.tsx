@@ -8,12 +8,14 @@ import {
   QuickTaskIntake,
 } from "./components"
 import { RemoveProjectModal } from "@/components/project/RemoveProjectModal"
+import { ProjectRelationshipsModal } from "@/components/project/ProjectRelationshipsModal"
 import { TaskConfirmationModal } from "@/pages/Tasks/components"
 
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate()
   const [removeModalOpen, setRemoveModalOpen] = useState(false)
   const [targetProject, setTargetProject] = useState<{ id: string; repo?: string } | null>(null)
+  const [relationshipProjectId, setRelationshipProjectId] = useState<string | null>(null)
 
   const {
     daemon,
@@ -69,6 +71,7 @@ export const OverviewPage: React.FC = () => {
             projects={projects}
             onCreateTask={handleSelectProjectAndNavigate}
             onRemoveProject={handleOpenRemoveModal}
+            onManageRelationships={setRelationshipProjectId}
           />
         </div>
 
@@ -96,6 +99,12 @@ export const OverviewPage: React.FC = () => {
         }}
         projectId={targetProject?.id ?? null}
         projectRepo={targetProject?.repo}
+      />
+
+      <ProjectRelationshipsModal
+        isOpen={Boolean(relationshipProjectId)}
+        projectId={relationshipProjectId}
+        onClose={() => setRelationshipProjectId(null)}
       />
 
       <TaskConfirmationModal

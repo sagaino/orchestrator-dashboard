@@ -210,7 +210,16 @@ export async function installLifecycleFixtures(page: Page) {
       return route.fulfill({ status: 200, contentType: "text/event-stream", body: "event: READY\ndata: {}\n\n" })
     }
     if (pathname === "/api/projects") {
-      return json(route, { projects: [{ id: "e2e-project", repository: "/tmp/e2e-project", projectPage: "fixture.md", agent: "fixture", graphify: false, graphifyOutput: "", repositoryExists: true, projectPageExists: true, verificationDefaults: ["typecheck", "build"], graphOutputExists: false, valid: true, projectPagePath: "fixture.md" }] })
+      return json(route, { projects: [
+        { id: "e2e-project", repository: "/tmp/e2e-project", projectPage: "fixture.md", agent: "fixture", graphify: false, graphifyOutput: "", repositoryExists: true, projectPageExists: true, verificationDefaults: ["typecheck", "build"], graphOutputExists: false, valid: true, projectPagePath: "fixture.md" },
+        { id: "e2e-backend", repository: "/tmp/e2e-backend", projectPage: "backend.md", agent: "fixture", graphify: false, graphifyOutput: "", repositoryExists: true, projectPageExists: true, verificationDefaults: ["test:contract"], graphOutputExists: false, valid: true, projectPagePath: "backend.md" },
+      ] })
+    }
+    if (pathname === "/api/projects/e2e-project/relationships" && method === "GET") {
+      return json(route, { schemaVersion: 1, projectId: "e2e-project", relationships: [{ type: "CONSUMES_API", targetProjectId: "e2e-backend", contractPaths: ["openapi.yaml"], verification: ["test:contract"] }], allowedTypes: ["CONSUMES_API", "PROVIDES_API", "SHARES_SCHEMA", "DEPENDS_ON", "DEPLOYS_WITH"], registeredProjectIds: ["e2e-backend", "e2e-project"] })
+    }
+    if (pathname === "/api/projects/e2e-project/relationships" && method === "PUT") {
+      return json(route, { schemaVersion: 1, action: "PROJECT_RELATIONSHIPS_REPLACED", changed: true, projectId: "e2e-project", relationships: request.postDataJSON()?.relationships ?? [], confirmedBy: "local:e2e-operator", audit: { auditId: "audit-relations-fixture", event: "PROJECT_RELATIONSHIPS_REPLACED", at: now } }, 200)
     }
     if (pathname === "/api/daemon/status") {
       return json(route, { service: "fixture", running: true, healthy: true, pid: 1, startedAt: now, heartbeatAt: now, heartbeatAgeMs: 0, restartReconciliation: { status: "COMPLETE", startedAt: now, completedAt: now, runs: 0, jobs: 0, error: null }, counters: { readyEvents: 0, manifestsCreated: 0, deduplicated: 0, jobsStarted: 0, jobsCompleted: 0, jobsFailed: 0, errors: 0 }, parallel: { strategy: "fixture", maxWorkers: 2, activeWorkers: 0, availableWorkerSlots: 2, activeProjects: [], reservedProjects: [], eligibleQueuedJobCount: jobs.length, blockedQueuedJobCount: 0, blockedQueuedJobs: [] }, durability: { strategy: "fixture", sourceOfTruth: "fixture", activeLeaseCount: 0, invocationCount: 0, invocationCounts: {}, guarantees: { atomicJobAdmission: true, projectExclusiveClaim: true, manifestRevisionGuard: true, stableInvocationIdentity: true, uncertainInvocationNeverAutoReplayed: true } }, notifications: { total: 0, unreadCount: 0, latest: [] }, queue: { queuedJobCount: jobs.length, runningJobCount: 0, reviewJobCount: 0, latestJobs: jobs } })
@@ -283,7 +292,7 @@ export async function installLifecycleFixtures(page: Page) {
           state: "GENESIS_REVIEW",
           request: body.request || "",
           requestedBy: "e2e-operator",
-          projectIds: [projectId],
+          projectIds: body.projectIds || [projectId],
           freshProject: {
             proposalId: `genesis-${projectId}-frontend-vite`,
             action: "ONBOARD_WITH_EXISTING_BLUEPRINT",

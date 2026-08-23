@@ -22,8 +22,13 @@ export default defineConfig(({ command }) => {
   const apiToken = command === "serve" ? readRuntimeApiToken() : null
   const dashboardPort = Number(process.env.ORCHESTRATOR_DASHBOARD_PORT || 5173)
   const apiTarget = process.env.ORCHESTRATOR_API_URL || "http://127.0.0.1:3721"
+  const crossProjectFlag = process.env.VITE_ORCHESTRATOR_CROSS_PROJECT ?? process.env.ORCHESTRATOR_CROSS_PROJECT ?? "0"
+  const crossProjectEnabled = ["1", "true", "on"].includes(crossProjectFlag.trim().toLowerCase())
   return {
     plugins: [react(), tailwindcss()],
+    define: {
+      "import.meta.env.VITE_ORCHESTRATOR_CROSS_PROJECT": JSON.stringify(crossProjectEnabled ? "1" : "0"),
+    },
     server: {
       host: "127.0.0.1",
       port: dashboardPort,

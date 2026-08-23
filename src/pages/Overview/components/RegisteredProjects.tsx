@@ -1,11 +1,12 @@
 import React from "react"
-import { FolderGit2, ArrowUpRight, Trash2 } from "lucide-react"
+import { FolderGit2, ArrowUpRight, Trash2, Link2 } from "lucide-react"
 import type { RegisteredProjectsProps } from "../types/overview"
 
 export const RegisteredProjects: React.FC<RegisteredProjectsProps> = ({
   projects,
   onCreateTask,
   onRemoveProject,
+  onManageRelationships,
 }) => {
   return (
     <div className="space-y-4">
@@ -64,6 +65,17 @@ export const RegisteredProjects: React.FC<RegisteredProjectsProps> = ({
                 <span>Create Task</span>
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </button>
+              {onManageRelationships && (
+                <button
+                  type="button"
+                  onClick={() => onManageRelationships(proj.id)}
+                  className="p-2 rounded-lg bg-slate-800/80 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-300 border border-slate-700/60 hover:border-emerald-500/40 transition-colors cursor-pointer"
+                  title="Kelola project relationships"
+                  aria-label={`Manage relationships for ${proj.id}`}
+                >
+                  <Link2 className="h-4 w-4" />
+                </button>
+              )}
               {onRemoveProject && (
                 <button
                   type="button"
