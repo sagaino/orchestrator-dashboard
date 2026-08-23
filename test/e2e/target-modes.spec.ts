@@ -53,8 +53,10 @@ test("Fresh Project validation remains visible before submission", async ({ page
 test("Linked Projects mode uses only registered explicit relationships", async ({ page }) => {
   test.skip(process.env.ORCHESTRATOR_CROSS_PROJECT !== "1", "Run with ORCHESTRATOR_CROSS_PROJECT=1")
   let objectiveRequest: Record<string, unknown> | null = null
+  const mutationPaths: string[] = []
   page.on("request", (request) => {
     if (request.url().endsWith("/api/objectives") && request.method() === "POST") objectiveRequest = request.postDataJSON()
+    if (request.method() === "POST") mutationPaths.push(new URL(request.url()).pathname)
   })
 
   await page.goto("/tasks")
@@ -68,12 +70,15 @@ test("Linked Projects mode uses only registered explicit relationships", async (
   await page.getByRole("textbox", { name: "Deskripsikan fitur, refactor, atau instruksi slicing UI sesuai desain..." }).fill("Diagnose frontend backend contract mismatch")
   await page.getByRole("button", { name: "Create Linked Projects Objective" }).click()
 
-  await expect(page.getByText(/Linked Projects objective obj-20260822-fresh-fixture dibuat/)).toBeVisible()
+  await expect(page.getByRole("dialog", { name: "Plan Review" })).toBeVisible()
+  await expect(page.getByText(/Linked Projects objective e2e-cross-intake dan plan-e2e-cross-intake-r1 siap untuk review/)).toBeVisible()
   expect(objectiveRequest).toMatchObject({
     mode: "CROSS_PROJECT_INCIDENT",
     request: "Diagnose frontend backend contract mismatch",
     projectIds: ["e2e-project", "e2e-backend"],
   })
+  expect(mutationPaths).toContain("/api/objectives/e2e-cross-intake/generate-plan")
+  expect(mutationPaths).not.toContain("/api/tasks/request")
 })
 
 test("Relationship editing requires confirmation and sends an auditable replacement", async ({ page }) => {
