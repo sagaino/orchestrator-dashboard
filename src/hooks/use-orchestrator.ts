@@ -28,6 +28,7 @@ import type {
   ObjectiveEvidence,
   ObjectiveGraph,
   ObjectiveSummary,
+  DecisionInboxItem,
   ProjectRelationship,
   ProjectRelationshipsResult,
 } from "@/services/orchestrator"
@@ -63,6 +64,7 @@ export const queryKeys = {
   objectiveEvidence: (id: string) => ["objectives", id, "evidence"] as const,
   objectiveGraph: (id: string) => ["objectives", id, "graph"] as const,
   objectives: ["objectives"] as const,
+  decisionInbox: ["decisions", "inbox"] as const,
 }
 
 // --- Query Hooks ---
@@ -139,6 +141,28 @@ export function useObjectives() {
     queryKey: queryKeys.objectives,
     queryFn: () => OrchestratorApi.getObjectives(),
     staleTime: 3_000,
+  })
+}
+
+export function useDecisionInbox() {
+  return useQuery<DecisionInboxItem[]>({
+    queryKey: queryKeys.decisionInbox,
+    queryFn: () => OrchestratorApi.getDecisionInbox(),
+    staleTime: 3_000,
+  })
+}
+
+export function useResolveDecision() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ decisionId, action }: { decisionId: string; action: string }) => OrchestratorApi.resolveDecision(decisionId, action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.decisionInbox })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectives })
+      queryClient.invalidateQueries({ queryKey: queryKeys.runs })
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications })
+    },
   })
 }
 

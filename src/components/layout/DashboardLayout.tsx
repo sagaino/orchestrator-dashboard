@@ -14,6 +14,7 @@ import {
   Plus,
   ShieldCheck,
   Target,
+  Inbox,
 } from "lucide-react"
 import { useDaemonStatus, useNotifications, useMarkNotificationsRead } from "@/hooks/use-orchestrator"
 import { useSSEEvents } from "@/providers/EventsContext"
@@ -56,6 +57,7 @@ export const DashboardLayout: React.FC = () => {
     { label: "Overview", to: "/", icon: LayoutDashboard },
     { label: "Task Intake", to: "/tasks", icon: PlayCircle },
     { label: "Objectives", to: "/objectives", icon: Target },
+    { label: "Decision Inbox", to: "/decisions", icon: Inbox },
     { label: "Runs & Review", to: "/runs", icon: History },
     { label: "Knowledge Center", to: "/knowledge", icon: BookOpen },
     { label: "Telemetry", to: "/telemetry", icon: BarChart3 },

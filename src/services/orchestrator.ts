@@ -950,6 +950,12 @@ export interface ObjectiveDecision {
   } | null
 }
 
+export interface DecisionInboxItem extends ObjectiveDecision {
+  risk: "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN" | string
+  riskScore: number
+  ageMs: number | null
+}
+
 export interface ObjectiveIntakeResult {
   objective: ObjectiveRecord
   summary: Record<string, unknown>
@@ -1333,6 +1339,21 @@ export const OrchestratorApi = {
 
   async getObjectiveGraph(objectiveId: string, page = 1, pageSize = 50) {
     const res = await axios.get<{ success: boolean; data: ObjectiveGraph }>(`/api/objectives/${encodeURIComponent(objectiveId)}/graph`, { params: { page, pageSize } })
+    return res.data.data
+  },
+
+  async getDecisionInbox() {
+    const res = await axios.get<{ success: boolean; data: DecisionInboxItem[] }>("/api/decisions/inbox", { params: { state: "OPEN" } })
+    return res.data.data
+  },
+
+  async resolveDecision(decisionId: string, action: string) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: { decision: DecisionInboxItem; alreadyResolved: boolean } }>(
+      `/api/decisions/${encodeURIComponent(decisionId)}/resolve`,
+      { action },
+      { headers: { "Idempotency-Key": `dashboard-decision-${decisionId}-${randomPart}` } },
+    )
     return res.data.data
   },
 

@@ -25,6 +25,7 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
           queryClient.invalidateQueries({ queryKey: queryKeys.objectives })
           queryClient.invalidateQueries({ queryKey: queryKeys.runs })
           queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+          queryClient.invalidateQueries({ queryKey: queryKeys.decisionInbox })
           break
 
         case "TASK_REQUESTED":
@@ -76,7 +77,9 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
         case "OBJECTIVE_CANCELLED":
         case "NODE_RETRY_DECISION_REQUESTED":
         case "DECISION_RESOLVED":
+        case "DECISION_RESOLUTION_IDEMPOTENT":
           queryClient.invalidateQueries({ queryKey: ["objectives"] })
+          queryClient.invalidateQueries({ queryKey: queryKeys.decisionInbox })
           queryClient.invalidateQueries({ queryKey: queryKeys.runs })
           queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
           if (evt.data?.objectiveId) {

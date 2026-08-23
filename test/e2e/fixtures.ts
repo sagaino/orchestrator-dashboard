@@ -113,6 +113,11 @@ export async function installLifecycleFixtures(page: Page) {
   let planReviewRevision = 1
   let objectiveDashboardAccepted = false
   let crossProjectObjectiveAccepted = false
+  const inboxDecisions = [
+    { decisionId: "decision-high-old", objectiveId: "e2e-objective-dashboard", nodeId: "N01", runId: "run-e2e-review", type: "INTEGRATION_CONFLICT", state: "OPEN", risk: "HIGH", riskScore: 3, ageMs: 7_200_000, evidence: { risk: "HIGH", reason: "Aggregate verification needs human review." }, requestedAction: "Review the aggregate evidence before continuing.", allowedChoices: ["RETRY", "CANCEL"], creator: "SYSTEM", createdAt: "2026-08-23T01:00:00.000Z", resolution: null },
+    { decisionId: "decision-high-new", objectiveId: "e2e-objective-dashboard", nodeId: null, runId: null, type: "SCOPE_EXPANSION", state: "OPEN", risk: "HIGH", riskScore: 3, ageMs: 3_600_000, evidence: { risk: "HIGH" }, requestedAction: "Review the requested scope expansion.", allowedChoices: ["SCOPE_EXPANSION", "CANCEL"], creator: "SYSTEM", createdAt: "2026-08-23T02:00:00.000Z", resolution: null },
+    { decisionId: "decision-low", objectiveId: "e2e-objective-dashboard", nodeId: null, runId: null, type: "PLAN_APPROVAL", state: "OPEN", risk: "LOW", riskScore: 1, ageMs: 10_800_000, evidence: { risk: "LOW" }, requestedAction: "Approve the reviewed plan revision.", allowedChoices: ["APPROVE", "CANCEL"], creator: "SYSTEM", createdAt: "2026-08-22T23:00:00.000Z", resolution: null },
+  ]
 
   const planReviewObjective = () => ({
     schemaVersion: 1,
@@ -342,6 +347,19 @@ export async function installLifecycleFixtures(page: Page) {
       activation: { eligible: true, state: "HUMAN_GATE_REQUIRED", requiresHumanConfirmation: true, authority: "EXTERNAL_SUPERVISOR", selfAcceptAllowed: false, inProcessActivationAllowed: false, confirmation: { confirmed: false, approvedBy: null, approvedAt: null } },
     })
     if (pathname === "/api/runs" && method === "GET") return json(route, runs)
+
+    if (pathname === "/api/decisions/inbox" && method === "GET") return json(route, inboxDecisions.filter((decision) => decision.state === "OPEN"))
+    const decisionResolveMatch = pathname.match(/^\/api\/decisions\/([^/]+)\/resolve$/)
+    if (decisionResolveMatch && method === "POST") {
+      const decision = inboxDecisions.find((item) => item.decisionId === decisionResolveMatch[1])
+      if (!decision) return route.fulfill({ status: 404 })
+      const body = request.postDataJSON() as { action?: string }
+      if (!decision.allowedChoices.includes(body.action || "")) return json(route, { code: "DECISION_ACTION_NOT_ALLOWED" }, 422)
+      if (decision.state === "RESOLVED") return json(route, { decision, alreadyResolved: true })
+      decision.state = "RESOLVED"
+      decision.resolution = { action: body.action || "", resolvedBy: "local:e2e-operator", resolvedAt: now }
+      return json(route, { decision, alreadyResolved: false }, 201)
+    }
 
     if (pathname === "/api/objectives" && method === "GET") return json(route, [objectiveDashboardObjective()])
     if (pathname === "/api/objectives" && method === "POST") {
