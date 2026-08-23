@@ -112,6 +112,7 @@ export async function installLifecycleFixtures(page: Page) {
   let planReviewState: "PENDING_APPROVAL" | "APPROVED" | "CANCELLED" = "PENDING_APPROVAL"
   let planReviewRevision = 1
   let objectiveDashboardAccepted = false
+  let aggregatePreviewSession: Record<string, unknown> | null = null
   let crossProjectObjectiveAccepted = false
   const inboxDecisions = [
     { decisionId: "decision-high-old", objectiveId: "e2e-objective-dashboard", nodeId: "N01", runId: "run-e2e-review", type: "INTEGRATION_CONFLICT", state: "OPEN", risk: "HIGH", riskScore: 3, ageMs: 7_200_000, evidence: { risk: "HIGH", reason: "Aggregate verification needs human review." }, requestedAction: "Review the aggregate evidence before continuing.", allowedChoices: ["RETRY", "CANCEL"], creator: "SYSTEM", createdAt: "2026-08-23T01:00:00.000Z", resolution: null },
@@ -398,6 +399,26 @@ export async function installLifecycleFixtures(page: Page) {
     if (pathname === "/api/objectives/e2e-objective-dashboard" && method === "GET") return json(route, { ...objectiveDashboardObjective(), plan: objectiveDashboardEvidence().plan, orchestration: objectiveDashboardEvidence().orchestration, decisions: [], decisionSummary: { open: [], recent: [] } })
     if (pathname === "/api/objectives/e2e-objective-dashboard/evidence" && method === "GET") return json(route, objectiveDashboardEvidence())
     if (pathname === "/api/objectives/e2e-objective-dashboard/graph" && method === "GET") return json(route, graphForEvidence(objectiveDashboardEvidence()))
+    if (pathname === "/api/objectives/e2e-objective-dashboard/preview" && method === "POST") {
+      aggregatePreviewSession = {
+        schemaVersion: 1,
+        action: "AGGREGATE_PROJECT_PREVIEW",
+        sessionId: "aggregate-preview-e2e-fixture",
+        objectiveId: "e2e-objective-dashboard",
+        status: "READY",
+        host: "127.0.0.1",
+        expiresAt: "2099-01-01T00:15:00.000Z",
+        previews: [{ projectId: "e2e-project", runId: "e2e-accept-fixture-run", url: "http://127.0.0.1:5310", host: "127.0.0.1", port: 5310, status: "RUNNING", startedAt: now }],
+        unavailable: [],
+        cleanup: { status: "ACTIVE", stoppedAt: null, stoppedRunIds: [], errors: [] },
+        approval: { planState: "APPROVED", loopbackOnly: true },
+      }
+      return json(route, aggregatePreviewSession)
+    }
+    if (pathname === "/api/objectives/e2e-objective-dashboard/preview/stop" && method === "POST") {
+      aggregatePreviewSession = { ...(aggregatePreviewSession ?? {}), cleanup: { status: "CLEANED", stoppedAt: now, stoppedRunIds: ["e2e-accept-fixture-run"], errors: [] } }
+      return json(route, aggregatePreviewSession)
+    }
     if (pathname === "/api/objectives/e2e-objective-dashboard/final-acceptance" && method === "POST") {
       objectiveDashboardAccepted = true
       return json(route, { objective: objectiveDashboardObjective(), decision: { decisionId: "decision-objective-dashboard", objectiveId: "e2e-objective-dashboard", nodeId: null, runId: null, type: "OBJECTIVE_ACCEPTANCE", state: "RESOLVED", evidence: {}, requestedAction: "Accept objective", allowedChoices: ["ACCEPT"], creator: "SYSTEM", createdAt: now, resolution: { action: "ACCEPT", resolvedBy: "local:e2e-operator", resolvedAt: now } }, evidence: objectiveDashboardEvidence(), alreadyAccepted: false }, 201)

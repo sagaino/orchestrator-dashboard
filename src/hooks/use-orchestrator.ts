@@ -28,6 +28,7 @@ import type {
   ObjectiveEvidence,
   ObjectiveGraph,
   ObjectiveSummary,
+  AggregatePreview,
   DecisionInboxItem,
   ProjectRelationship,
   ProjectRelationshipsResult,
@@ -737,6 +738,18 @@ export function useMarkNotificationsRead() {
 export function usePreviewRun() {
   return useMutation({
     mutationFn: (runId: string) => OrchestratorApi.previewRun(runId),
+  })
+}
+
+export function useAggregatePreview() {
+  return useMutation<AggregatePreview, Error, { objectiveId: string; options?: { maxProjects?: number; maxServers?: number; maxDurationMs?: number } }>({
+    mutationFn: ({ objectiveId, options }) => OrchestratorApi.startAggregatePreview(objectiveId, options),
+  })
+}
+
+export function useStopAggregatePreview() {
+  return useMutation<AggregatePreview, Error, { objectiveId: string; sessionId: string }>({
+    mutationFn: ({ objectiveId, sessionId }) => OrchestratorApi.stopAggregatePreview(objectiveId, sessionId),
   })
 }
 

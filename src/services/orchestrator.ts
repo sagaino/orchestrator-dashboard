@@ -1132,6 +1132,21 @@ export interface ObjectiveEvidence {
   decisions: ObjectiveDecision[]
 }
 
+export interface AggregatePreview {
+  schemaVersion: number
+  action: "AGGREGATE_PROJECT_PREVIEW" | string
+  sessionId: string
+  objectiveId: string
+  status: "READY" | "PARTIAL" | "UNAVAILABLE" | string
+  host: "127.0.0.1" | string
+  expiresAt: string | null
+  previews: Array<{ projectId: string; runId: string | null; url: string; host: string; port: number; status: string; startedAt: string }>
+  unavailable: Array<{ projectId: string | null; runId: string | null; status: "UNAVAILABLE" | string; reason: string; message?: string | null; verification: { status: "NOT_EVALUATED" | string; failed: boolean; impact: string } }>
+  cleanup: { status: "ACTIVE" | "CLEANED" | string; stoppedAt?: string | null; stoppedRunIds?: string[]; errors?: Array<{ runId: string; message: string }> }
+  evidence?: Record<string, unknown>
+  approval?: { planState: string | null; loopbackOnly: boolean }
+}
+
 export const OrchestratorApi = {
   // Operations Center & resource governance
   async getOperationsReadiness() {
@@ -1479,6 +1494,16 @@ export const OrchestratorApi = {
 
   async previewRun(runId: string) {
     const res = await axios.post<{ success: boolean; data: { workspacePath: string; opened: boolean } }>(`/api/runs/${runId}/preview`)
+    return res.data.data
+  },
+
+  async startAggregatePreview(objectiveId: string, options: { maxProjects?: number; maxServers?: number; maxDurationMs?: number } = {}) {
+    const res = await axios.post<{ success: boolean; data: AggregatePreview }>(`/api/objectives/${encodeURIComponent(objectiveId)}/preview`, options)
+    return res.data.data
+  },
+
+  async stopAggregatePreview(objectiveId: string, sessionId: string) {
+    const res = await axios.post<{ success: boolean; data: AggregatePreview }>(`/api/objectives/${encodeURIComponent(objectiveId)}/preview/stop`, { sessionId })
     return res.data.data
   },
 
