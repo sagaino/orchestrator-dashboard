@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useAcceptObjective, useObjective, useObjectiveEvidence, useObjectives, usePreviewRun } from "@/hooks/use-orchestrator"
 import type { ObjectiveEvidence, ObjectiveEvidenceNode, ObjectiveSummary } from "@/services/orchestrator"
+import { CrossProjectIntegrationEvidence } from "./components/CrossProjectIntegrationEvidence"
 
 const stateTone = (state: string) => {
   if (["DONE", "ACCEPTED", "PASS", "PASSED"].includes(state)) return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
@@ -97,6 +98,8 @@ function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
 
       {previewMessage && <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs text-indigo-200">{previewMessage}</div>}
       {evidence.finalAcceptance.state !== "ACCEPTED" && evidence.blockers.length > 0 && <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4"><div className="flex items-center gap-2 text-amber-200"><AlertTriangle className="h-4 w-4" /><h2 className="text-sm font-semibold">Unresolved blockers</h2></div><div className="mt-3 space-y-2 text-xs text-amber-100/80">{evidence.blockers.map((blocker) => <div key={blocker.id} className="rounded-lg border border-amber-500/20 bg-slate-950/20 p-2"><span className="font-mono text-amber-200">{blocker.id}</span> · {blocker.message}</div>)}</div></section>}
+
+      {objective.mode === "CROSS_PROJECT_INCIDENT" && evidence.integration && <CrossProjectIntegrationEvidence integration={evidence.integration} objectiveProjectIds={objective.projectIds} nodes={evidence.nodes} blockers={evidence.blockers} canAccept={evidence.finalAcceptance.canAccept} />}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4"><p className="text-[10px] uppercase tracking-wider text-slate-500">Orchestration</p><p className="mt-2 text-lg font-semibold text-white">{evidence.orchestration?.state ?? "NOT_STARTED"}</p></div>

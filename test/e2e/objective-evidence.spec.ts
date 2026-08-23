@@ -20,3 +20,21 @@ test("Objective evidence keeps final acceptance separate from evidence review", 
   await page.getByRole("button", { name: "Accept objective" }).click()
   await expect(page.getByText("ACCEPTED", { exact: true })).toBeVisible()
 })
+
+test("Cross-project result review identifies repositories, checks, blockers, and final action", async ({ page }) => {
+  await page.goto("/objectives/e2e-cross-project-review")
+
+  await expect(page.getByRole("heading", { name: "Diagnose and verify the frontend/backend contract incident." })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Cross-project result review" })).toBeVisible()
+  await expect(page.getByText("READY — diagnosis and cross-project checks passed")).toBeVisible()
+  await expect(page.getByText("2 inspected · 2 changed")).toBeVisible()
+  await expect(page.getByText("e2e-project", { exact: true })).toBeVisible()
+  await expect(page.getByText("e2e-backend", { exact: true })).toBeVisible()
+  await expect(page.getByText("Baseline", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("run-cross-frontend-change", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("run-cross-backend-change", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("Contract / API", { exact: true })).toBeVisible()
+  await expect(page.getByText("E2E / browser", { exact: true })).toBeVisible()
+  await expect(page.getByText("No blockers. Final objective action is available from the page header.")).toBeVisible()
+  await expect(page.getByRole("button", { name: "Final Acceptance" })).toBeEnabled()
+})
