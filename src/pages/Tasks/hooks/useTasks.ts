@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from "react"
-import { useProjects, useDaemonStatus, useJobs, useRequestTask, useConfirmTaskQueue, useUploadAsset, useDeleteAsset } from "@/hooks/use-orchestrator"
+import { useEffect, useState, type FormEvent } from "react"
+import { useSearchParams } from "react-router-dom"
+import { useProjects, useDaemonStatus, useJobs, useRequestTask, useConfirmTaskQueue, useUploadAsset, useDeleteAsset, useCreateObjective, useApproveObjectivePlan, useRequestObjectivePlanChanges, useCancelObjective, useObjective } from "@/hooks/use-orchestrator"
 import { toast } from "@/components/ui/toast"
-import type { AttachedAsset, TaskRequestResult } from "@/services/orchestrator"
+import type { AttachedAsset, ObjectiveDecision, ObjectiveIntakeResult, ObjectiveMode, ObjectivePlanReview, ObjectiveRecord, TaskRequestResult } from "@/services/orchestrator"
 import type { UseTasksReturn, TaskStatusMessage } from "../types"
 
 const isClarificationNeeded = (res: any): boolean => {
@@ -33,22 +34,54 @@ const extractClarificationQuestion = (res: any): string => {
   )
 }
 
+const extractErrorMessage = (error: unknown): string => {
+  if (error && typeof error === "object") {
+    const responseMessage = (error as any).response?.data?.error?.message
+    if (typeof responseMessage === "string" && responseMessage.trim()) return responseMessage
+  }
+  return error instanceof Error ? error.message : String(error)
+}
+
 export const useTasks = (): UseTasksReturn => {
+  const [searchParams] = useSearchParams()
+  const reviewObjectiveId = searchParams.get("objectiveId")
   const { data: projects = [] } = useProjects()
+  const { data: objectiveDetail } = useObjective(reviewObjectiveId)
   const { data: daemon = null, refetch: refetchDaemon } = useDaemonStatus()
   const { data: jobs = [] } = useJobs()
   const { mutateAsync: requestTask, isPending: submitting } = useRequestTask()
+  const { mutateAsync: createObjective, isPending: creatingObjective } = useCreateObjective()
+  const { mutateAsync: approveObjectivePlan, isPending: approvingPlan } = useApproveObjectivePlan()
+  const { mutateAsync: requestObjectivePlanChanges, isPending: requestingPlanChanges } = useRequestObjectivePlanChanges()
+  const { mutateAsync: cancelObjective, isPending: cancellingObjective } = useCancelObjective()
   const { mutateAsync: confirmTaskQueue, isPending: confirming } = useConfirmTaskQueue()
   const { mutateAsync: uploadAsset, isPending: isUploadingAsset } = useUploadAsset()
   const { mutateAsync: deleteAsset } = useDeleteAsset()
 
+  const [targetMode, setTargetMode] = useState<ObjectiveMode>("EXISTING_PROJECT")
   const [selectedProject, setSelectedProject] = useState("orchestrator-dashboard")
+  const [freshProjectId, setFreshProjectId] = useState("")
+  const [freshTargetDirectory, setFreshTargetDirectory] = useState("")
+  const [freshBlueprint, setFreshBlueprint] = useState("frontend-vite")
   const [prompt, setPrompt] = useState("")
   const [queueAfterConfirmation, setQueueAfterConfirmation] = useState(true)
   const [statusMessage, setStatusMessage] = useState<TaskStatusMessage | null>(null)
   const [attachedAssets, setAttachedAssets] = useState<AttachedAsset[]>([])
   const [confirmationOpen, setConfirmationOpen] = useState(false)
   const [confirmationResult, setConfirmationResult] = useState<TaskRequestResult | null>(null)
+  const [objectiveResult, setObjectiveResult] = useState<ObjectiveIntakeResult | null>(null)
+  const [planReviewOpen, setPlanReviewOpen] = useState(false)
+  const [planReviewObjective, setPlanReviewObjective] = useState<ObjectiveRecord | null>(null)
+  const [planReview, setPlanReview] = useState<ObjectivePlanReview | null>(null)
+  const [planReviewDecisions, setPlanReviewDecisions] = useState<ObjectiveDecision[]>([])
+
+  useEffect(() => {
+    if (!objectiveDetail?.plan) return
+    setPlanReviewObjective(objectiveDetail)
+    setPlanReview(objectiveDetail.plan)
+    setPlanReviewDecisions(objectiveDetail.decisions ?? [])
+    setPlanReviewOpen(true)
+  }, [objectiveDetail])
 
   // Clarification state
   const [clarificationOpen, setClarificationOpen] = useState(false)
@@ -114,7 +147,54 @@ export const useTasks = (): UseTasksReturn => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     const trimmedPrompt = prompt.trim()
-    if (!trimmedPrompt || !selectedProject) return
+    if (!trimmedPrompt) return
+
+    if (targetMode === "FRESH_PROJECT") {
+      const trimmedProjectId = freshProjectId.trim()
+      const trimmedTargetDirectory = freshTargetDirectory.trim()
+      if (!trimmedProjectId || !trimmedTargetDirectory) {
+        setStatusMessage({ type: "error", text: "Fresh Project ID dan absolute target path wajib diisi." })
+        return
+      }
+
+      try {
+        setStatusMessage(null)
+        const result = await createObjective({
+          mode: "FRESH_PROJECT",
+          request: trimmedPrompt,
+          projectIds: [trimmedProjectId],
+          freshProject: {
+            projectId: trimmedProjectId,
+            targetDirectory: trimmedTargetDirectory,
+            blueprint: freshBlueprint,
+          },
+        })
+        setObjectiveResult(result)
+        if (result.plan) {
+          setPlanReviewObjective(result.objective)
+          setPlanReview(result.plan)
+          setPlanReviewDecisions(result.decisions ?? [])
+          setPlanReviewOpen(true)
+        }
+        setPrompt("")
+        setStatusMessage({
+          type: "success",
+          text: `Fresh Project objective ${result.objective.objectiveId} dibuat dan menunggu review genesis. Belum ada task atau queue yang dibuat.`,
+        })
+        toast.add({
+          title: "Fresh Project Objective Dibuat",
+          description: `Review genesis diperlukan sebelum repository dibuat.`,
+          type: "success",
+        })
+      } catch (err: unknown) {
+        const errorMessage = extractErrorMessage(err)
+        setStatusMessage({ type: "error", text: `Gagal membuat Fresh Project objective: ${errorMessage}` })
+        toast.add({ title: "Gagal Membuat Objective", description: errorMessage, type: "error" })
+      }
+      return
+    }
+
+    if (!selectedProject) return
 
     try {
       setStatusMessage(null)
@@ -157,7 +237,7 @@ export const useTasks = (): UseTasksReturn => {
         type: "success",
       })
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err)
+      const errorMessage = extractErrorMessage(err)
       const errorText = `Gagal membuat task: ${errorMessage}`
       setStatusMessage({
         type: "error",
@@ -225,7 +305,7 @@ export const useTasks = (): UseTasksReturn => {
         type: "success",
       })
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err)
+      const errorMessage = extractErrorMessage(err)
       const errorText = `Gagal mengirim klarifikasi: ${errorMessage}`
       setStatusMessage({
         type: "error",
@@ -274,15 +354,75 @@ export const useTasks = (): UseTasksReturn => {
     }
   }
 
+  const handleClosePlanReview = () => {
+    if (approvingPlan || requestingPlanChanges || cancellingObjective) return
+    setPlanReviewOpen(false)
+  }
+
+  const handleApprovePlan = async () => {
+    if (!planReviewObjective || !planReview) return
+    try {
+      const result = await approveObjectivePlan({ objectiveId: planReviewObjective.objectiveId, planFingerprint: planReview.planFingerprint })
+      setPlanReviewObjective(result.objective)
+      setPlanReview(result.plan)
+      setStatusMessage({ type: "success", text: `${result.plan.planId} disetujui. Approval plan belum berarti final result acceptance atau queue execution.` })
+      toast.add({ title: "Plan Disetujui", description: `${result.plan.planId} siap untuk tahap materialization berikutnya.`, type: "success" })
+    } catch (err: unknown) {
+      const errorMessage = extractErrorMessage(err)
+      setStatusMessage({ type: "error", text: `Approval plan gagal: ${errorMessage}` })
+      toast.add({ title: "Approval Plan Gagal", description: errorMessage, type: "error" })
+    }
+  }
+
+  const handleRequestPlanChanges = async (reason: string) => {
+    if (!planReviewObjective) return
+    try {
+      const result = await requestObjectivePlanChanges({ objectiveId: planReviewObjective.objectiveId, reason })
+      setPlanReviewObjective(result.objective)
+      setPlanReview(result.plan)
+      setStatusMessage({ type: "success", text: `${result.plan.planId} dibuat sebagai revision baru. Approval revision lama sudah tidak berlaku.` })
+      toast.add({ title: "Plan Revision Dibuat", description: `${result.plan.planId} kembali ke planning untuk review ulang.`, type: "success" })
+    } catch (err: unknown) {
+      const errorMessage = extractErrorMessage(err)
+      setStatusMessage({ type: "error", text: `Request revision gagal: ${errorMessage}` })
+      toast.add({ title: "Request Revision Gagal", description: errorMessage, type: "error" })
+    }
+  }
+
+  const handleCancelObjective = async () => {
+    if (!planReviewObjective) return
+    try {
+      const result = await cancelObjective(planReviewObjective.objectiveId)
+      setPlanReviewObjective(result.objective)
+      setPlanReview(result.plan)
+      setPlanReviewOpen(false)
+      setStatusMessage({ type: "success", text: `Objective ${result.objective.objectiveId} dibatalkan. Tidak ada task atau run yang dijalankan.` })
+      toast.add({ title: "Objective Dibatalkan", description: "Plan aktif tidak lagi dapat dieksekusi.", type: "success" })
+    } catch (err: unknown) {
+      const errorMessage = extractErrorMessage(err)
+      setStatusMessage({ type: "error", text: `Cancel objective gagal: ${errorMessage}` })
+      toast.add({ title: "Cancel Gagal", description: errorMessage, type: "error" })
+    }
+  }
+
   const queueJobs = daemon?.queue.latestJobs || jobs || []
+  const submittingState = submitting || creatingObjective
 
   return {
+    targetMode,
+    setTargetMode,
     projects,
     daemon,
     jobs,
     queueJobs,
     selectedProject,
     setSelectedProject,
+    freshProjectId,
+    setFreshProjectId,
+    freshTargetDirectory,
+    setFreshTargetDirectory,
+    freshBlueprint,
+    setFreshBlueprint,
     prompt,
     setPrompt,
     queueAfterConfirmation,
@@ -294,7 +434,7 @@ export const useTasks = (): UseTasksReturn => {
     handleUploadFile,
     statusMessage,
     setStatusMessage,
-    submitting,
+    submitting: submittingState,
     handleSubmit,
     refetchDaemon,
     clarificationOpen,
@@ -308,8 +448,18 @@ export const useTasks = (): UseTasksReturn => {
     pendingPrompt,
     confirmationOpen,
     confirmationResult,
+    objectiveResult,
     confirming,
     handleCloseConfirmation,
     handleConfirmQueue,
+    planReviewOpen,
+    planReviewObjective,
+    planReview,
+    planReviewDecisions,
+    planReviewActionLoading: approvingPlan || requestingPlanChanges || cancellingObjective,
+    handleClosePlanReview,
+    handleApprovePlan,
+    handleRequestPlanChanges,
+    handleCancelObjective,
   }
 }

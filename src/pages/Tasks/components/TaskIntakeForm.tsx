@@ -1,11 +1,19 @@
 import React, { useRef, useState } from "react"
-import { FileText, Play, RefreshCw, CheckCircle2, AlertCircle, Image as ImageIcon, Upload, X, Box, Sparkles } from "lucide-react"
+import { FileText, Play, RefreshCw, CheckCircle2, AlertCircle, Image as ImageIcon, Upload, X, Box, Sparkles, Link2, FolderPlus, FolderOpen } from "lucide-react"
 import type { TaskIntakeFormProps } from "../types"
 
 export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
+  targetMode,
+  onTargetModeChange,
   projects,
   selectedProject,
   onSelectProject,
+  freshProjectId,
+  onFreshProjectIdChange,
+  freshTargetDirectory,
+  onFreshTargetDirectoryChange,
+  freshBlueprint,
+  onFreshBlueprintChange,
   prompt,
   onPromptChange,
   queueAfterConfirmation,
@@ -59,22 +67,104 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-            Target Repository / Project
-          </label>
-          <select
-            value={selectedProject}
-            onChange={(e) => onSelectProject(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 font-medium"
-          >
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.id} ({p.repository})
-              </option>
-            ))}
-          </select>
-        </div>
+        <fieldset className="space-y-2">
+          <legend className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Target Mode
+          </legend>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button
+              type="button"
+              aria-pressed={targetMode === "EXISTING_PROJECT"}
+              onClick={() => onTargetModeChange("EXISTING_PROJECT")}
+              className={`rounded-lg border p-3 text-left transition-colors ${targetMode === "EXISTING_PROJECT" ? "border-indigo-500 bg-indigo-500/10" : "border-slate-700 bg-slate-800/60 hover:border-slate-600"}`}
+            >
+              <FolderOpen className="h-4 w-4 text-indigo-400 mb-2" />
+              <span className="block text-xs font-semibold text-slate-200">Existing Project</span>
+              <span className="block text-[11px] text-slate-500 mt-1">Task lifecycle saat ini</span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={targetMode === "FRESH_PROJECT"}
+              onClick={() => onTargetModeChange("FRESH_PROJECT")}
+              className={`rounded-lg border p-3 text-left transition-colors ${targetMode === "FRESH_PROJECT" ? "border-violet-500 bg-violet-500/10" : "border-slate-700 bg-slate-800/60 hover:border-slate-600"}`}
+            >
+              <FolderPlus className="h-4 w-4 text-violet-400 mb-2" />
+              <span className="block text-xs font-semibold text-slate-200">Fresh Project</span>
+              <span className="block text-[11px] text-slate-500 mt-1">Objective menunggu review</span>
+            </button>
+            <button
+              type="button"
+              disabled
+              aria-pressed={false}
+              className="rounded-lg border border-slate-800 bg-slate-950/40 p-3 text-left opacity-55 cursor-not-allowed"
+            >
+              <Link2 className="h-4 w-4 text-slate-500 mb-2" />
+              <span className="block text-xs font-semibold text-slate-400">Linked Projects</span>
+              <span className="block text-[11px] text-slate-600 mt-1">Tersedia di Phase V2.6</span>
+            </button>
+          </div>
+        </fieldset>
+
+        {targetMode === "EXISTING_PROJECT" ? (
+          <div>
+            <label htmlFor="existingProject" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+              Target Repository / Project
+            </label>
+            <select
+              id="existingProject"
+              value={selectedProject}
+              onChange={(e) => onSelectProject(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 font-medium"
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.id} ({p.repository})
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-violet-500/20 bg-violet-500/5 p-4">
+            <div>
+              <label htmlFor="freshProjectId" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                Fresh Project ID
+              </label>
+              <input
+                id="freshProjectId"
+                value={freshProjectId}
+                onChange={(e) => onFreshProjectIdChange(e.target.value)}
+                placeholder="my-new-project"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="freshBlueprint" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                Blueprint
+              </label>
+              <select
+                id="freshBlueprint"
+                value={freshBlueprint}
+                onChange={(e) => onFreshBlueprintChange(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+              >
+                <option value="frontend-vite">frontend-vite</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="freshTargetDirectory" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                Absolute Target Path
+              </label>
+              <input
+                id="freshTargetDirectory"
+                value={freshTargetDirectory}
+                onChange={(e) => onFreshTargetDirectoryChange(e.target.value)}
+                placeholder="/Users/you/Documents/my-new-project"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-violet-500 font-mono"
+              />
+              <p className="text-[11px] text-slate-500 mt-1.5">Direktori harus absolute dan belum ada. Repository baru belum dibuat pada tahap ini.</p>
+            </div>
+          </div>
+        )}
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
@@ -96,7 +186,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
         </div>
 
         {/* Optional Visual Attachments: Mockups & Project Assets */}
-        <div className="space-y-2">
+        {targetMode === "EXISTING_PROJECT" && <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
               Lampiran Gambar Desain & Asset (Opsional)
@@ -223,9 +313,9 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
               ))}
             </div>
           )}
-        </div>
+        </div>}
 
-        <div className="flex items-center justify-between p-3.5 rounded-lg bg-slate-800/40 border border-slate-700/50">
+        {targetMode === "EXISTING_PROJECT" && <div className="flex items-center justify-between p-3.5 rounded-lg bg-slate-800/40 border border-slate-700/50">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -239,7 +329,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
               Canonical plan selalu ditampilkan dahulu; eksekusi hanya dimulai setelah Approve &amp; Queue
             </label>
           </div>
-        </div>
+        </div>}
 
         {statusMessage && (
           <div
@@ -272,7 +362,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
             ) : (
               <>
                 <Play className="h-4 w-4 fill-white" />
-                <span>Generate Canonical Plan</span>
+                <span>{targetMode === "FRESH_PROJECT" ? "Create Fresh Project Objective" : "Generate Canonical Plan"}</span>
               </>
             )}
           </button>

@@ -1,13 +1,21 @@
 import React from "react"
 import { useTasks } from "./hooks"
-import { TaskIntakeForm, LiveJobQueue, ClarificationModal, TaskConfirmationModal } from "./components"
+import { TaskIntakeForm, LiveJobQueue, ClarificationModal, PlanReviewPanel, TaskConfirmationModal } from "./components"
 
 export const TasksPage: React.FC = () => {
   const {
+    targetMode,
+    setTargetMode,
     projects,
     queueJobs,
     selectedProject,
     setSelectedProject,
+    freshProjectId,
+    setFreshProjectId,
+    freshTargetDirectory,
+    setFreshTargetDirectory,
+    freshBlueprint,
+    setFreshBlueprint,
     prompt,
     setPrompt,
     queueAfterConfirmation,
@@ -33,6 +41,15 @@ export const TasksPage: React.FC = () => {
     confirming,
     handleCloseConfirmation,
     handleConfirmQueue,
+    planReviewOpen,
+    planReviewObjective,
+    planReview,
+    planReviewDecisions,
+    planReviewActionLoading,
+    handleClosePlanReview,
+    handleApprovePlan,
+    handleRequestPlanChanges,
+    handleCancelObjective,
   } = useTasks()
 
   return (
@@ -48,9 +65,17 @@ export const TasksPage: React.FC = () => {
         {/* Left Form: Task Intake (7 Cols) */}
         <div className="lg:col-span-7 space-y-6">
           <TaskIntakeForm
+            targetMode={targetMode}
+            onTargetModeChange={setTargetMode}
             projects={projects}
             selectedProject={selectedProject}
             onSelectProject={setSelectedProject}
+            freshProjectId={freshProjectId}
+            onFreshProjectIdChange={setFreshProjectId}
+            freshTargetDirectory={freshTargetDirectory}
+            onFreshTargetDirectoryChange={setFreshTargetDirectory}
+            freshBlueprint={freshBlueprint}
+            onFreshBlueprintChange={setFreshBlueprint}
             prompt={prompt}
             onPromptChange={setPrompt}
             queueAfterConfirmation={queueAfterConfirmation}
@@ -91,6 +116,18 @@ export const TasksPage: React.FC = () => {
         confirming={confirming}
         onClose={handleCloseConfirmation}
         onConfirm={handleConfirmQueue}
+      />
+
+      <PlanReviewPanel
+        isOpen={planReviewOpen}
+        objective={planReviewObjective}
+        plan={planReview}
+        decisions={planReviewDecisions}
+        actionLoading={planReviewActionLoading}
+        onClose={handleClosePlanReview}
+        onApprove={handleApprovePlan}
+        onRequestChanges={handleRequestPlanChanges}
+        onCancel={handleCancelObjective}
       />
     </div>
   )

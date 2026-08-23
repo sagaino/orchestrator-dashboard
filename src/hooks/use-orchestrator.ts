@@ -23,6 +23,8 @@ import type {
   BackupRecoveryStatus,
   BackupSchedulePreview,
   BackupRotationPreview,
+  ObjectiveMode,
+  ObjectiveLifecycleDetail,
 } from "@/services/orchestrator"
 
 // --- Query Keys ---
@@ -51,6 +53,7 @@ export const queryKeys = {
   releaseOperations: ["operations", "release"] as const,
   retentionTrash: ["operations", "retention", "trash"] as const,
   backupRecovery: ["operations", "backups", "status"] as const,
+  objective: (id: string) => ["objectives", id] as const,
 }
 
 // --- Query Hooks ---
@@ -69,6 +72,15 @@ export function useProjects() {
     queryKey: queryKeys.projects,
     queryFn: () => OrchestratorApi.getProjects(),
     staleTime: 60_000,
+  })
+}
+
+export function useObjective(objectiveId: string | null) {
+  return useQuery<ObjectiveLifecycleDetail>({
+    queryKey: queryKeys.objective(objectiveId ?? ""),
+    queryFn: () => OrchestratorApi.getObjective(objectiveId!),
+    enabled: Boolean(objectiveId),
+    staleTime: 3_000,
   })
 }
 
@@ -412,6 +424,50 @@ export function useRequestTask() {
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
       queryClient.invalidateQueries({ queryKey: queryKeys.runs })
       queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
+    },
+  })
+}
+
+export function useCreateObjective() {
+  return useMutation({
+    mutationFn: (payload: {
+      mode: ObjectiveMode
+      request: string
+      projectIds?: string[]
+      freshProject?: { projectId: string; targetDirectory: string; blueprint: string }
+    }) => OrchestratorApi.createObjective(payload),
+  })
+}
+
+export function useApproveObjectivePlan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ objectiveId, planFingerprint }: { objectiveId: string; planFingerprint?: string | null }) => OrchestratorApi.approveObjectivePlan(objectiveId, planFingerprint),
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData(queryKeys.objective(variables.objectiveId), (current: ObjectiveLifecycleDetail | undefined) => current ? { ...current, ...result.objective, plan: result.plan } : current)
+      queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+    },
+  })
+}
+
+export function useRequestObjectivePlanChanges() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ objectiveId, reason }: { objectiveId: string; reason: string }) => OrchestratorApi.requestObjectivePlanChanges(objectiveId, reason),
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData(queryKeys.objective(variables.objectiveId), (current: ObjectiveLifecycleDetail | undefined) => current ? { ...current, ...result.objective, plan: result.plan } : current)
+      queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+    },
+  })
+}
+
+export function useCancelObjective() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (objectiveId: string) => OrchestratorApi.cancelObjective(objectiveId),
+    onSuccess: (result, objectiveId) => {
+      queryClient.setQueryData(queryKeys.objective(objectiveId), (current: ObjectiveLifecycleDetail | undefined) => current ? { ...current, ...result.objective, plan: result.plan } : current)
+      queryClient.invalidateQueries({ queryKey: queryKeys.objective(objectiveId) })
     },
   })
 }
