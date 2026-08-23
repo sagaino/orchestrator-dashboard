@@ -1012,6 +1012,59 @@ export interface ObjectiveEvidenceNode {
   error: { code?: string; message?: string; [key: string]: unknown } | null
 }
 
+export interface ObjectiveVisualEvidenceRef {
+  evidenceId: string
+  href: string
+  runId: string
+  nodeId: string
+  projectId: string
+  route: string
+  viewport: { name: string; width: number; height: number; deviceScaleFactor?: number }
+  checks: { actualStatus: string; comparisonStatus: VisualEvidenceStatus; accessibilityStatus: VisualEvidenceStatus }
+  artifact: { exists: boolean; contentType: string | null; sha256: string | null }
+  createdAt: string
+  objectiveId: string | null
+}
+
+export interface ObjectiveVisualEvidenceNode {
+  nodeId: string
+  projectId: string
+  runId: string | null
+  nodeState: string
+  runState: string | null
+  verificationChecks: Array<Record<string, unknown>>
+  evidenceRefs: ObjectiveVisualEvidenceRef[]
+  captureRefs: Array<{ captureId: string; href: string; route: string; status: string; comparisonStatus: string; viewportNames: string[]; completedAt: string }>
+  revisions: Array<{ revisionId: string; href: string; iteration: number; status: string; beforeEvidenceIds: string[]; afterEvidenceIds: string[]; reason: string }>
+  certification: { certificationId: string; href: string; status: string; blockers: string[] } | null
+  requestChanges: { available: boolean; href: string; method: "POST"; reasonRequired: boolean }
+}
+
+export interface ObjectiveVisualEvidence {
+  schemaVersion: number
+  mode: "objective-visual-evidence"
+  objectiveId: string | null
+  nodes: ObjectiveVisualEvidenceNode[]
+  summary: { nodeCount: number; projectCount: number; evidenceCount: number; captureCount: number; revisionCount: number; verificationCheckCount: number; certifiedNodeCount: number; routes: string[]; viewports: string[] }
+  ownership: string
+}
+
+export interface ObjectiveVisualRepair {
+  schemaVersion: number
+  mode: "objective-visual-repair"
+  status: "APPROVED_FOR_REPAIR" | string
+  objectiveId: string
+  nodeId: string
+  projectId: string
+  runId: string
+  revisionIteration: number
+  requestedBy: string
+  sourceEvidenceIds: string[]
+  requestChangesHref: string
+  approval: { status: string; source: string; approvedBy: string; approvedAt: string }
+  nextAction: string
+}
+
 export interface IntegrationVerificationResult {
   projectId?: string | null
   script?: string | null
@@ -1130,6 +1183,7 @@ export interface ObjectiveEvidence {
     requiredReview: boolean
   }
   decisions: ObjectiveDecision[]
+  visualEvidence?: ObjectiveVisualEvidence
 }
 
 export interface AggregatePreview {
@@ -1363,6 +1417,16 @@ export const OrchestratorApi = {
 
   async getObjectiveEvidence(objectiveId: string) {
     const res = await axios.get<{ success: boolean; data: ObjectiveEvidence }>(`/api/objectives/${encodeURIComponent(objectiveId)}/evidence`)
+    return res.data.data
+  },
+
+  async getObjectiveVisualEvidence(objectiveId: string) {
+    const res = await axios.get<{ success: boolean; data: ObjectiveVisualEvidence }>(`/api/objectives/${encodeURIComponent(objectiveId)}/visual-evidence`)
+    return res.data.data
+  },
+
+  async requestObjectiveVisualChanges(objectiveId: string, payload: { nodeId: string; reason: string; requestedBy?: string; inlineComments?: InlineDiffComment[]; visualAnnotations?: Array<{ id?: string; x: number; y: number; width?: number; height?: number; comment: string; createdAt?: string }> }) {
+    const res = await axios.post<{ success: boolean; data: ObjectiveVisualRepair }>(`/api/objectives/${encodeURIComponent(objectiveId)}/visual-evidence/request-changes`, payload)
     return res.data.data
   },
 

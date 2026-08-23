@@ -566,6 +566,18 @@ export function useAcceptObjective() {
   })
 }
 
+export function useRequestObjectiveVisualChanges() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ objectiveId, ...payload }: { objectiveId: string; nodeId: string; reason: string; requestedBy?: string }) =>
+      OrchestratorApi.requestObjectiveVisualChanges(objectiveId, payload),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectiveEvidence(variables.objectiveId) })
+    },
+  })
+}
+
 export function useConfirmTaskQueue() {
   const queryClient = useQueryClient()
   return useMutation({
