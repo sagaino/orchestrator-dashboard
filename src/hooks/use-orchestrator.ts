@@ -25,6 +25,8 @@ import type {
   BackupRotationPreview,
   ObjectiveMode,
   ObjectiveLifecycleDetail,
+  ObjectiveEvidence,
+  ObjectiveSummary,
 } from "@/services/orchestrator"
 
 // --- Query Keys ---
@@ -54,6 +56,8 @@ export const queryKeys = {
   retentionTrash: ["operations", "retention", "trash"] as const,
   backupRecovery: ["operations", "backups", "status"] as const,
   objective: (id: string) => ["objectives", id] as const,
+  objectiveEvidence: (id: string) => ["objectives", id, "evidence"] as const,
+  objectives: ["objectives"] as const,
 }
 
 // --- Query Hooks ---
@@ -80,6 +84,24 @@ export function useObjective(objectiveId: string | null) {
     queryKey: queryKeys.objective(objectiveId ?? ""),
     queryFn: () => OrchestratorApi.getObjective(objectiveId!),
     enabled: Boolean(objectiveId),
+    staleTime: 3_000,
+  })
+}
+
+export function useObjectiveEvidence(objectiveId: string | null) {
+  return useQuery<ObjectiveEvidence>({
+    queryKey: queryKeys.objectiveEvidence(objectiveId ?? ""),
+    queryFn: () => OrchestratorApi.getObjectiveEvidence(objectiveId!),
+    enabled: Boolean(objectiveId),
+    refetchInterval: objectiveId ? 3_000 : false,
+    staleTime: 1_000,
+  })
+}
+
+export function useObjectives() {
+  return useQuery<ObjectiveSummary[]>({
+    queryKey: queryKeys.objectives,
+    queryFn: () => OrchestratorApi.getObjectives(),
     staleTime: 3_000,
   })
 }
@@ -468,6 +490,17 @@ export function useCancelObjective() {
     onSuccess: (result, objectiveId) => {
       queryClient.setQueryData(queryKeys.objective(objectiveId), (current: ObjectiveLifecycleDetail | undefined) => current ? { ...current, ...result.objective, plan: result.plan } : current)
       queryClient.invalidateQueries({ queryKey: queryKeys.objective(objectiveId) })
+    },
+  })
+}
+
+export function useAcceptObjective() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (objectiveId: string) => OrchestratorApi.acceptObjective(objectiveId),
+    onSuccess: (result, objectiveId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.objective(objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectiveEvidence(objectiveId) })
     },
   })
 }

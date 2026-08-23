@@ -9,6 +9,7 @@ import ErrorBoundary from "@/components/ErrorBoundary"
 
 const OverviewPage = lazy(() => import("@/pages/Overview").then((module) => ({ default: module.OverviewPage })))
 const TasksPage = lazy(() => import("@/pages/Tasks").then((module) => ({ default: module.TasksPage })))
+const ObjectivePage = lazy(() => import("@/pages/Objectives").then((module) => ({ default: module.ObjectivePage })))
 const RunsPage = lazy(() => import("@/pages/Runs").then((module) => ({ default: module.RunsPage })))
 const KnowledgePage = lazy(() => import("@/pages/Knowledge").then((module) => ({ default: module.KnowledgePage })))
 const TelemetryPage = lazy(() => import("@/pages/Telemetry").then((module) => ({ default: module.TelemetryPage })))
@@ -33,6 +34,14 @@ export const router = createBrowserRouter([
       {
         path: ROUTES.TASK,
         element: routeElement(TasksPage),
+      },
+      {
+        path: ROUTES.OBJECTIVE,
+        element: routeElement(ObjectivePage),
+      },
+      {
+        path: "objectives",
+        element: routeElement(ObjectivePage),
       },
       {
         path: ROUTES.RUNS,
