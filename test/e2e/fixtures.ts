@@ -202,6 +202,26 @@ export async function installLifecycleFixtures(page: Page) {
     usage: { actual: { totalTokens: 420, agentInvocations: 2, retries: 0 }, budget: objectiveDashboardObjective().budget, remainingTokens: 780 },
     finalAcceptance: { state: objectiveDashboardAccepted ? "ACCEPTED" : "PENDING", canAccept: !objectiveDashboardAccepted, decisionId: objectiveDashboardAccepted ? "decision-objective-dashboard" : null, acceptedBy: objectiveDashboardAccepted ? "local:e2e-operator" : null, acceptedAt: objectiveDashboardAccepted ? now : null, requiredReview: true },
     decisions: [],
+    visualEvidence: {
+      schemaVersion: 1,
+      mode: "objective-visual-evidence",
+      objectiveId: "e2e-objective-dashboard",
+      nodes: [{
+        nodeId: "N01",
+        projectId: "e2e-project",
+        runId: "e2e-accept-fixture-run",
+        nodeState: "DONE",
+        runState: "RETROSPECTIVE",
+        verificationChecks: [{ command: "npm run build", status: "PASS" }],
+        evidenceRefs: [{ evidenceId: "visual-e2e-fixture", href: "/api/runs/e2e-accept-fixture-run/visual-evidence/visual-e2e-fixture", runId: "e2e-accept-fixture-run", nodeId: "N01", projectId: "e2e-project", route: "/dashboard", viewport: { name: "desktop", width: 1440, height: 900 }, checks: { actualStatus: "CAPTURED", comparisonStatus: "PASS", accessibilityStatus: "PASS" }, artifact: { exists: true, contentType: "image/png", sha256: null }, createdAt: now, objectiveId: "e2e-objective-dashboard" }],
+        captureRefs: [{ captureId: "capture-e2e-fixture", href: "/api/runs/e2e-accept-fixture-run/visual-evidence/captures", route: "/dashboard", status: "PASS", comparisonStatus: "PASS", viewportNames: ["desktop"], completedAt: now }],
+        revisions: [],
+        certification: null,
+        requestChanges: { available: true, href: "/api/objectives/e2e-objective-dashboard/visual-evidence/request-changes", method: "POST", reasonRequired: true },
+      }],
+      summary: { nodeCount: 1, projectCount: 1, evidenceCount: 1, captureCount: 1, revisionCount: 0, verificationCheckCount: 1, certifiedNodeCount: 0, routes: ["/dashboard"], viewports: ["desktop"] },
+      ownership: "Fixture visual evidence remains linked to the source node and run.",
+    },
   })
 
   const graphForEvidence = (evidenceData: { objective: { objectiveId: string; state: string }; plan?: { planId?: string | null }; orchestration?: { orchestrationId?: string | null }; nodes: Array<{ nodeId: string; title: string; purpose: string; projectId: string; type: string; role: string; dependsOn: string[]; state: string; runId: string | null; jobId: string | null }> }) => {
@@ -418,6 +438,9 @@ export async function installLifecycleFixtures(page: Page) {
     if (pathname === "/api/objectives/e2e-objective-dashboard/preview/stop" && method === "POST") {
       aggregatePreviewSession = { ...(aggregatePreviewSession ?? {}), cleanup: { status: "CLEANED", stoppedAt: now, stoppedRunIds: ["e2e-accept-fixture-run"], errors: [] } }
       return json(route, aggregatePreviewSession)
+    }
+    if (pathname === "/api/objectives/e2e-objective-dashboard/visual-evidence/request-changes" && method === "POST") {
+      return json(route, { schemaVersion: 1, mode: "objective-visual-repair", status: "APPROVED_FOR_REPAIR", objectiveId: "e2e-objective-dashboard", nodeId: "N01", projectId: "e2e-project", runId: "e2e-accept-fixture-run", revisionIteration: 1, requestedBy: "local:e2e-operator", sourceEvidenceIds: ["visual-e2e-fixture"], requestChangesHref: "/api/objectives/e2e-objective-dashboard/visual-evidence/request-changes", approval: { status: "APPROVED_FOR_REPAIR", source: "HUMAN_VISUAL_REVIEW", approvedBy: "local:e2e-operator", approvedAt: now }, nextAction: "Repair revision sudah diotorisasi." }, 202)
     }
     if (pathname === "/api/objectives/e2e-objective-dashboard/final-acceptance" && method === "POST") {
       objectiveDashboardAccepted = true

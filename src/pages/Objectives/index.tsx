@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 import { Link, useParams } from "react-router-dom"
-import { AlertTriangle, CheckCircle2, ExternalLink, FileDiff, Eye, Gauge, GitCommitHorizontal, Layers3, ShieldCheck, Square, Target, XCircle } from "lucide-react"
+import { AlertTriangle, CheckCircle2, ExternalLink, FileDiff, Eye, Gauge, GitCommitHorizontal, Image, Layers3, RefreshCw, ShieldCheck, Square, Target, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -12,8 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useAcceptObjective, useAggregatePreview, useObjective, useObjectiveEvidence, useObjectives, usePreviewRun, useStopAggregatePreview } from "@/hooks/use-orchestrator"
-import type { AggregatePreview, ObjectiveEvidence, ObjectiveEvidenceNode, ObjectiveSummary } from "@/services/orchestrator"
+import { useAcceptObjective, useAggregatePreview, useObjective, useObjectiveEvidence, useObjectives, usePreviewRun, useRequestObjectiveVisualChanges, useStopAggregatePreview } from "@/hooks/use-orchestrator"
+import type { AggregatePreview, ObjectiveEvidence, ObjectiveEvidenceNode, ObjectiveSummary, ObjectiveVisualEvidence } from "@/services/orchestrator"
 import { CrossProjectIntegrationEvidence } from "./components/CrossProjectIntegrationEvidence"
 import { ObjectiveGraph } from "./components/ObjectiveGraph"
 
@@ -86,6 +86,35 @@ function AggregatePreviewPanel({ preview, onStop, stopping }: { preview: Aggrega
   </section>
 }
 
+function ObjectiveVisualEvidencePanel({ report, onRepair, repairing }: { report?: ObjectiveVisualEvidence; onRepair: (nodeId: string, reason: string) => Promise<void>; repairing: boolean }) {
+  const [repairNodeId, setRepairNodeId] = useState<string | null>(null)
+  const [reason, setReason] = useState("")
+  const [message, setMessage] = useState<string | null>(null)
+  if (!report) return null
+  const submitRepair = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!repairNodeId || !reason.trim()) return
+    try {
+      await onRepair(repairNodeId, reason.trim())
+      setMessage("Repair path disetujui dan revision lifecycle sudah dimulai.")
+      setRepairNodeId(null)
+      setReason("")
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Repair path tidak dapat dibuat.")
+    }
+  }
+  return <section className="rounded-xl border border-violet-500/30 bg-violet-500/5 p-5">
+    <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><Image className="h-4 w-4 text-violet-300" /><h2 className="text-sm font-semibold text-white">Objective visual & E2E evidence</h2></div><p className="mt-2 text-xs text-slate-400">Report ini menautkan evidence per-run; artifact screenshot tidak diduplikasi. Ownership tetap terlihat per node dan project.</p></div><div className="text-right text-[11px] text-slate-400"><div>{report.summary.evidenceCount} visual checks · {report.summary.captureCount} captures</div><div>{report.summary.projectCount} project · {report.summary.viewports.join(", ") || "No viewport"}</div></div></div>
+    <div className="mt-4 space-y-3">{report.nodes.map((node) => <div key={node.nodeId} className="rounded-lg border border-slate-800 bg-slate-950/40 p-3"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-mono text-xs text-violet-200">{node.nodeId} · {node.projectId}</p><p className="mt-1 text-[11px] text-slate-500">Run: {node.runId ?? "—"} · State: {node.runState ?? "NO_RUN"}</p></div>{node.requestChanges.available && <Button type="button" variant="outline" size="sm" disabled={repairing} onClick={() => { setRepairNodeId(node.nodeId); setMessage(null) }} className="gap-1.5 border-violet-500/30 text-violet-200 hover:bg-violet-500/10"><RefreshCw className="h-3.5 w-3.5" />Request changes</Button>}</div>
+      {node.verificationChecks.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{node.verificationChecks.map((check, index) => <span key={`${String(check.command ?? check.script ?? "check")}-${index}`} className="rounded border border-slate-700 px-2 py-1 text-[10px] text-slate-300">{String(check.command ?? check.script ?? "check")} · {String(check.status ?? "UNKNOWN")}</span>)}</div>}
+      {node.evidenceRefs.length === 0 ? <p className="mt-3 text-xs text-slate-500">Belum ada visual capture untuk node ini; status visual tetap UNKNOWN.</p> : <div className="mt-3 grid gap-2 lg:grid-cols-2">{node.evidenceRefs.map((item) => <div key={item.evidenceId} className="rounded border border-slate-800 p-2 text-[11px]"><div className="flex items-center justify-between gap-2"><a href={item.href} target="_blank" rel="noreferrer" className="font-mono text-violet-200 hover:text-violet-100">{item.evidenceId}</a><span className="text-slate-500">{item.viewport.name} · {item.viewport.width}×{item.viewport.height}</span></div><p className="mt-1 text-slate-400">Route: <span className="font-mono text-slate-200">{item.route}</span></p><p className="mt-1 text-slate-500">Comparison: <span className="text-slate-300">{item.checks.comparisonStatus}</span> · Accessibility: <span className="text-slate-300">{item.checks.accessibilityStatus}</span></p></div>)}</div>}
+      {node.captureRefs.length > 0 && <p className="mt-3 text-[11px] text-slate-500">Capture jobs: {node.captureRefs.map((capture) => `${capture.captureId} (${capture.status})`).join(", ")}</p>}
+      {repairNodeId === node.nodeId && <form onSubmit={submitRepair} className="mt-3 rounded-lg border border-violet-500/20 bg-violet-500/5 p-3"><label className="text-[11px] text-violet-200" htmlFor={`repair-reason-${node.nodeId}`}>Alasan request changes</label><textarea id={`repair-reason-${node.nodeId}`} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Contoh: perbaiki overflow pada mobile viewport" className="mt-2 min-h-20 w-full rounded border border-slate-700 bg-slate-950 p-2 text-xs text-slate-200 outline-none focus:border-violet-400" /><div className="mt-2 flex justify-end gap-2"><Button type="button" variant="ghost" size="sm" onClick={() => setRepairNodeId(null)}>Batal</Button><Button type="submit" size="sm" disabled={repairing || !reason.trim()} className="gap-1.5 bg-violet-600 text-white hover:bg-violet-500">{repairing ? "Memulai…" : "Approve repair"}</Button></div></form>}
+    </div>)}</div>
+    {message && <p className="mt-3 text-xs text-violet-200">{message}</p>}
+  </section>
+}
+
 function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
   const [acceptOpen, setAcceptOpen] = useState(false)
   const [previewMessage, setPreviewMessage] = useState<string | null>(null)
@@ -94,6 +123,7 @@ function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
   const preview = usePreviewRun()
   const aggregate = useAggregatePreview()
   const stopAggregate = useStopAggregatePreview()
+  const visualRepair = useRequestObjectiveVisualChanges()
   const objective = evidence.objective
   const handlePreview = async (runId: string) => {
     try {
@@ -118,6 +148,10 @@ function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
     if (!aggregatePreview) return
     setAggregatePreview(await stopAggregate.mutateAsync({ objectiveId: objective.objectiveId, sessionId: aggregatePreview.sessionId }))
   }
+  const handleVisualRepair = async (nodeId: string, reason: string) => {
+    await visualRepair.mutateAsync({ objectiveId: objective.objectiveId, nodeId, reason })
+    setPreviewMessage(`Visual repair untuk ${nodeId} disetujui.`)
+  }
   return (
     <div className="w-full space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -127,6 +161,7 @@ function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
 
       {previewMessage && <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs text-indigo-200">{previewMessage}</div>}
       <AggregatePreviewPanel preview={aggregatePreview} onStop={() => void handleStopAggregatePreview()} stopping={stopAggregate.isPending} />
+      <ObjectiveVisualEvidencePanel report={evidence.visualEvidence} onRepair={handleVisualRepair} repairing={visualRepair.isPending} />
       {evidence.finalAcceptance.state !== "ACCEPTED" && evidence.blockers.length > 0 && <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4"><div className="flex items-center gap-2 text-amber-200"><AlertTriangle className="h-4 w-4" /><h2 className="text-sm font-semibold">Unresolved blockers</h2></div><div className="mt-3 space-y-2 text-xs text-amber-100/80">{evidence.blockers.map((blocker) => <div key={blocker.id} className="rounded-lg border border-amber-500/20 bg-slate-950/20 p-2"><span className="font-mono text-amber-200">{blocker.id}</span> · {blocker.message}</div>)}</div></section>}
 
       {objective.mode === "CROSS_PROJECT_INCIDENT" && evidence.integration && <CrossProjectIntegrationEvidence integration={evidence.integration} objectiveProjectIds={objective.projectIds} nodes={evidence.nodes} blockers={evidence.blockers} canAccept={evidence.finalAcceptance.canAccept} />}

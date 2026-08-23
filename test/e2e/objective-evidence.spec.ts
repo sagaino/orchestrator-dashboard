@@ -24,6 +24,14 @@ test("Objective evidence keeps final acceptance separate from evidence review", 
   await page.getByRole("button", { name: "Stop preview" }).click()
   await expect(page.getByRole("button", { name: "Stop preview" })).toHaveCount(0)
 
+  await expect(page.getByRole("heading", { name: "Objective visual & E2E evidence" })).toBeVisible()
+  await expect(page.getByText("/dashboard", { exact: true })).toBeVisible()
+  await expect(page.getByText("desktop · 1440×900", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "Request changes" }).click()
+  await page.getByLabel("Alasan request changes").fill("Perbaiki layout dashboard pada viewport desktop")
+  await page.getByRole("button", { name: "Approve repair" }).click()
+  await expect(page.getByText("Repair path disetujui dan revision lifecycle sudah dimulai.")).toBeVisible()
+
   const graphNode = page.getByRole("button", { name: /N01.*DIAGNOSTIC/ })
   await graphNode.focus()
   await graphNode.press("Enter")
