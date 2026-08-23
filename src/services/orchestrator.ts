@@ -231,6 +231,8 @@ export interface ProjectRelationshipsResult {
   schemaVersion: number
   projectId: string
   relationships: ProjectRelationship[]
+  incomingRelationships?: ProjectRelationship[]
+  effectiveRelationships?: ProjectRelationship[]
   allowedTypes: ProjectRelationshipType[]
   registeredProjectIds: string[]
 }

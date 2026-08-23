@@ -130,7 +130,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
               <div className="mt-3 space-y-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
                 <div>
                   <p className="text-xs font-semibold text-slate-200">Linked Projects</p>
-                  <p className="mt-1 text-[11px] text-slate-500">Hanya project yang memiliki relationship eksplisit dengan primary project yang tersedia.</p>
+                  <p className="mt-1 text-[11px] text-slate-500">Project yang memiliki relationship terdaftar dengan primary project tersedia dari kedua arah.</p>
                 </div>
                 {relationshipsLoading ? (
                   <p className="text-xs text-slate-400">Memuat relationship terdaftar...</p>

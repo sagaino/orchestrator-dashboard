@@ -85,7 +85,7 @@ export const useTasks = (): UseTasksReturn => {
   }, [projects, selectedProject])
 
   useEffect(() => {
-    const available = relationshipData?.relationships.map((relationship) => relationship.targetProjectId) ?? []
+    const available = (relationshipData?.effectiveRelationships ?? relationshipData?.relationships ?? []).map((relationship) => relationship.targetProjectId)
     setLinkedProjectIds((current) => current.filter((projectId) => available.includes(projectId)))
   }, [relationshipData, selectedProject])
 
@@ -220,10 +220,10 @@ export const useTasks = (): UseTasksReturn => {
         setStatusMessage({ type: "error", text: "Linked Projects belum diaktifkan oleh ORCHESTRATOR_CROSS_PROJECT=1." })
         return
       }
-      const allowedRelatedIds = new Set(relationshipData?.relationships.map((relationship) => relationship.targetProjectId) ?? [])
+      const allowedRelatedIds = new Set((relationshipData?.effectiveRelationships ?? relationshipData?.relationships ?? []).map((relationship) => relationship.targetProjectId))
       const safeLinkedProjectIds = linkedProjectIds.filter((projectId) => allowedRelatedIds.has(projectId) && projectId !== selectedProject)
       if (safeLinkedProjectIds.length === 0) {
-        setStatusMessage({ type: "error", text: "Pilih minimal satu Linked Project yang memiliki relationship eksplisit dengan primary project." })
+        setStatusMessage({ type: "error", text: "Pilih minimal satu Linked Project yang memiliki relationship terdaftar dengan primary project." })
         return
       }
       try {
@@ -481,7 +481,7 @@ export const useTasks = (): UseTasksReturn => {
     queueJobs,
     selectedProject,
     setSelectedProject,
-    projectRelationships: relationshipData?.relationships ?? [],
+    projectRelationships: relationshipData?.effectiveRelationships ?? relationshipData?.relationships ?? [],
     linkedProjectIds,
     setLinkedProjectIds,
     relationshipsLoading,
