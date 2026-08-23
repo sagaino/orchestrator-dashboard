@@ -27,6 +27,7 @@ import type {
   ObjectiveLifecycleDetail,
   ObjectiveEvidence,
   DeliveryCertificationHistory,
+  SkillCatalog,
   ObjectiveGraph,
   ObjectiveSummary,
   AggregatePreview,
@@ -67,6 +68,7 @@ export const queryKeys = {
   deliveryCertification: (id: string) => ["objectives", id, "delivery-certification"] as const,
   objectiveGraph: (id: string) => ["objectives", id, "graph"] as const,
   objectives: ["objectives"] as const,
+  skills: ["skills"] as const,
   decisionInbox: ["decisions", "inbox"] as const,
 }
 
@@ -116,6 +118,14 @@ export function useObjective(objectiveId: string | null) {
     queryFn: () => OrchestratorApi.getObjective(objectiveId!),
     enabled: Boolean(objectiveId),
     staleTime: 3_000,
+  })
+}
+
+export function useSkillCatalog() {
+  return useQuery<SkillCatalog>({
+    queryKey: queryKeys.skills,
+    queryFn: () => OrchestratorApi.getSkillCatalog(),
+    staleTime: 30_000,
   })
 }
 
@@ -540,6 +550,18 @@ export function useApproveObjectivePlan() {
     onSuccess: (result, variables) => {
       queryClient.setQueryData(queryKeys.objective(variables.objectiveId), (current: ObjectiveLifecycleDetail | undefined) => current ? { ...current, ...result.objective, plan: result.plan } : current)
       queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+    },
+  })
+}
+
+export function useAssignObjectivePlanSkills() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ objectiveId, assignments }: { objectiveId: string; assignments: Array<{ nodeId: string; skillId: string; version: string; checksum?: string }> }) => OrchestratorApi.assignObjectivePlanSkills(objectiveId, assignments),
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData(queryKeys.objective(variables.objectiveId), (current: ObjectiveLifecycleDetail | undefined) => current ? { ...current, ...result.objective, plan: result.plan } : current)
+      queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.decisionInbox })
     },
   })
 }

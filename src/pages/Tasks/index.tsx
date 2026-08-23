@@ -51,6 +51,8 @@ export const TasksPage: React.FC = () => {
     planReview,
     planReviewDecisions,
     planReviewActionLoading,
+    skillCatalog,
+    handleAssignPlanSkills,
     handleClosePlanReview,
     handleApprovePlan,
     handleRequestPlanChanges,
@@ -134,6 +136,8 @@ export const TasksPage: React.FC = () => {
         plan={planReview}
         decisions={planReviewDecisions}
         actionLoading={planReviewActionLoading}
+        skillCatalog={skillCatalog}
+        onAssignSkills={handleAssignPlanSkills}
         onClose={handleClosePlanReview}
         onApprove={handleApprovePlan}
         onRequestChanges={handleRequestPlanChanges}

@@ -111,6 +111,7 @@ export async function installLifecycleFixtures(page: Page) {
   let provenancePlanId: string | null = null
   let planReviewState: "PENDING_APPROVAL" | "APPROVED" | "CANCELLED" = "PENDING_APPROVAL"
   let planReviewRevision = 1
+  let planReviewSkillAssigned = false
   let objectiveDashboardAccepted = false
   let aggregatePreviewSession: Record<string, unknown> | null = null
   let deliveryCertification: Record<string, any> | null = null
@@ -151,7 +152,7 @@ export async function installLifecycleFixtures(page: Page) {
     clarificationQuestion: null,
     projects: ["e2e-project"],
     nodes: [
-      { nodeId: "N01", title: "Inspect project", purpose: "Collect bounded repository context.", projectId: "e2e-project", role: "DIAGNOSTIC", type: "DIAGNOSTIC", dependsOn: [], acceptanceCriteria: ["Context is bounded."], allowedPaths: [], verification: ["typecheck"], risk: "LOW", complexity: "LOW", requiresChanges: false, canRunInParallel: true, writeConflictGroup: null, contextFrom: [], skills: [] },
+      { nodeId: "N01", title: "Inspect project", purpose: "Collect bounded repository context.", projectId: "e2e-project", role: "DIAGNOSTIC", type: "DIAGNOSTIC", dependsOn: [], acceptanceCriteria: ["Context is bounded."], allowedPaths: [], verification: ["typecheck"], risk: "LOW", complexity: "LOW", requiresChanges: false, canRunInParallel: true, writeConflictGroup: null, contextFrom: [], skills: planReviewSkillAssigned ? [{ skillId: "diagnostic-review", version: "1.0.0", checksum: "a".repeat(64) }] : [] },
       { nodeId: "N02", title: "Verify implementation", purpose: "Run the planned verification after inspection.", projectId: "e2e-project", role: "TESTING", type: "VERIFICATION", dependsOn: ["N01"], acceptanceCriteria: ["Verification passes."], allowedPaths: [], verification: ["build"], risk: "MEDIUM", complexity: "MEDIUM", requiresChanges: false, canRunInParallel: false, writeConflictGroup: null, contextFrom: ["N01"], skills: [] },
     ],
     integration: { required: true, projectVerification: ["typecheck"], crossProjectVerification: [], previewRequired: false },
@@ -430,6 +431,13 @@ export async function installLifecycleFixtures(page: Page) {
     }
 
     if (pathname === "/api/objectives/e2e-plan-review" && method === "GET") return json(route, planReviewData())
+    if (pathname === "/api/skills" && method === "GET") return json(route, { schemaVersion: 1, mode: "read-only-skill-catalog", registryState: "AVAILABLE", skills: [{ skillId: "diagnostic-review", version: "1.0.0", purpose: "Review bounded diagnostic evidence.", supportedRoles: ["DIAGNOSTIC"], supportedTaskTypes: ["DIAGNOSTIC"], requiredContextTypes: ["PLAN"], requiredCapabilities: ["context.read"], compatibleProjectSignals: [], riskLevel: "LOW", instructionChecksum: "a".repeat(64), verificationRequirements: ["typecheck"], enabled: true, provenance: { source: "LOCAL_HUMAN", humanInstaller: "local:e2e-operator", installedAt: now, sourceRef: "fixture" } }] })
+    if (pathname === "/api/objectives/e2e-plan-review/plan/skills" && method === "POST") {
+      planReviewSkillAssigned = true
+      planReviewState = "PENDING_APPROVAL"
+      planReviewRevision += 1
+      return json(route, { objective: planReviewObjective(), plan: planReviewPlan(), previousPlan: null, decision: { decisionId: "decision-plan-assign-skills-fixture", objectiveId: "e2e-plan-review", nodeId: null, runId: null, type: "SKILL_ASSIGNMENT", state: "RESOLVED", evidence: {}, requestedAction: "Assign skills", allowedChoices: ["ASSIGN_SKILLS", "CANCEL"], creator: "SYSTEM", createdAt: now, resolution: { action: "ASSIGN_SKILLS", resolvedBy: "local:e2e-operator", resolvedAt: now } }, skillAssignments: [{ nodeId: "N01", skill: { skillId: "diagnostic-review", version: "1.0.0", checksum: "a".repeat(64) } }], registryRevision: 1 }, 201)
+    }
     if (pathname === "/api/objectives/e2e-objective-dashboard" && method === "GET") return json(route, { ...objectiveDashboardObjective(), plan: objectiveDashboardEvidence().plan, orchestration: objectiveDashboardEvidence().orchestration, decisions: [], decisionSummary: { open: [], recent: [] } })
     if (pathname === "/api/objectives/e2e-objective-dashboard/evidence" && method === "GET") return json(route, objectiveDashboardEvidence())
     if (pathname === "/api/objectives/e2e-objective-dashboard/graph" && method === "GET") return json(route, graphForEvidence(objectiveDashboardEvidence()))

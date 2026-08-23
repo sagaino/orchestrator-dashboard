@@ -23,9 +23,15 @@ test("Plan Review exposes scope, graph edges, budget, and explicit approval", as
   await expect(dialog).toContainText("Max nodes")
   await expect(dialog).toContainText("Project verification")
 
+  await dialog.getByLabel("Skill assignment N01").selectOption("diagnostic-review@1.0.0")
+  await dialog.getByRole("button", { name: "Assign selected skills" }).click()
+  await expect(dialog).toContainText("plan-e2e-plan-review-r2")
+  await expect(dialog).toContainText("diagnostic-review@1.0.0")
+
   await dialog.getByRole("button", { name: "Approve Plan" }).click()
   await expect(dialog.getByText("Plan Approved", { exact: true })).toBeVisible()
   expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/approve-plan")
+  expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/plan/skills")
 })
 
 test("Plan Review maps revision and cancel actions to separate endpoints", async ({ page }) => {
