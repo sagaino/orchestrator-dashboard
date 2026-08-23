@@ -58,6 +58,8 @@ export const PlanReviewPanel: React.FC<PlanReviewPanelProps> = ({
     setRequestMode(false)
   }
   const compatibleSkills = (node: typeof plan.nodes[number]) => skillCatalog.skills.filter((skill) => (
+    skill.enabled
+    &&
     (skill.supportedRoles.includes(node.role) || skill.supportedRoles.includes("GENERAL"))
     && (skill.supportedTaskTypes.includes(node.type) || skill.supportedTaskTypes.includes("ANY"))
   ))

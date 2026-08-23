@@ -916,6 +916,7 @@ export interface SkillCatalogEntry {
   verificationRequirements: string[]
   enabled: boolean
   provenance: { source: string; humanInstaller: string; installedAt: string; sourceRef: string }
+  usage: { planAssignments: number; runAssignments: number; lastSeenAt: string | null }
 }
 
 export interface SkillCatalog {
@@ -1469,6 +1470,16 @@ export const OrchestratorApi = {
 
   async getSkillCatalog() {
     const res = await axios.get<{ success: boolean; data: SkillCatalog }>("/api/skills")
+    return res.data.data
+  },
+
+  async updateSkillEnabled(skillId: string, version: string, enabled: boolean) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.put<{ success: boolean; data: { registry: SkillCatalog; skill: SkillCatalogEntry; changed: boolean; previousEnabled: boolean } }>(
+      `/api/skills/${encodeURIComponent(skillId)}`,
+      { version, enabled },
+      { headers: { "Idempotency-Key": `dashboard-skill-status-${randomPart}` } },
+    )
     return res.data.data
   },
 

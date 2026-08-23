@@ -15,6 +15,7 @@ const RunsPage = lazy(() => import("@/pages/Runs").then((module) => ({ default: 
 const KnowledgePage = lazy(() => import("@/pages/Knowledge").then((module) => ({ default: module.KnowledgePage })))
 const TelemetryPage = lazy(() => import("@/pages/Telemetry").then((module) => ({ default: module.TelemetryPage })))
 const OperationsPage = lazy(() => import("@/pages/Operations").then((module) => ({ default: module.OperationsPage })))
+const SkillsPage = lazy(() => import("@/pages/Skills").then((module) => ({ default: module.SkillsPage })))
 const RouteFallback = () => <div className="p-6 text-slate-400">Loading…</div>
 const routeElement = (Page: ComponentType) => <Suspense fallback={<RouteFallback />}><Page /></Suspense>
 
@@ -63,6 +64,10 @@ export const router = createBrowserRouter([
       {
         path: ROUTES.OPERATIONS,
         element: routeElement(OperationsPage),
+      },
+      {
+        path: ROUTES.SKILLS,
+        element: routeElement(SkillsPage),
       },
     ],
   },

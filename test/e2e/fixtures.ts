@@ -112,6 +112,7 @@ export async function installLifecycleFixtures(page: Page) {
   let planReviewState: "PENDING_APPROVAL" | "APPROVED" | "CANCELLED" = "PENDING_APPROVAL"
   let planReviewRevision = 1
   let planReviewSkillAssigned = false
+  let skillEnabled = true
   let objectiveDashboardAccepted = false
   let aggregatePreviewSession: Record<string, unknown> | null = null
   let deliveryCertification: Record<string, any> | null = null
@@ -431,7 +432,11 @@ export async function installLifecycleFixtures(page: Page) {
     }
 
     if (pathname === "/api/objectives/e2e-plan-review" && method === "GET") return json(route, planReviewData())
-    if (pathname === "/api/skills" && method === "GET") return json(route, { schemaVersion: 1, mode: "read-only-skill-catalog", registryState: "AVAILABLE", skills: [{ skillId: "diagnostic-review", version: "1.0.0", purpose: "Review bounded diagnostic evidence.", supportedRoles: ["DIAGNOSTIC"], supportedTaskTypes: ["DIAGNOSTIC"], requiredContextTypes: ["PLAN"], requiredCapabilities: ["context.read"], compatibleProjectSignals: [], riskLevel: "LOW", instructionChecksum: "a".repeat(64), verificationRequirements: ["typecheck"], enabled: true, provenance: { source: "LOCAL_HUMAN", humanInstaller: "local:e2e-operator", installedAt: now, sourceRef: "fixture" } }] })
+    if (pathname === "/api/skills" && method === "GET") return json(route, { schemaVersion: 1, mode: "read-only-skill-catalog", registryState: "AVAILABLE", skills: [{ skillId: "diagnostic-review", version: "1.0.0", purpose: "Review bounded diagnostic evidence.", supportedRoles: ["DIAGNOSTIC"], supportedTaskTypes: ["DIAGNOSTIC"], requiredContextTypes: ["PLAN"], requiredCapabilities: ["context.read"], compatibleProjectSignals: [], riskLevel: "LOW", instructionChecksum: "a".repeat(64), verificationRequirements: ["typecheck"], enabled: skillEnabled, provenance: { source: "LOCAL_HUMAN", humanInstaller: "local:e2e-operator", installedAt: now, sourceRef: "fixture" }, usage: { planAssignments: planReviewSkillAssigned ? 1 : 0, runAssignments: 0, lastSeenAt: planReviewSkillAssigned ? now : null } }] })
+    if (pathname === "/api/skills/diagnostic-review" && method === "PUT") {
+      skillEnabled = Boolean(request.postDataJSON()?.enabled)
+      return json(route, { registry: { revision: skillEnabled ? 2 : 1 }, skill: { skillId: "diagnostic-review", version: "1.0.0", enabled: skillEnabled }, changed: true, previousEnabled: !skillEnabled }, 200)
+    }
     if (pathname === "/api/objectives/e2e-plan-review/plan/skills" && method === "POST") {
       planReviewSkillAssigned = true
       planReviewState = "PENDING_APPROVAL"

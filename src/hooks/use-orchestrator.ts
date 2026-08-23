@@ -129,6 +129,17 @@ export function useSkillCatalog() {
   })
 }
 
+export function useUpdateSkillEnabled() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ skillId, version, enabled }: { skillId: string; version: string; enabled: boolean }) =>
+      OrchestratorApi.updateSkillEnabled(skillId, version, enabled),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.skills })
+    },
+  })
+}
+
 export function useObjectiveEvidence(objectiveId: string | null) {
   return useQuery<ObjectiveEvidence>({
     queryKey: queryKeys.objectiveEvidence(objectiveId ?? ""),
