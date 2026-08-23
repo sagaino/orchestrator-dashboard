@@ -228,21 +228,36 @@ export const useTasks = (): UseTasksReturn => {
       }
       try {
         setStatusMessage(null)
-        const result = await createObjective({
+        const objective = await createObjective({
           mode: "CROSS_PROJECT_INCIDENT",
           request: trimmedPrompt,
           projectIds: [selectedProject, ...safeLinkedProjectIds],
         })
-        setObjectiveResult(result)
-        if (result.plan) {
-          setPlanReviewObjective(result.objective)
-          setPlanReview(result.plan)
-          setPlanReviewDecisions(result.decisions ?? [])
-          setPlanReviewOpen(true)
+        setObjectiveResult(objective)
+        setPendingObjectiveId(objective.objective.objectiveId)
+        setPendingPrompt(trimmedPrompt)
+        const res = await generateObjectivePlan({ objectiveId: objective.objective.objectiveId })
+
+        if (isClarificationNeeded(res)) {
+          const questionText = extractClarificationQuestion(res)
+          setClarificationQuestion(questionText)
+          setClarificationAnswer("")
+          setClarificationOpen(true)
+          toast.add({ title: "Klarifikasi Lintas Project Diperlukan", description: questionText, type: "warning" })
+          return
         }
+
+        if (!res.plan) throw new Error("Diagnostic planner tidak menghasilkan plan review.")
+        setPlanReviewObjective(res.objective)
+        setPlanReview(res.plan)
+        setPlanReviewDecisions(res.decisions ?? [])
+        setPlanReviewOpen(true)
         setPrompt("")
-        setStatusMessage({ type: "success", text: `Linked Projects objective ${result.objective.objectiveId} dibuat untuk review planning.` })
-        toast.add({ title: "Linked Projects Objective Dibuat", description: "Review relationship, contract checks, dan plan sebelum melanjutkan.", type: "success" })
+        setPendingPrompt("")
+        setPendingObjectiveId(null)
+        const successText = `Linked Projects objective ${res.objective.objectiveId} dan ${res.plan.planId} siap untuk review.`
+        setStatusMessage({ type: "success", text: successText })
+        toast.add({ title: "Linked Projects Plan Siap Direview", description: "Review diagnostic evidence, relationship, contract checks, dan plan sebelum melanjutkan.", type: "success" })
       } catch (err: unknown) {
         const errorMessage = extractErrorMessage(err)
         setStatusMessage({ type: "error", text: `Gagal membuat Linked Projects objective: ${errorMessage}` })

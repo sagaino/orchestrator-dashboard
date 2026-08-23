@@ -174,6 +174,27 @@ export async function installLifecycleFixtures(page: Page) {
     decisionSummary: { open: [], recent: [] },
   })
 
+  const crossIntakeObjective = () => ({
+    ...planReviewObjective(),
+    objectiveId: "e2e-cross-intake",
+    mode: "CROSS_PROJECT_INCIDENT",
+    state: "PLAN_REVIEW",
+    projectIds: ["e2e-project", "e2e-backend"],
+    activePlanId: "plan-e2e-cross-intake-r1",
+  })
+
+  const crossIntakePlan = () => ({
+    ...planReviewPlan(),
+    planId: "plan-e2e-cross-intake-r1",
+    objectiveId: "e2e-cross-intake",
+    projects: ["e2e-project", "e2e-backend"],
+    nodes: planReviewPlan().nodes.map((node, index) => ({
+      ...node,
+      projectId: index === 0 ? "e2e-project" : "e2e-backend",
+    })),
+    integration: { required: true, projectVerification: ["typecheck"], crossProjectVerification: ["test:contract"], previewRequired: false },
+  })
+
   const objectiveDashboardObjective = () => ({
     schemaVersion: 1,
     revision: objectiveDashboardAccepted ? 1 : 0,
@@ -408,6 +429,13 @@ export async function installLifecycleFixtures(page: Page) {
           planning: { started: false, readOnly: true, tasksCreated: 0, jobsCreated: 0, runsCreated: 0 },
         }, 201)
       }
+      if (body.mode === "CROSS_PROJECT_INCIDENT") {
+        return json(route, {
+          objective: { ...crossIntakeObjective(), state: "PLANNING", request: body.request || "", activePlanId: null },
+          summary: { objectiveId: "e2e-cross-intake", mode: "CROSS_PROJECT_INCIDENT", state: "PLANNING", projectIds: body.projectIds || ["e2e-project", "e2e-backend"] },
+          planning: { started: false, readOnly: true, tasksCreated: 0, jobsCreated: 0, runsCreated: 0 },
+        }, 201)
+      }
       const projectId = body.freshProject?.projectId || body.projectIds?.[0] || "fixture-project"
       return json(route, {
         objective: {
@@ -440,6 +468,9 @@ export async function installLifecycleFixtures(page: Page) {
 
     if (pathname === "/api/objectives/e2e-plan-review/generate-plan" && method === "POST") {
       return json(route, { objective: planReviewObjective(), plan: planReviewPlan(), status: "PLAN_REVIEW", alreadyPlanned: false, planning: { started: true, readOnly: true, tasksCreated: 0, jobsCreated: 0, runsCreated: 0 } }, 201)
+    }
+    if (pathname === "/api/objectives/e2e-cross-intake/generate-plan" && method === "POST") {
+      return json(route, { objective: crossIntakeObjective(), plan: crossIntakePlan(), status: "PLAN_REVIEW", alreadyPlanned: false, planning: { started: true, readOnly: true, tasksCreated: 0, jobsCreated: 0, runsCreated: 0 } }, 201)
     }
 
     if (pathname === "/api/objectives/e2e-plan-review" && method === "GET") return json(route, planReviewData())
