@@ -37,6 +37,25 @@ function StatusBadge({ state }: { state: string }) {
   return <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider ${stateTone(state)}`}>{humanize(state)}</span>
 }
 
+function requestSections(request: string) {
+  const normalized = request.trim().replace(/\s+/g, " ")
+  const sentence = normalized.match(/^(.{1,180}?[.!?])(?:\s|$)/)?.[1]
+  if (sentence) return { title: sentence, details: normalized.slice(sentence.length).trim() }
+  if (normalized.length <= 150) return { title: normalized, details: "" }
+  const boundary = normalized.slice(0, 150).lastIndexOf(" ")
+  const title = `${normalized.slice(0, boundary > 80 ? boundary : 150).trim()}…`
+  return { title, details: normalized }
+}
+
+function ObjectiveRequestHeading({ request }: { request: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const { title, details } = requestSections(request)
+  return <div className="min-w-0">
+    <h1 className="max-w-5xl break-words text-xl font-semibold leading-tight text-white sm:text-2xl">{title}</h1>
+    {details && <div className="mt-3 max-w-5xl"><p className={`text-sm leading-6 text-slate-400 ${expanded ? "" : "line-clamp-2"}`}>{details}</p><button type="button" onClick={() => setExpanded((current) => !current)} className="mt-1 text-xs font-medium text-indigo-300 transition-colors hover:text-indigo-200">{expanded ? "Sembunyikan instruksi" : "Lihat instruksi lengkap"}</button></div>}
+  </div>
+}
+
 function SummaryList({ items }: { items: ObjectiveSummary[] }) {
   return (
     <div className="space-y-3">
@@ -120,7 +139,7 @@ function ObjectivePlanGate({ lifecycle }: { lifecycle: ObjectiveLifecycleDetail 
 }
 
 function PlanOnlyView({ lifecycle }: { lifecycle: ObjectiveLifecycleDetail }) {
-  return <div className="w-full space-y-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><Link to="/objectives" className="text-xs text-indigo-300 hover:text-indigo-200">← Semua objectives</Link><div className="mt-3 flex items-center gap-3"><div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-2.5 text-indigo-300"><Target className="h-5 w-5" /></div><div><p className="font-mono text-xs text-indigo-300">{lifecycle.objectiveId}</p><h1 className="text-2xl font-semibold text-white">{lifecycle.request}</h1></div></div></div><div className="flex flex-col items-end gap-3"><StatusBadge state={lifecycle.state} /><ObjectivePlanGate lifecycle={lifecycle} /></div></div><section className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5"><h2 className="text-sm font-semibold text-amber-200">Execution belum dimulai</h2><p className="mt-2 text-xs text-slate-400">Plan revision aktif menunggu human approval. Evidence eksekusi akan tersedia setelah plan disetujui dan dimaterialisasi.</p></section></div>
+  return <div className="w-full space-y-6"><Link to="/objectives" className="text-xs text-indigo-300 hover:text-indigo-200">← Semua objectives</Link><div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_auto]"><div className="flex min-w-0 items-start gap-3"><div className="mt-0.5 shrink-0 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-2.5 text-indigo-300"><Target className="h-5 w-5" /></div><div className="min-w-0"><p className="mb-1 font-mono text-xs text-indigo-300">{lifecycle.objectiveId}</p><ObjectiveRequestHeading request={lifecycle.request} /></div></div><div className="flex shrink-0 flex-col items-start gap-3 lg:items-end"><StatusBadge state={lifecycle.state} /><ObjectivePlanGate lifecycle={lifecycle} /></div></div><section className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5"><h2 className="text-sm font-semibold text-amber-200">Execution belum dimulai</h2><p className="mt-2 text-xs text-slate-400">Plan revision aktif menunggu human approval. Evidence eksekusi akan tersedia setelah plan disetujui dan dimaterialisasi.</p></section></div>
 }
 
 function NodeCard({ node, onPreview, previewing }: { node: ObjectiveEvidenceNode; onPreview: (runId: string) => void; previewing: boolean }) {
@@ -274,9 +293,10 @@ function EvidenceView({ evidence, lifecycle }: { evidence: ObjectiveEvidence; li
   }
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div><Link to="/objectives" className="text-xs text-indigo-300 hover:text-indigo-200">← Semua objectives</Link><div className="mt-3 flex items-center gap-3"><div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-2.5 text-indigo-300"><Target className="h-5 w-5" /></div><div><p className="font-mono text-xs text-indigo-300">{objective.objectiveId}</p><h1 className="text-2xl font-semibold text-white">{objective.request}</h1></div></div></div>
-        <div className="flex flex-col items-end gap-2"><StatusBadge state={objective.state} /><ObjectivePlanGate lifecycle={lifecycle} /><div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="outline" disabled={aggregate.isPending || aggregatePreview?.cleanup.status === "ACTIVE"} onClick={() => void handleAggregatePreview()} className="gap-2 border-cyan-500/30 text-cyan-200 hover:bg-cyan-500/10"><Layers3 className="h-4 w-4" />{aggregate.isPending ? "Starting preview…" : "Aggregate preview"}</Button><Button type="button" disabled={!evidence.finalAcceptance.canAccept || accept.isPending} onClick={() => setAcceptOpen(true)} className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"><CheckCircle2 className="h-4 w-4" />Final Acceptance</Button></div></div>
+      <Link to="/objectives" className="text-xs text-indigo-300 hover:text-indigo-200">← Semua objectives</Link>
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="flex min-w-0 items-start gap-3"><div className="mt-0.5 shrink-0 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-2.5 text-indigo-300"><Target className="h-5 w-5" /></div><div className="min-w-0"><p className="mb-1 font-mono text-xs text-indigo-300">{objective.objectiveId}</p><ObjectiveRequestHeading request={objective.request} /></div></div>
+        <div className="flex shrink-0 flex-col items-start gap-2 lg:items-end"><StatusBadge state={objective.state} /><ObjectivePlanGate lifecycle={lifecycle} /><div className="flex flex-wrap gap-2 lg:justify-end"><Button type="button" variant="outline" disabled={aggregate.isPending || aggregatePreview?.cleanup.status === "ACTIVE"} onClick={() => void handleAggregatePreview()} className="gap-2 border-cyan-500/30 text-cyan-200 hover:bg-cyan-500/10"><Layers3 className="h-4 w-4" />{aggregate.isPending ? "Starting preview…" : "Aggregate preview"}</Button><Button type="button" disabled={!evidence.finalAcceptance.canAccept || accept.isPending} onClick={() => setAcceptOpen(true)} className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"><CheckCircle2 className="h-4 w-4" />Final Acceptance</Button></div></div>
       </div>
 
       {previewMessage && <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs text-indigo-200">{previewMessage}</div>}

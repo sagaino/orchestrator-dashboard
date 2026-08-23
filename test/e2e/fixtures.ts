@@ -129,7 +129,7 @@ export async function installLifecycleFixtures(page: Page) {
     objectiveId: "e2e-plan-review",
     mode: "EXISTING_PROJECT",
     state: planReviewState === "CANCELLED" ? "CANCELLED" : planReviewState === "APPROVED" ? "APPROVED" : "PLAN_REVIEW",
-    request: "Review the deterministic multi-node objective plan.",
+    request: "Review the deterministic multi-node objective plan. Confirm that long objective instructions remain readable without overwhelming the page header or displacing its actions.",
     requestedBy: "e2e-operator",
     projectIds: ["e2e-project"],
     freshProject: null,

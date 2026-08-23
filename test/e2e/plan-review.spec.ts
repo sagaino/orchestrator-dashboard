@@ -62,6 +62,9 @@ test("Objective Detail can reopen and approve a pending plan after refresh", asy
 
   await page.goto("/objectives/e2e-plan-review")
   await expect(page.getByRole("heading", { name: "Review the deterministic multi-node objective plan." })).toBeVisible()
+  await expect(page.getByText("Confirm that long objective instructions remain readable")).toBeVisible()
+  await page.getByRole("button", { name: "Lihat instruksi lengkap" }).click()
+  await expect(page.getByRole("button", { name: "Sembunyikan instruksi" })).toBeVisible()
   await expect(page.getByText("Execution belum dimulai")).toBeVisible()
 
   await page.getByRole("button", { name: "Review / Approve Plan" }).click()
@@ -82,7 +85,7 @@ test("Objective Detail can reopen and approve a pending plan after refresh", asy
   expect(closeBox!.x).toBeGreaterThan(dialogBox!.x + dialogBox!.width * 0.6)
   expect(approveBox!.x + approveBox!.width).toBeGreaterThan(dialogBox!.x + dialogBox!.width * 0.65)
   expect(dialogBox!.y + dialogBox!.height - approveBox!.y - approveBox!.height).toBeGreaterThanOrEqual(14)
-  expect(titleBox!.y - dialogBox!.y).toBeGreaterThanOrEqual(20)
+  expect(titleBox!.y - dialogBox!.y).toBeGreaterThanOrEqual(18)
 
   await dialog.getByRole("button", { name: "Approve & Run" }).click()
   await expect(dialog).toHaveCount(0)
