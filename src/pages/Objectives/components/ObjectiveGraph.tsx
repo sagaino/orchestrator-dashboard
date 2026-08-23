@@ -32,7 +32,7 @@ export function ObjectiveGraph({ objectiveId }: { objectiveId: string }) {
     <section aria-labelledby="objective-graph-title" className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-2"><Workflow className="h-4 w-4 text-cyan-300" /><div><h2 id="objective-graph-title" className="text-sm font-semibold text-white">Objective graph</h2><p className="mt-1 text-xs text-slate-500">Dependency graph yang deterministik dan aman untuk keyboard.</p></div></div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400"><Badge variant="outline">{graph.summary.totalNodes} nodes</Badge><Badge variant="outline">{graph.summary.totalEdges} edges</Badge><span aria-label="Graph bounded status">{graph.bounded ? "Bounded view" : "Unbounded view"}</span></div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300"><Badge variant="outline" className="border-slate-600 bg-slate-950/50 text-slate-200">{graph.summary.totalNodes} nodes</Badge><Badge variant="outline" className="border-slate-600 bg-slate-950/50 text-slate-200">{graph.summary.totalEdges} edges</Badge><span aria-label="Graph bounded status" className={`inline-flex items-center rounded-full border px-2.5 py-1 font-medium ${graph.bounded ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-200" : "border-amber-500/30 bg-amber-500/10 text-amber-200"}`}>{graph.bounded ? "Bounded view" : "Unbounded view"}</span></div>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3" role="list" aria-label="Objective graph nodes">
