@@ -4,15 +4,14 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { IntegrationEvidence, IntegrationRepositoryAcceptance, IntegrationVerificationResult, ObjectiveEvidenceNode } from "@/services/orchestrator"
 
-const statusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-  if (["PASS", "PASSED", "DONE", "READY_FOR_ACCEPTANCE"].includes(status)) return "default"
-  if (["FAIL", "FAILED", "BLOCKED"].includes(status)) return "destructive"
-  return "secondary"
-}
-
 function ResultBadge({ status }: { status: string | null | undefined }) {
   const value = status || "UNKNOWN"
-  return <Badge variant={statusVariant(value)}>{value.replaceAll("_", " ")}</Badge>
+  const tone = ["PASS", "PASSED", "DONE", "READY_FOR_ACCEPTANCE"].includes(value)
+    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+    : ["FAIL", "FAILED", "BLOCKED"].includes(value)
+      ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+      : "border-slate-600 bg-slate-950/50 text-slate-200"
+  return <Badge variant="outline" className={tone}>{value.replaceAll("_", " ")}</Badge>
 }
 
 function pathsForProject(integration: IntegrationEvidence, projectId: string) {
