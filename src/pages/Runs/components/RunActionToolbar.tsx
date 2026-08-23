@@ -20,6 +20,8 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
   onRecover,
   onRetry,
 }) => {
+  const taskFailed = String(selectedRun.task.status ?? "").toUpperCase() === "FAILED"
+
   return (
     <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 space-y-3">
       <div className="flex items-center justify-between">
@@ -96,18 +98,23 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
               <span>Auto Recover</span>
             </button>
 
-            <button
-              onClick={() => onRetry(selectedRun.runId)}
-              disabled={actionLoading}
-              className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span>Retry Task</span>
-            </button>
+            {taskFailed ? (
+              <button
+                onClick={() => onRetry(selectedRun.runId)}
+                disabled={actionLoading}
+                className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Retry Task</span>
+              </button>
+            ) : (
+              <p className="max-w-sm text-[11px] leading-relaxed text-slate-400">
+                Retry Task tidak tersedia karena status task sudah <span className="font-mono text-slate-300">{selectedRun.task.status || "UNKNOWN"}</span>. Untuk retry orchestration, gunakan Decision Inbox.
+              </p>
+            )}
           </>
         )}
       </div>
     </div>
   )
 }
-
