@@ -896,6 +896,35 @@ export interface ObjectiveSummary extends Pick<ObjectiveRecord, "objectiveId" | 
   request: string
 }
 
+export interface PlanSkillAssignment {
+  skillId: string
+  version: string
+  checksum: string
+}
+
+export interface SkillCatalogEntry {
+  skillId: string
+  version: string
+  purpose: string
+  supportedRoles: string[]
+  supportedTaskTypes: string[]
+  requiredContextTypes: string[]
+  requiredCapabilities: string[]
+  compatibleProjectSignals: string[]
+  riskLevel: string
+  instructionChecksum: string
+  verificationRequirements: string[]
+  enabled: boolean
+  provenance: { source: string; humanInstaller: string; installedAt: string; sourceRef: string }
+}
+
+export interface SkillCatalog {
+  schemaVersion: number
+  mode: string
+  registryState: "AVAILABLE" | "EMPTY" | string
+  skills: SkillCatalogEntry[]
+}
+
 export interface PlanNodeReview {
   nodeId: string
   title: string
@@ -913,7 +942,7 @@ export interface PlanNodeReview {
   canRunInParallel: boolean
   writeConflictGroup?: string | null
   contextFrom?: string[]
-  skills?: string[]
+  skills?: PlanSkillAssignment[]
 }
 
 export interface ObjectivePlanReview {
@@ -1438,6 +1467,11 @@ export const OrchestratorApi = {
     return res.data.data
   },
 
+  async getSkillCatalog() {
+    const res = await axios.get<{ success: boolean; data: SkillCatalog }>("/api/skills")
+    return res.data.data
+  },
+
   async getObjectives() {
     const res = await axios.get<{ success: boolean; data: ObjectiveSummary[] }>("/api/objectives")
     return res.data.data
@@ -1519,6 +1553,16 @@ export const OrchestratorApi = {
       `/api/objectives/${encodeURIComponent(objectiveId)}/approve-plan`,
       planFingerprint ? { planFingerprint } : {},
       { headers: { "Idempotency-Key": `dashboard-plan-approval-${randomPart}` } },
+    )
+    return res.data.data
+  },
+
+  async assignObjectivePlanSkills(objectiveId: string, assignments: Array<{ nodeId: string; skillId: string; version: string; checksum?: string }>) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: { objective: ObjectiveRecord; plan: ObjectivePlanReview; decision: ObjectiveDecision; previousPlan: ObjectivePlanReview | null; skillAssignments: Array<{ nodeId: string; skill: PlanSkillAssignment }>; registryRevision: number } }>(
+      `/api/objectives/${encodeURIComponent(objectiveId)}/plan/skills`,
+      { assignments },
+      { headers: { "Idempotency-Key": `dashboard-plan-skills-${randomPart}` } },
     )
     return res.data.data
   },

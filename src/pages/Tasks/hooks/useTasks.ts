@@ -1,9 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { useSearchParams } from "react-router-dom"
-import { useProjects, useDaemonStatus, useJobs, useRequestTask, useConfirmTaskQueue, useUploadAsset, useDeleteAsset, useCreateObjective, useApproveObjectivePlan, useRequestObjectivePlanChanges, useCancelObjective, useObjective, useProjectRelationships } from "@/hooks/use-orchestrator"
+import { useProjects, useDaemonStatus, useJobs, useRequestTask, useConfirmTaskQueue, useUploadAsset, useDeleteAsset, useCreateObjective, useApproveObjectivePlan, useAssignObjectivePlanSkills, useRequestObjectivePlanChanges, useCancelObjective, useObjective, useProjectRelationships, useSkillCatalog } from "@/hooks/use-orchestrator"
 import { crossProjectEnabled } from "@/lib/feature-flags"
 import { toast } from "@/components/ui/toast"
-import type { AttachedAsset, ObjectiveDecision, ObjectiveIntakeResult, ObjectiveMode, ObjectivePlanReview, ObjectiveRecord, TaskRequestResult } from "@/services/orchestrator"
+import type { AttachedAsset, ObjectiveDecision, ObjectiveIntakeResult, ObjectiveMode, ObjectivePlanReview, ObjectiveRecord, SkillCatalog, TaskRequestResult } from "@/services/orchestrator"
 import type { UseTasksReturn, TaskStatusMessage } from "../types"
 
 const isClarificationNeeded = (res: any): boolean => {
@@ -57,11 +57,13 @@ export const useTasks = (): UseTasksReturn => {
   const { mutateAsync: requestTask, isPending: submitting } = useRequestTask()
   const { mutateAsync: createObjective, isPending: creatingObjective } = useCreateObjective()
   const { mutateAsync: approveObjectivePlan, isPending: approvingPlan } = useApproveObjectivePlan()
+  const { mutateAsync: assignObjectivePlanSkills, isPending: assigningPlanSkills } = useAssignObjectivePlanSkills()
   const { mutateAsync: requestObjectivePlanChanges, isPending: requestingPlanChanges } = useRequestObjectivePlanChanges()
   const { mutateAsync: cancelObjective, isPending: cancellingObjective } = useCancelObjective()
   const { mutateAsync: confirmTaskQueue, isPending: confirming } = useConfirmTaskQueue()
   const { mutateAsync: uploadAsset, isPending: isUploadingAsset } = useUploadAsset()
   const { mutateAsync: deleteAsset } = useDeleteAsset()
+  const { data: skillCatalog } = useSkillCatalog()
 
   const [freshProjectId, setFreshProjectId] = useState("")
   const [freshTargetDirectory, setFreshTargetDirectory] = useState("")
@@ -443,6 +445,23 @@ export const useTasks = (): UseTasksReturn => {
     }
   }
 
+  const handleAssignPlanSkills = async (assignments: Array<{ nodeId: string; skillId: string; version: string; checksum?: string }>) => {
+    if (!planReviewObjective) return
+    try {
+      const result = await assignObjectivePlanSkills({ objectiveId: planReviewObjective.objectiveId, assignments })
+      setPlanReviewObjective(result.objective)
+      setPlanReview(result.plan)
+      setPlanReviewDecisions((current) => [...current, result.decision])
+      setStatusMessage({ type: "success", text: `${result.plan.planId} dibuat dengan skill assignment terverifikasi. Approval revision lama sudah tidak berlaku.` })
+      toast.add({ title: "Skill Assigned", description: `${assignments.length} node memiliki skill manual pada revision baru.`, type: "success" })
+    } catch (err: unknown) {
+      const errorMessage = extractErrorMessage(err)
+      setStatusMessage({ type: "error", text: `Skill assignment gagal: ${errorMessage}` })
+      toast.add({ title: "Skill Assignment Gagal", description: errorMessage, type: "error" })
+      throw err
+    }
+  }
+
   const handleCancelObjective = async () => {
     if (!planReviewObjective) return
     try {
@@ -515,7 +534,9 @@ export const useTasks = (): UseTasksReturn => {
     planReviewObjective,
     planReview,
     planReviewDecisions,
-    planReviewActionLoading: approvingPlan || requestingPlanChanges || cancellingObjective,
+    planReviewActionLoading: approvingPlan || assigningPlanSkills || requestingPlanChanges || cancellingObjective,
+    skillCatalog: skillCatalog ?? { schemaVersion: 1, mode: "read-only-skill-catalog", registryState: "EMPTY", skills: [] } as SkillCatalog,
+    handleAssignPlanSkills,
     handleClosePlanReview,
     handleApprovePlan,
     handleRequestPlanChanges,

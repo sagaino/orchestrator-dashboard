@@ -1,5 +1,5 @@
 import type { FormEvent, Dispatch, SetStateAction } from "react"
-import type { ProjectInfo, ProjectRelationship, DaemonStatus, ObjectiveDecision, ObjectiveIntakeResult, ObjectiveMode, ObjectivePlanReview, ObjectiveRecord, TaskRequestResult } from "@/services/orchestrator"
+import type { ProjectInfo, ProjectRelationship, DaemonStatus, ObjectiveDecision, ObjectiveIntakeResult, ObjectiveMode, ObjectivePlanReview, ObjectiveRecord, SkillCatalog, TaskRequestResult } from "@/services/orchestrator"
 
 export interface OrchestratorJob {
   jobId: string
@@ -80,6 +80,8 @@ export interface PlanReviewPanelProps {
   onApprove: () => Promise<void>
   onRequestChanges: (reason: string) => Promise<void>
   onCancel: () => Promise<void>
+  skillCatalog: SkillCatalog
+  onAssignSkills: (assignments: Array<{ nodeId: string; skillId: string; version: string; checksum?: string }>) => Promise<void>
 }
 
 export interface UseTasksReturn {
@@ -140,4 +142,6 @@ export interface UseTasksReturn {
   handleApprovePlan: () => Promise<void>
   handleRequestPlanChanges: (reason: string) => Promise<void>
   handleCancelObjective: () => Promise<void>
+  skillCatalog: SkillCatalog
+  handleAssignPlanSkills: (assignments: Array<{ nodeId: string; skillId: string; version: string; checksum?: string }>) => Promise<void>
 }

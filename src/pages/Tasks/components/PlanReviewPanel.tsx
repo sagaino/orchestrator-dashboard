@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { AlertTriangle, CheckCircle2, ChevronRight, CircleDot, FileCheck2, GitBranch, Layers3, ShieldAlert, XCircle } from "lucide-react"
 import {
   Dialog,
@@ -30,9 +30,20 @@ export const PlanReviewPanel: React.FC<PlanReviewPanelProps> = ({
   onApprove,
   onRequestChanges,
   onCancel,
+  skillCatalog,
+  onAssignSkills,
 }) => {
   const [requestMode, setRequestMode] = useState(false)
   const [reason, setReason] = useState("")
+  const [selectedSkills, setSelectedSkills] = useState<Record<string, string>>({})
+  const [skillMessage, setSkillMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!plan) return
+    const next = Object.fromEntries(plan.nodes.flatMap((node) => node.skills?.[0] ? [[node.nodeId, `${node.skills[0].skillId}@${node.skills[0].version}`]] : []))
+    setSelectedSkills(next)
+    setSkillMessage(null)
+  }, [plan])
 
   if (!objective || !plan) return null
 
@@ -45,6 +56,20 @@ export const PlanReviewPanel: React.FC<PlanReviewPanelProps> = ({
     await onRequestChanges(trimmed)
     setReason("")
     setRequestMode(false)
+  }
+  const compatibleSkills = (node: typeof plan.nodes[number]) => skillCatalog.skills.filter((skill) => (
+    (skill.supportedRoles.includes(node.role) || skill.supportedRoles.includes("GENERAL"))
+    && (skill.supportedTaskTypes.includes(node.type) || skill.supportedTaskTypes.includes("ANY"))
+  ))
+  const submitSkills = async () => {
+    const assignments = plan.nodes.flatMap((node) => {
+      const identity = selectedSkills[node.nodeId]
+      const skill = compatibleSkills(node).find((candidate) => `${candidate.skillId}@${candidate.version}` === identity)
+      return skill ? [{ nodeId: node.nodeId, skillId: skill.skillId, version: skill.version, checksum: skill.instructionChecksum }] : []
+    })
+    if (!assignments.length) return
+    await onAssignSkills(assignments)
+    setSkillMessage(`${assignments.length} skill assignment dipilih dan dibuat sebagai plan revision baru.`)
   }
 
   return (
@@ -137,6 +162,10 @@ export const PlanReviewPanel: React.FC<PlanReviewPanelProps> = ({
                   <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-800 pt-3 text-[10px] text-slate-500">
                     <span>Acceptance: {node.acceptanceCriteria.length}</span><span>•</span><span>Complexity: {node.complexity}</span><span>•</span><span>{node.requiresChanges ? "Writes required" : "No product-code writes"}</span>
                   </div>
+                  <div className="mt-3 border-t border-violet-500/20 pt-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2"><label htmlFor={`skill-assignment-${node.nodeId}`} className="text-[10px] font-semibold uppercase tracking-wider text-violet-300">Manual skill assignment</label>{node.skills?.length ? <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-[10px] text-violet-200">{node.skills.map((skill) => `${skill.skillId}@${skill.version}`).join(", ")}</span> : <span className="text-[10px] text-slate-500">No skill</span>}</div>
+                    {skillCatalog.skills.length === 0 ? <p className="mt-2 text-[11px] text-slate-500">Registry skill kosong. Node tetap menggunakan general role agent fallback.</p> : <select id={`skill-assignment-${node.nodeId}`} aria-label={`Skill assignment ${node.nodeId}`} value={selectedSkills[node.nodeId] ?? ""} onChange={(event) => setSelectedSkills((current) => ({ ...current, [node.nodeId]: event.target.value }))} disabled={actionLoading || plan.state !== "PENDING_APPROVAL"} className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200 outline-none focus:border-violet-400"><option value="">No skill selected</option>{compatibleSkills(node).map((skill) => <option key={`${skill.skillId}@${skill.version}`} value={`${skill.skillId}@${skill.version}`}>{skill.skillId}@{skill.version} · {skill.purpose}</option>)}</select>}
+                  </div>
                   {index < plan.nodes.length - 1 && <ChevronRight className="mx-auto mt-2 hidden h-3 w-3 text-slate-700 md:block" aria-hidden="true" />}
                 </article>
               ))}
@@ -161,6 +190,8 @@ export const PlanReviewPanel: React.FC<PlanReviewPanelProps> = ({
           </div>
 
           {decisions.length > 0 && <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4"><h4 className="mb-3 text-xs font-semibold text-slate-200">Decisions & Audit</h4><ul className="space-y-2">{decisions.slice(-5).map((decision) => <li key={decision.decisionId} className="flex flex-wrap items-center justify-between gap-2 text-[11px]"><span className="font-mono text-slate-400">{decision.type} · {decision.decisionId}</span><span className="text-slate-500">{decision.resolution ? `${decision.resolution.action} · ${decision.resolution.resolvedBy}` : decision.state}</span></li>)}</ul></section>}
+
+          <section className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h4 className="text-xs font-semibold text-violet-200">Skill registry</h4><p className="mt-1 text-[11px] text-slate-400">Catalog read-only: {skillCatalog.registryState}. Assignment hanya membuat revision baru dan tidak memuat instruksi penuh ke plan.</p></div>{plan.state === "PENDING_APPROVAL" && skillCatalog.skills.length > 0 && <button type="button" disabled={actionLoading || !Object.values(selectedSkills).some(Boolean)} onClick={() => void submitSkills()} className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50">{actionLoading ? "Menyimpan..." : "Assign selected skills"}</button>}</div>{skillMessage && <p className="mt-3 text-xs text-violet-200">{skillMessage}</p>}</section>
 
           {requestMode && (
             <form onSubmit={submitChanges} className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
