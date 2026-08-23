@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Target,
   Inbox,
+  Wrench,
 } from "lucide-react"
 import { useDaemonStatus, useNotifications, useMarkNotificationsRead } from "@/hooks/use-orchestrator"
 import { useSSEEvents } from "@/providers/EventsContext"
@@ -62,6 +63,7 @@ export const DashboardLayout: React.FC = () => {
     { label: "Knowledge Center", to: "/knowledge", icon: BookOpen },
     { label: "Telemetry", to: "/telemetry", icon: BarChart3 },
     { label: "Operations", to: "/operations", icon: ShieldCheck },
+    { label: "Skill Management", to: "/skills", icon: Wrench },
   ]
 
   const notificationList: NotificationItem[] = Array.isArray(notificationsData)

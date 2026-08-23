@@ -7,4 +7,5 @@ export const ROUTES = {
   KNOWLEDGE: "knowledge",
   TELEMETRY: "telemetry",
   OPERATIONS: "operations",
+  SKILLS: "skills",
 }
