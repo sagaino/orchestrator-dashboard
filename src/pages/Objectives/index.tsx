@@ -218,6 +218,17 @@ function ObjectiveVisualEvidencePanel({ report, onRepair, repairing }: { report?
   </section>
 }
 
+function deliveryCertificationErrorMessage(error: unknown, fallback: string) {
+  const response = (error as { response?: { data?: { error?: { message?: string; details?: { blockers?: unknown } }; data?: { status?: string; blockers?: unknown } } } })?.response
+  const payload = response?.data
+  const apiError = payload?.error
+  const result = payload?.data
+  const blockerSource = apiError?.details?.blockers ?? result?.blockers
+  const blockers = Array.isArray(blockerSource) ? blockerSource.filter((item): item is string => typeof item === "string") : []
+  const message = apiError?.message || (result?.status === "BLOCKED" ? "Delivery certification masih diblokir oleh machine gate." : error instanceof Error ? error.message : fallback)
+  return blockers.length > 0 ? `${message} Blockers: ${blockers.join(", ")}` : message
+}
+
 function DeliveryCertificationPanel({ certification, canRun, onRun, onAccept, running, accepting }: { certification: DeliveryCertification | null; canRun: boolean; onRun: () => Promise<void>; onAccept: () => Promise<void>; running: boolean; accepting: boolean }) {
   const [acceptOpen, setAcceptOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -226,7 +237,7 @@ function DeliveryCertificationPanel({ certification, canRun, onRun, onAccept, ru
       await onRun()
       setMessage(null)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Delivery certification tidak dapat dibuat.")
+      setMessage(deliveryCertificationErrorMessage(error, "Delivery certification tidak dapat dibuat."))
     }
   }
   const accept = async () => {
@@ -235,7 +246,7 @@ function DeliveryCertificationPanel({ certification, canRun, onRun, onAccept, ru
       setAcceptOpen(false)
       setMessage(null)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Delivery certification tidak dapat diterima.")
+      setMessage(deliveryCertificationErrorMessage(error, "Delivery certification tidak dapat diterima."))
     }
   }
   return <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5">
@@ -251,7 +262,7 @@ function DeliveryCertificationPanel({ certification, canRun, onRun, onAccept, ru
       <p className="mt-3 text-xs text-slate-500">{certification.nextAction}</p>
     </>}
     {message && <p className="mt-3 text-xs text-rose-300">{message}</p>}
-    <AlertDialog open={acceptOpen} onOpenChange={setAcceptOpen}><AlertDialogContent className="border border-slate-800 bg-slate-950 text-slate-100"><AlertDialogHeader><AlertDialogTitle>Accept delivery certification</AlertDialogTitle><AlertDialogDescription className="text-slate-400">Human gate ini mengunci bundle certification setelah seluruh machine checks lulus. Pastikan evidence delivery sudah ditinjau.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={accepting}>Batal</AlertDialogCancel><AlertDialogAction disabled={accepting} onClick={(event) => { event.preventDefault(); void accept() }} className="bg-emerald-600 text-white hover:bg-emerald-500">{accepting ? "Menyimpan…" : "Accept certification"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    <AlertDialog open={acceptOpen} onOpenChange={setAcceptOpen}><AlertDialogContent className="max-w-lg border border-slate-800 bg-slate-900 text-slate-100"><AlertDialogHeader className="space-y-3"><AlertDialogTitle className="text-white">Accept delivery certification</AlertDialogTitle><AlertDialogDescription className="text-slate-300 text-sm leading-relaxed">Human gate ini mengunci bundle certification setelah seluruh machine checks lulus. Pastikan evidence delivery sudah ditinjau.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="mt-2 border-slate-800 bg-slate-900/50"><AlertDialogCancel disabled={accepting} className="border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white focus-visible:ring-indigo-500">Batal</AlertDialogCancel><AlertDialogAction disabled={accepting} onClick={(event) => { event.preventDefault(); void accept() }} className="bg-emerald-600 text-white hover:bg-emerald-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50">{accepting ? "Menyimpan…" : "Accept certification"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </section>
 }
 
