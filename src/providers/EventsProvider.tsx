@@ -60,6 +60,21 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
           queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
           break
 
+        case "OBJECTIVE_CREATED":
+        case "PLAN_APPROVED":
+        case "PLAN_REVISION_CREATED":
+        case "PLAN_CHANGES_REQUESTED":
+        case "INTEGRATION_IN_PROGRESS":
+        case "INTEGRATION_BLOCKED":
+        case "INTEGRATION_COMPLETED":
+        case "INTEGRATION_REPAIR_PROPOSED":
+        case "OBJECTIVE_ACCEPTED":
+        case "OBJECTIVE_ACCEPTANCE_IDEMPOTENT":
+          queryClient.invalidateQueries({ queryKey: ["objectives"] })
+          queryClient.invalidateQueries({ queryKey: queryKeys.runs })
+          queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+          break
+
         case "KNOWLEDGE_PROMOTED":
         case "KNOWLEDGE_REJECTED":
           queryClient.invalidateQueries({ queryKey: queryKeys.knowledgeCandidates })

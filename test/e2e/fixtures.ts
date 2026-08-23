@@ -111,6 +111,7 @@ export async function installLifecycleFixtures(page: Page) {
   let provenancePlanId: string | null = null
   let planReviewState: "PENDING_APPROVAL" | "APPROVED" | "CANCELLED" = "PENDING_APPROVAL"
   let planReviewRevision = 1
+  let objectiveDashboardAccepted = false
 
   const planReviewObjective = () => ({
     schemaVersion: 1,
@@ -161,6 +162,39 @@ export async function installLifecycleFixtures(page: Page) {
     orchestration: null,
     decisions: [],
     decisionSummary: { open: [], recent: [] },
+  })
+
+  const objectiveDashboardObjective = () => ({
+    schemaVersion: 1,
+    revision: objectiveDashboardAccepted ? 1 : 0,
+    objectiveId: "e2e-objective-dashboard",
+    mode: "EXISTING_PROJECT",
+    state: objectiveDashboardAccepted ? "DONE" : "RESULT_REVIEW",
+    request: "Review the deterministic objective evidence dashboard.",
+    requestedBy: "e2e-operator",
+    projectIds: ["e2e-project"],
+    freshProject: null,
+    activePlanId: "plan-e2e-objective-dashboard-r1",
+    activeOrchestrationId: "orch-e2e-objective-dashboard",
+    budget: { maxSubtasks: 4, maxParallelAgents: 2, maxRetriesPerNode: 1, maxTotalTokens: 1200, deadlineAt: null },
+    createdAt: now,
+    updatedAt: now,
+  })
+  const objectiveDashboardEvidence = () => ({
+    schemaVersion: 1,
+    mode: "objective-evidence",
+    objective: objectiveDashboardObjective(),
+    plan: { ...planReviewPlan(), planId: "plan-e2e-objective-dashboard-r1", objectiveId: "e2e-objective-dashboard", state: "APPROVED", summary: "Review objective evidence." },
+    orchestration: { orchestrationId: "orch-e2e-objective-dashboard", state: "DONE", usage: { totalTokens: 420, agentInvocations: 2, retries: 0 } },
+    nodes: [{ nodeId: "N01", title: "Inspect fixture", purpose: "Inspect the fixture.", projectId: "e2e-project", type: "DIAGNOSTIC", role: "DIAGNOSTIC", dependsOn: [], state: "DONE", runId: "e2e-accept-fixture-run", jobId: "job-e2e-accept", commitHash: "fixture123", changedPaths: ["src/fixture.ts"], allowedPaths: ["src/fixture.ts"], verification: [{ command: "npm run build", status: "PASS" }], verificationStatus: "PASS", links: { evidence: "/api/runs/e2e-accept-fixture-run/evidence", diff: "/api/runs/e2e-accept-fixture-run/diff", preview: "/api/runs/e2e-accept-fixture-run/preview" }, error: null }],
+    integration: null,
+    diffs: [{ nodeId: "N01", runId: "e2e-accept-fixture-run", projectId: "e2e-project", href: "/api/runs/e2e-accept-fixture-run/diff", changedPaths: ["src/fixture.ts"] }],
+    previews: [{ nodeId: "N01", runId: "e2e-accept-fixture-run", projectId: "e2e-project", href: "/api/runs/e2e-accept-fixture-run/preview" }],
+    verification: { status: "PASS", results: [{ command: "npm run build", status: "PASS" }], integration: { required: false, status: "NOT_REQUIRED", artifactPath: null } },
+    blockers: [],
+    usage: { actual: { totalTokens: 420, agentInvocations: 2, retries: 0 }, budget: objectiveDashboardObjective().budget, remainingTokens: 780 },
+    finalAcceptance: { state: objectiveDashboardAccepted ? "ACCEPTED" : "PENDING", canAccept: !objectiveDashboardAccepted, decisionId: objectiveDashboardAccepted ? "decision-objective-dashboard" : null, acceptedBy: objectiveDashboardAccepted ? "local:e2e-operator" : null, acceptedAt: objectiveDashboardAccepted ? now : null, requiredReview: true },
+    decisions: [],
   })
 
   await page.route("**/api/**", async (route) => {
@@ -236,6 +270,7 @@ export async function installLifecycleFixtures(page: Page) {
     })
     if (pathname === "/api/runs" && method === "GET") return json(route, runs)
 
+    if (pathname === "/api/objectives" && method === "GET") return json(route, [objectiveDashboardObjective()])
     if (pathname === "/api/objectives" && method === "POST") {
       const body = request.postDataJSON() as { mode?: string; request?: string; projectIds?: string[]; freshProject?: { projectId?: string; targetDirectory?: string; blueprint?: string } }
       const projectId = body.freshProject?.projectId || body.projectIds?.[0] || "fixture-project"
@@ -269,6 +304,12 @@ export async function installLifecycleFixtures(page: Page) {
     }
 
     if (pathname === "/api/objectives/e2e-plan-review" && method === "GET") return json(route, planReviewData())
+    if (pathname === "/api/objectives/e2e-objective-dashboard" && method === "GET") return json(route, { ...objectiveDashboardObjective(), plan: objectiveDashboardEvidence().plan, orchestration: objectiveDashboardEvidence().orchestration, decisions: [], decisionSummary: { open: [], recent: [] } })
+    if (pathname === "/api/objectives/e2e-objective-dashboard/evidence" && method === "GET") return json(route, objectiveDashboardEvidence())
+    if (pathname === "/api/objectives/e2e-objective-dashboard/final-acceptance" && method === "POST") {
+      objectiveDashboardAccepted = true
+      return json(route, { objective: objectiveDashboardObjective(), decision: { decisionId: "decision-objective-dashboard", objectiveId: "e2e-objective-dashboard", nodeId: null, runId: null, type: "OBJECTIVE_ACCEPTANCE", state: "RESOLVED", evidence: {}, requestedAction: "Accept objective", allowedChoices: ["ACCEPT"], creator: "SYSTEM", createdAt: now, resolution: { action: "ACCEPT", resolvedBy: "local:e2e-operator", resolvedAt: now } }, evidence: objectiveDashboardEvidence(), alreadyAccepted: false }, 201)
+    }
     if (pathname === "/api/objectives/e2e-plan-review/approve-plan" && method === "POST") {
       planReviewState = "APPROVED"
       return json(route, { objective: planReviewObjective(), plan: planReviewPlan(), decision: { decisionId: "decision-plan-approval-fixture", objectiveId: "e2e-plan-review", nodeId: null, runId: null, type: "PLAN_APPROVAL", state: "RESOLVED", evidence: {}, requestedAction: "Approve plan", allowedChoices: ["APPROVE"], creator: "SYSTEM", createdAt: now, resolution: { action: "APPROVE", resolvedBy: "local:e2e-operator", resolvedAt: now } }, alreadyApproved: false, planFingerprint: "fixture-plan-fingerprint" }, 201)
@@ -296,6 +337,10 @@ export async function installLifecycleFixtures(page: Page) {
       const item = runs.find((candidate) => candidate.runId === evidenceMatch[1])
       return item ? json(route, evidence(item)) : route.fulfill({ status: 404 })
     }
+    const diffMatch = pathname.match(/^\/api\/runs\/([^/]+)\/diff$/)
+    if (diffMatch && method === "GET") return json(route, { runId: diffMatch[1], changedFiles: ["src/fixture.ts"], files: [] })
+    const previewMatch = pathname.match(/^\/api\/runs\/([^/]+)\/preview$/)
+    if (previewMatch && method === "POST") return json(route, { workspacePath: "/tmp/fixture-preview", opened: true })
     const visualEvidenceMatch = pathname.match(/^\/api\/runs\/([^/]+)\/visual-evidence$/)
     if (visualEvidenceMatch) return json(route, [])
     const visualRevisionsMatch = pathname.match(/^\/api\/runs\/([^/]+)\/visual-revisions$/)

@@ -826,6 +826,7 @@ export interface ObjectiveBudget {
   maxSubtasks: number
   maxParallelAgents: number
   maxRetriesPerNode: number
+  maxRepairCycles?: number
   maxTotalTokens: number | null
   deadlineAt: string | null
 }
@@ -850,6 +851,10 @@ export interface ObjectiveRecord {
   budget: ObjectiveBudget
   createdAt: string
   updatedAt: string
+}
+
+export interface ObjectiveSummary extends Pick<ObjectiveRecord, "objectiveId" | "mode" | "state" | "projectIds" | "activePlanId" | "activeOrchestrationId" | "createdAt" | "updatedAt"> {
+  request: string
 }
 
 export interface PlanNodeReview {
@@ -940,6 +945,58 @@ export interface ObjectiveLifecycleDetail extends ObjectiveRecord {
   orchestration: Record<string, unknown> | null
   decisions: ObjectiveDecision[]
   decisionSummary: { open: ObjectiveDecision[]; recent: ObjectiveDecision[] }
+}
+
+export interface ObjectiveEvidenceNode {
+  nodeId: string
+  title: string
+  purpose: string
+  projectId: string
+  type: string
+  role: string
+  dependsOn: string[]
+  state: string
+  runId: string | null
+  jobId: string | null
+  commitHash: string | null
+  changedPaths: string[]
+  allowedPaths: string[]
+  verification: Array<Record<string, unknown>>
+  verificationStatus: EvidenceStatus | string
+  links: { evidence: string | null; diff: string | null; preview: string | null }
+  error: { code?: string; message?: string; [key: string]: unknown } | null
+}
+
+export interface ObjectiveEvidence {
+  schemaVersion: number
+  mode: "objective-evidence"
+  objective: ObjectiveRecord
+  plan: ObjectivePlanReview | null
+  orchestration: Record<string, any> | null
+  nodes: ObjectiveEvidenceNode[]
+  integration: Record<string, any> | null
+  diffs: Array<{ nodeId: string; runId: string; projectId: string; href: string; changedPaths: string[] }>
+  previews: Array<{ nodeId: string; runId: string; projectId: string; href: string }>
+  verification: {
+    status: EvidenceStatus | "NOT_REQUIRED" | string
+    results: Array<Record<string, unknown>>
+    integration: { required: boolean; status: string; artifactPath: string | null }
+  }
+  blockers: Array<{ id: string; kind: string; state?: string; message: string; nodeId?: string; decisionId?: string }>
+  usage: {
+    actual: { totalTokens: number; agentInvocations: number; retries: number }
+    budget: ObjectiveBudget
+    remainingTokens: number | null
+  }
+  finalAcceptance: {
+    state: "PENDING" | "BLOCKED" | "ACCEPTED" | string
+    canAccept: boolean
+    decisionId: string | null
+    acceptedBy: string | null
+    acceptedAt: string | null
+    requiredReview: boolean
+  }
+  decisions: ObjectiveDecision[]
 }
 
 export const OrchestratorApi = {
@@ -1133,6 +1190,26 @@ export const OrchestratorApi = {
 
   async getObjective(objectiveId: string) {
     const res = await axios.get<{ success: boolean; data: ObjectiveLifecycleDetail }>(`/api/objectives/${encodeURIComponent(objectiveId)}`)
+    return res.data.data
+  },
+
+  async getObjectives() {
+    const res = await axios.get<{ success: boolean; data: ObjectiveSummary[] }>("/api/objectives")
+    return res.data.data
+  },
+
+  async getObjectiveEvidence(objectiveId: string) {
+    const res = await axios.get<{ success: boolean; data: ObjectiveEvidence }>(`/api/objectives/${encodeURIComponent(objectiveId)}/evidence`)
+    return res.data.data
+  },
+
+  async acceptObjective(objectiveId: string) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: { objective: ObjectiveRecord; decision?: ObjectiveDecision; evidence: ObjectiveEvidence; alreadyAccepted: boolean } }>(
+      `/api/objectives/${encodeURIComponent(objectiveId)}/final-acceptance`,
+      {},
+      { headers: { "Idempotency-Key": `dashboard-objective-acceptance-${randomPart}` } },
+    )
     return res.data.data
   },
 
