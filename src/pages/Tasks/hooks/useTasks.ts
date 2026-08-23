@@ -253,13 +253,21 @@ export const useTasks = (): UseTasksReturn => {
 
     try {
       setStatusMessage(null)
-      const objective = await createObjective({
-        mode: "EXISTING_PROJECT",
-        request: trimmedPrompt,
-        projectIds: [selectedProject],
-        attachments: attachedAssets,
-      })
+      const retryObjectiveId = pendingObjectiveId
+        && pendingPrompt === trimmedPrompt
+        && objectiveResult?.objective.projectIds[0] === selectedProject
+        && objectiveResult.objective.state === "PLANNING"
+        ? pendingObjectiveId
+        : null
+      const objective = retryObjectiveId && objectiveResult ? objectiveResult : await createObjective({
+          mode: "EXISTING_PROJECT",
+          request: trimmedPrompt,
+          projectIds: [selectedProject],
+          attachments: attachedAssets,
+        })
       setObjectiveResult(objective)
+      setPendingObjectiveId(objective.objective.objectiveId)
+      setPendingPrompt(trimmedPrompt)
       const res = await generateObjectivePlan({ objectiveId: objective.objective.objectiveId })
 
       if (isClarificationNeeded(res)) {
