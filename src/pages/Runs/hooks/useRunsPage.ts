@@ -314,7 +314,8 @@ export const useRunsPage = (): UseRunsPageReturn => {
         type: "success",
       })
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err)
+      const response = (err as { response?: { data?: { error?: { message?: string } } } })?.response
+      const errorMessage = response?.data?.error?.message || (err instanceof Error ? err.message : String(err))
       toast.add({
         title: "Gagal Retry",
         description: errorMessage,
