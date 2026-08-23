@@ -27,12 +27,15 @@ import type {
   ObjectiveLifecycleDetail,
   ObjectiveEvidence,
   ObjectiveSummary,
+  ProjectRelationship,
+  ProjectRelationshipsResult,
 } from "@/services/orchestrator"
 
 // --- Query Keys ---
 export const queryKeys = {
   daemon: ["daemon"] as const,
   projects: ["projects"] as const,
+  projectRelationships: (id: string) => ["projects", id, "relationships"] as const,
   archivedProjects: ["projects", "archived"] as const,
   runs: ["runs"] as const,
   runDetail: (id: string) => ["runs", id] as const,
@@ -76,6 +79,27 @@ export function useProjects() {
     queryKey: queryKeys.projects,
     queryFn: () => OrchestratorApi.getProjects(),
     staleTime: 60_000,
+  })
+}
+
+export function useProjectRelationships(projectId: string | null, enabled = true) {
+  return useQuery<ProjectRelationshipsResult>({
+    queryKey: queryKeys.projectRelationships(projectId ?? ""),
+    queryFn: () => OrchestratorApi.getProjectRelationships(projectId!),
+    enabled: Boolean(projectId) && enabled,
+    staleTime: 30_000,
+  })
+}
+
+export function useReplaceProjectRelationships() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ projectId, relationships }: { projectId: string; relationships: ProjectRelationship[] }) =>
+      OrchestratorApi.replaceProjectRelationships(projectId, relationships),
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData(queryKeys.projectRelationships(variables.projectId), result)
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects })
+    },
   })
 }
 

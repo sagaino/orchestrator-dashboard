@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { useSearchParams } from "react-router-dom"
-import { useProjects, useDaemonStatus, useJobs, useRequestTask, useConfirmTaskQueue, useUploadAsset, useDeleteAsset, useCreateObjective, useApproveObjectivePlan, useRequestObjectivePlanChanges, useCancelObjective, useObjective } from "@/hooks/use-orchestrator"
+import { useProjects, useDaemonStatus, useJobs, useRequestTask, useConfirmTaskQueue, useUploadAsset, useDeleteAsset, useCreateObjective, useApproveObjectivePlan, useRequestObjectivePlanChanges, useCancelObjective, useObjective, useProjectRelationships } from "@/hooks/use-orchestrator"
+import { crossProjectEnabled } from "@/lib/feature-flags"
 import { toast } from "@/components/ui/toast"
 import type { AttachedAsset, ObjectiveDecision, ObjectiveIntakeResult, ObjectiveMode, ObjectivePlanReview, ObjectiveRecord, TaskRequestResult } from "@/services/orchestrator"
 import type { UseTasksReturn, TaskStatusMessage } from "../types"
@@ -46,6 +47,10 @@ export const useTasks = (): UseTasksReturn => {
   const [searchParams] = useSearchParams()
   const reviewObjectiveId = searchParams.get("objectiveId")
   const { data: projects = [] } = useProjects()
+  const [targetMode, setTargetMode] = useState<ObjectiveMode>("EXISTING_PROJECT")
+  const [selectedProject, setSelectedProject] = useState("orchestrator-dashboard")
+  const [linkedProjectIds, setLinkedProjectIds] = useState<string[]>([])
+  const { data: relationshipData, isLoading: relationshipsLoading } = useProjectRelationships(selectedProject, crossProjectEnabled && targetMode === "CROSS_PROJECT_INCIDENT")
   const { data: objectiveDetail } = useObjective(reviewObjectiveId)
   const { data: daemon = null, refetch: refetchDaemon } = useDaemonStatus()
   const { data: jobs = [] } = useJobs()
@@ -58,8 +63,6 @@ export const useTasks = (): UseTasksReturn => {
   const { mutateAsync: uploadAsset, isPending: isUploadingAsset } = useUploadAsset()
   const { mutateAsync: deleteAsset } = useDeleteAsset()
 
-  const [targetMode, setTargetMode] = useState<ObjectiveMode>("EXISTING_PROJECT")
-  const [selectedProject, setSelectedProject] = useState("orchestrator-dashboard")
   const [freshProjectId, setFreshProjectId] = useState("")
   const [freshTargetDirectory, setFreshTargetDirectory] = useState("")
   const [freshBlueprint, setFreshBlueprint] = useState("frontend-vite")
@@ -74,6 +77,21 @@ export const useTasks = (): UseTasksReturn => {
   const [planReviewObjective, setPlanReviewObjective] = useState<ObjectiveRecord | null>(null)
   const [planReview, setPlanReview] = useState<ObjectivePlanReview | null>(null)
   const [planReviewDecisions, setPlanReviewDecisions] = useState<ObjectiveDecision[]>([])
+
+  useEffect(() => {
+    if (projects.length > 0 && !projects.some((project) => project.id === selectedProject)) {
+      setSelectedProject(projects[0].id)
+    }
+  }, [projects, selectedProject])
+
+  useEffect(() => {
+    const available = relationshipData?.relationships.map((relationship) => relationship.targetProjectId) ?? []
+    setLinkedProjectIds((current) => current.filter((projectId) => available.includes(projectId)))
+  }, [relationshipData, selectedProject])
+
+  useEffect(() => {
+    if (targetMode !== "CROSS_PROJECT_INCIDENT") setLinkedProjectIds([])
+  }, [targetMode])
 
   useEffect(() => {
     if (!objectiveDetail?.plan) return
@@ -195,6 +213,42 @@ export const useTasks = (): UseTasksReturn => {
     }
 
     if (!selectedProject) return
+
+    if (targetMode === "CROSS_PROJECT_INCIDENT") {
+      if (!crossProjectEnabled) {
+        setStatusMessage({ type: "error", text: "Linked Projects belum diaktifkan oleh ORCHESTRATOR_CROSS_PROJECT=1." })
+        return
+      }
+      const allowedRelatedIds = new Set(relationshipData?.relationships.map((relationship) => relationship.targetProjectId) ?? [])
+      const safeLinkedProjectIds = linkedProjectIds.filter((projectId) => allowedRelatedIds.has(projectId) && projectId !== selectedProject)
+      if (safeLinkedProjectIds.length === 0) {
+        setStatusMessage({ type: "error", text: "Pilih minimal satu Linked Project yang memiliki relationship eksplisit dengan primary project." })
+        return
+      }
+      try {
+        setStatusMessage(null)
+        const result = await createObjective({
+          mode: "CROSS_PROJECT_INCIDENT",
+          request: trimmedPrompt,
+          projectIds: [selectedProject, ...safeLinkedProjectIds],
+        })
+        setObjectiveResult(result)
+        if (result.plan) {
+          setPlanReviewObjective(result.objective)
+          setPlanReview(result.plan)
+          setPlanReviewDecisions(result.decisions ?? [])
+          setPlanReviewOpen(true)
+        }
+        setPrompt("")
+        setStatusMessage({ type: "success", text: `Linked Projects objective ${result.objective.objectiveId} dibuat untuk review planning.` })
+        toast.add({ title: "Linked Projects Objective Dibuat", description: "Review relationship, contract checks, dan plan sebelum melanjutkan.", type: "success" })
+      } catch (err: unknown) {
+        const errorMessage = extractErrorMessage(err)
+        setStatusMessage({ type: "error", text: `Gagal membuat Linked Projects objective: ${errorMessage}` })
+        toast.add({ title: "Gagal Membuat Linked Projects Objective", description: errorMessage, type: "error" })
+      }
+      return
+    }
 
     try {
       setStatusMessage(null)
@@ -411,12 +465,17 @@ export const useTasks = (): UseTasksReturn => {
   return {
     targetMode,
     setTargetMode,
+    crossProjectEnabled,
     projects,
     daemon,
     jobs,
     queueJobs,
     selectedProject,
     setSelectedProject,
+    projectRelationships: relationshipData?.relationships ?? [],
+    linkedProjectIds,
+    setLinkedProjectIds,
+    relationshipsLoading,
     freshProjectId,
     setFreshProjectId,
     freshTargetDirectory,

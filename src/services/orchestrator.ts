@@ -201,6 +201,31 @@ export interface ProjectInfo {
   graphOutputExists: boolean
   valid: boolean
   projectPagePath: string
+  relationships?: ProjectRelationship[]
+}
+
+export type ProjectRelationshipType = "CONSUMES_API" | "PROVIDES_API" | "SHARES_SCHEMA" | "DEPENDS_ON" | "DEPLOYS_WITH"
+
+export interface ProjectRelationship {
+  type: ProjectRelationshipType
+  targetProjectId: string
+  contractPaths: string[]
+  verification: string[]
+}
+
+export interface ProjectRelationshipsResult {
+  schemaVersion: number
+  projectId: string
+  relationships: ProjectRelationship[]
+  allowedTypes: ProjectRelationshipType[]
+  registeredProjectIds: string[]
+}
+
+export interface ReplaceProjectRelationshipsResult extends ProjectRelationshipsResult {
+  action: string
+  changed: boolean
+  confirmedBy: string
+  audit: { auditId: string; event: string; at: string }
 }
 
 export interface TaskReadinessSummary {
@@ -1114,6 +1139,21 @@ export const OrchestratorApi = {
 
   async getProjectDetail(id: string) {
     const res = await axios.get<{ success: boolean; data: ProjectInfo }>(`/api/projects/${id}`)
+    return res.data.data
+  },
+
+  async getProjectRelationships(projectId: string) {
+    const res = await axios.get<{ success: boolean; data: ProjectRelationshipsResult }>(`/api/projects/${encodeURIComponent(projectId)}/relationships`)
+    return res.data.data
+  },
+
+  async replaceProjectRelationships(projectId: string, relationships: ProjectRelationship[]) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.put<{ success: boolean; data: ReplaceProjectRelationshipsResult }>(
+      `/api/projects/${encodeURIComponent(projectId)}/relationships`,
+      { relationships, confirmed: true },
+      { headers: { "Idempotency-Key": `dashboard-project-relationships-${randomPart}` } },
+    )
     return res.data.data
   },
 

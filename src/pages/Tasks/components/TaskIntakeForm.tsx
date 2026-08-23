@@ -5,9 +5,14 @@ import type { TaskIntakeFormProps } from "../types"
 export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
   targetMode,
   onTargetModeChange,
+  crossProjectEnabled,
   projects,
   selectedProject,
   onSelectProject,
+  projectRelationships,
+  linkedProjectIds,
+  onLinkedProjectIdsChange,
+  relationshipsLoading = false,
   freshProjectId,
   onFreshProjectIdChange,
   freshTargetDirectory,
@@ -94,21 +99,22 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
             </button>
             <button
               type="button"
-              disabled
-              aria-pressed={false}
-              className="rounded-lg border border-slate-800 bg-slate-950/40 p-3 text-left opacity-55 cursor-not-allowed"
+              disabled={!crossProjectEnabled}
+              onClick={() => crossProjectEnabled && onTargetModeChange("CROSS_PROJECT_INCIDENT")}
+              aria-pressed={targetMode === "CROSS_PROJECT_INCIDENT"}
+              className={`rounded-lg border p-3 text-left transition-colors ${targetMode === "CROSS_PROJECT_INCIDENT" ? "border-emerald-500 bg-emerald-500/10" : "border-slate-700 bg-slate-800/60 hover:border-slate-600"} ${!crossProjectEnabled ? "opacity-55 cursor-not-allowed" : "cursor-pointer"}`}
             >
-              <Link2 className="h-4 w-4 text-slate-500 mb-2" />
-              <span className="block text-xs font-semibold text-slate-400">Linked Projects</span>
-              <span className="block text-[11px] text-slate-600 mt-1">Tersedia di Phase V2.6</span>
+              <Link2 className={`h-4 w-4 mb-2 ${crossProjectEnabled ? "text-emerald-400" : "text-slate-500"}`} />
+              <span className={`block text-xs font-semibold ${crossProjectEnabled ? "text-slate-200" : "text-slate-400"}`}>Linked Projects</span>
+              <span className="block text-[11px] text-slate-500 mt-1">{crossProjectEnabled ? "Insiden lintas repository terdaftar" : "Aktifkan ORCHESTRATOR_CROSS_PROJECT=1"}</span>
             </button>
           </div>
         </fieldset>
 
-        {targetMode === "EXISTING_PROJECT" ? (
+        {targetMode === "EXISTING_PROJECT" || targetMode === "CROSS_PROJECT_INCIDENT" ? (
           <div>
             <label htmlFor="existingProject" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-              Target Repository / Project
+              {targetMode === "CROSS_PROJECT_INCIDENT" ? "Primary Project" : "Target Repository / Project"}
             </label>
             <select
               id="existingProject"
@@ -122,6 +128,46 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
                 </option>
               ))}
             </select>
+            {targetMode === "CROSS_PROJECT_INCIDENT" && (
+              <div className="mt-3 space-y-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
+                <div>
+                  <p className="text-xs font-semibold text-slate-200">Linked Projects</p>
+                  <p className="mt-1 text-[11px] text-slate-500">Hanya project yang memiliki relationship eksplisit dengan primary project yang tersedia.</p>
+                </div>
+                {relationshipsLoading ? (
+                  <p className="text-xs text-slate-400">Memuat relationship terdaftar...</p>
+                ) : projectRelationships.length === 0 ? (
+                  <p className="text-xs text-amber-300">Belum ada linked project yang terdaftar. Kelola relationship dari Registered Projects terlebih dahulu.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {projectRelationships.map((relationship) => {
+                      const checked = linkedProjectIds.includes(relationship.targetProjectId)
+                      return (
+                        <label key={`${relationship.type}-${relationship.targetProjectId}`} className="flex items-start gap-3 rounded-md border border-slate-800 bg-slate-950/40 p-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            aria-label={`Link ${relationship.targetProjectId}`}
+                            checked={checked}
+                            onChange={(event) => onLinkedProjectIdsChange(event.target.checked ? [...linkedProjectIds, relationship.targetProjectId] : linkedProjectIds.filter((id) => id !== relationship.targetProjectId))}
+                            className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-slate-800 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="min-w-0 text-xs">
+                            <span className="block font-semibold text-slate-200">{relationship.targetProjectId} <span className="font-mono text-[10px] text-emerald-300">{relationship.type}</span></span>
+                            <span className="mt-1 block text-[11px] text-slate-500">Contract: {relationship.contractPaths.length ? relationship.contractPaths.join(", ") : "tidak dikonfigurasi"}</span>
+                            <span className="block text-[11px] text-slate-500">Checks: {relationship.verification.length ? relationship.verification.join(", ") : "tidak dikonfigurasi"}</span>
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
+                {linkedProjectIds.length > 0 && (
+                  <div className="border-t border-emerald-500/10 pt-3 text-[11px] text-emerald-200">
+                    Objective mencakup: {[selectedProject, ...linkedProjectIds].join(", ")}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-violet-500/20 bg-violet-500/5 p-4">
@@ -186,7 +232,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
         </div>
 
         {/* Optional Visual Attachments: Mockups & Project Assets */}
-        {targetMode === "EXISTING_PROJECT" && <div className="space-y-2">
+        {targetMode !== "FRESH_PROJECT" && <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
               Lampiran Gambar Desain & Asset (Opsional)
@@ -362,7 +408,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
             ) : (
               <>
                 <Play className="h-4 w-4 fill-white" />
-                <span>{targetMode === "FRESH_PROJECT" ? "Create Fresh Project Objective" : "Generate Canonical Plan"}</span>
+                <span>{targetMode === "FRESH_PROJECT" ? "Create Fresh Project Objective" : targetMode === "CROSS_PROJECT_INCIDENT" ? "Create Linked Projects Objective" : "Generate Canonical Plan"}</span>
               </>
             )}
           </button>

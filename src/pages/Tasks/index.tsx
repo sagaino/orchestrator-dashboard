@@ -6,10 +6,15 @@ export const TasksPage: React.FC = () => {
   const {
     targetMode,
     setTargetMode,
+    crossProjectEnabled,
     projects,
     queueJobs,
     selectedProject,
     setSelectedProject,
+    projectRelationships,
+    linkedProjectIds,
+    setLinkedProjectIds,
+    relationshipsLoading,
     freshProjectId,
     setFreshProjectId,
     freshTargetDirectory,
@@ -67,9 +72,14 @@ export const TasksPage: React.FC = () => {
           <TaskIntakeForm
             targetMode={targetMode}
             onTargetModeChange={setTargetMode}
+            crossProjectEnabled={crossProjectEnabled}
             projects={projects}
             selectedProject={selectedProject}
             onSelectProject={setSelectedProject}
+            projectRelationships={projectRelationships}
+            linkedProjectIds={linkedProjectIds}
+            onLinkedProjectIdsChange={setLinkedProjectIds}
+            relationshipsLoading={relationshipsLoading}
             freshProjectId={freshProjectId}
             onFreshProjectIdChange={setFreshProjectId}
             freshTargetDirectory={freshTargetDirectory}

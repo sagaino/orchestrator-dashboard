@@ -1,5 +1,5 @@
 import type { FormEvent, Dispatch, SetStateAction } from "react"
-import type { ProjectInfo, DaemonStatus, ObjectiveDecision, ObjectiveIntakeResult, ObjectiveMode, ObjectivePlanReview, ObjectiveRecord, TaskRequestResult } from "@/services/orchestrator"
+import type { ProjectInfo, ProjectRelationship, DaemonStatus, ObjectiveDecision, ObjectiveIntakeResult, ObjectiveMode, ObjectivePlanReview, ObjectiveRecord, TaskRequestResult } from "@/services/orchestrator"
 
 export interface OrchestratorJob {
   jobId: string
@@ -17,9 +17,14 @@ export interface TaskStatusMessage {
 export interface TaskIntakeFormProps {
   targetMode: ObjectiveMode
   onTargetModeChange: (mode: ObjectiveMode) => void
+  crossProjectEnabled: boolean
   projects: ProjectInfo[]
   selectedProject: string
   onSelectProject: (projectId: string) => void
+  projectRelationships: ProjectRelationship[]
+  linkedProjectIds: string[]
+  onLinkedProjectIdsChange: (projectIds: string[]) => void
+  relationshipsLoading?: boolean
   freshProjectId: string
   onFreshProjectIdChange: (projectId: string) => void
   freshTargetDirectory: string
@@ -80,12 +85,17 @@ export interface PlanReviewPanelProps {
 export interface UseTasksReturn {
   targetMode: ObjectiveMode
   setTargetMode: Dispatch<SetStateAction<ObjectiveMode>>
+  crossProjectEnabled: boolean
   projects: ProjectInfo[]
   daemon: DaemonStatus | null
   jobs: OrchestratorJob[]
   queueJobs: OrchestratorJob[]
   selectedProject: string
   setSelectedProject: Dispatch<SetStateAction<string>>
+  projectRelationships: ProjectRelationship[]
+  linkedProjectIds: string[]
+  setLinkedProjectIds: Dispatch<SetStateAction<string[]>>
+  relationshipsLoading: boolean
   freshProjectId: string
   setFreshProjectId: Dispatch<SetStateAction<string>>
   freshTargetDirectory: string
