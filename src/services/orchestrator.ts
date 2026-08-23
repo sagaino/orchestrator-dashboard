@@ -820,6 +820,128 @@ export interface AttachedAsset {
   sizeBytes: number
 }
 
+export type ObjectiveMode = "FRESH_PROJECT" | "EXISTING_PROJECT" | "CROSS_PROJECT_INCIDENT"
+
+export interface ObjectiveBudget {
+  maxSubtasks: number
+  maxParallelAgents: number
+  maxRetriesPerNode: number
+  maxTotalTokens: number | null
+  deadlineAt: string | null
+}
+
+export interface ObjectiveRecord {
+  objectiveId: string
+  mode: ObjectiveMode
+  state: string
+  request: string
+  requestedBy?: string
+  projectIds: string[]
+  freshProject: {
+    proposalId: string
+    action: string
+    projectId: string
+    targetDirectory: string
+    blueprint: string
+    request: string
+  } | null
+  activePlanId: string | null
+  activeOrchestrationId: string | null
+  budget: ObjectiveBudget
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PlanNodeReview {
+  nodeId: string
+  title: string
+  purpose: string
+  projectId: string
+  role: string
+  type: string
+  dependsOn: string[]
+  acceptanceCriteria: string[]
+  allowedPaths: string[]
+  verification: string[]
+  risk: string
+  complexity: string
+  requiresChanges: boolean
+  canRunInParallel: boolean
+  writeConflictGroup?: string | null
+  contextFrom?: string[]
+  skills?: string[]
+}
+
+export interface ObjectivePlanReview {
+  schemaVersion: number
+  revision: number
+  planId: string
+  objectiveId: string
+  state: "PENDING_APPROVAL" | "APPROVED" | "SUPERSEDED" | "CANCELLED" | string
+  summary: string
+  architectureDecisions: string[]
+  assumptions: string[]
+  clarificationNeeded: boolean
+  clarificationQuestion: string | null
+  projects: string[]
+  nodes: PlanNodeReview[]
+  integration: {
+    required: boolean
+    projectVerification: string[]
+    crossProjectVerification: string[]
+    previewRequired: boolean
+  }
+  risk: string
+  complexity: string
+  estimatedTokens?: number
+  approvedBy: string | null
+  approvedAt: string | null
+  createdAt: string
+  updatedAt?: string
+  planFingerprint?: string
+}
+
+export interface ObjectiveDecision {
+  decisionId: string
+  objectiveId: string
+  nodeId: string | null
+  runId: string | null
+  type: string
+  state: string
+  evidence: Record<string, unknown> | unknown[]
+  requestedAction: string
+  allowedChoices: string[]
+  creator: "SYSTEM" | string
+  createdAt: string
+  resolution: {
+    action: string
+    resolvedBy: string
+    resolvedAt: string
+  } | null
+}
+
+export interface ObjectiveIntakeResult {
+  objective: ObjectiveRecord
+  summary: Record<string, unknown>
+  planning: {
+    started: boolean
+    readOnly: boolean
+    tasksCreated: number
+    jobsCreated: number
+    runsCreated: number
+    planRevision?: number
+  }
+  plan?: ObjectivePlanReview | null
+  decisions?: ObjectiveDecision[]
+}
+
+export interface ObjectiveLifecycleDetail extends ObjectiveRecord {
+  plan: ObjectivePlanReview | null
+  orchestration: Record<string, unknown> | null
+  decisions: ObjectiveDecision[]
+  decisionSummary: { open: ObjectiveDecision[]; recent: ObjectiveDecision[] }
+}
+
 export const OrchestratorApi = {
   // Operations Center & resource governance
   async getOperationsReadiness() {
@@ -989,6 +1111,58 @@ export const OrchestratorApi = {
     projectId?: string
   }) {
     const res = await axios.post<{ success: boolean; data: { deleted: boolean; path: string } }>("/api/assets/delete", payload)
+    return res.data.data
+  },
+
+  async createObjective(payload: {
+    mode: ObjectiveMode
+    request: string
+    projectIds?: string[]
+    freshProject?: {
+      projectId: string
+      targetDirectory: string
+      blueprint: string
+    }
+  }) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: ObjectiveIntakeResult }>("/api/objectives", payload, {
+      headers: { "Idempotency-Key": `dashboard-objective-${randomPart}` },
+    })
+    return res.data.data
+  },
+
+  async getObjective(objectiveId: string) {
+    const res = await axios.get<{ success: boolean; data: ObjectiveLifecycleDetail }>(`/api/objectives/${encodeURIComponent(objectiveId)}`)
+    return res.data.data
+  },
+
+  async approveObjectivePlan(objectiveId: string, planFingerprint?: string | null) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: { objective: ObjectiveRecord; plan: ObjectivePlanReview; decision: ObjectiveDecision; alreadyApproved: boolean; planFingerprint: string } }>(
+      `/api/objectives/${encodeURIComponent(objectiveId)}/approve-plan`,
+      planFingerprint ? { planFingerprint } : {},
+      { headers: { "Idempotency-Key": `dashboard-plan-approval-${randomPart}` } },
+    )
+    return res.data.data
+  },
+
+  async requestObjectivePlanChanges(objectiveId: string, reason: string) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: { objective: ObjectiveRecord; plan: ObjectivePlanReview; previousPlan: ObjectivePlanReview | null } }>(
+      `/api/objectives/${encodeURIComponent(objectiveId)}/request-plan-changes`,
+      { reason },
+      { headers: { "Idempotency-Key": `dashboard-plan-changes-${randomPart}` } },
+    )
+    return res.data.data
+  },
+
+  async cancelObjective(objectiveId: string) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: { objective: ObjectiveRecord; plan: ObjectivePlanReview | null; alreadyCancelled: boolean } }>(
+      `/api/objectives/${encodeURIComponent(objectiveId)}/cancel`,
+      {},
+      { headers: { "Idempotency-Key": `dashboard-objective-cancel-${randomPart}` } },
+    )
     return res.data.data
   },
 

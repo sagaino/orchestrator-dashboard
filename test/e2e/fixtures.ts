@@ -109,6 +109,59 @@ export async function installLifecycleFixtures(page: Page) {
   ]
   const jobs: Array<Record<string, unknown>> = []
   let provenancePlanId: string | null = null
+  let planReviewState: "PENDING_APPROVAL" | "APPROVED" | "CANCELLED" = "PENDING_APPROVAL"
+  let planReviewRevision = 1
+
+  const planReviewObjective = () => ({
+    schemaVersion: 1,
+    revision: 1,
+    objectiveId: "e2e-plan-review",
+    mode: "EXISTING_PROJECT",
+    state: planReviewState === "CANCELLED" ? "CANCELLED" : planReviewState === "APPROVED" ? "APPROVED" : "PLAN_REVIEW",
+    request: "Review the deterministic multi-node objective plan.",
+    requestedBy: "e2e-operator",
+    projectIds: ["e2e-project"],
+    freshProject: null,
+    activePlanId: `plan-e2e-plan-review-r${planReviewRevision}`,
+    activeOrchestrationId: null,
+    budget: { maxSubtasks: 4, maxParallelAgents: 2, maxRetriesPerNode: 1, maxTotalTokens: 1200, deadlineAt: null },
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  const planReviewPlan = () => ({
+    schemaVersion: 1,
+    revision: planReviewRevision,
+    planId: `plan-e2e-plan-review-r${planReviewRevision}`,
+    objectiveId: "e2e-plan-review",
+    state: planReviewState,
+    summary: "Inspect the fixture and verify the resulting implementation.",
+    architectureDecisions: ["Keep diagnosis read-only before implementation."],
+    assumptions: ["The project verification scripts are available locally."],
+    clarificationNeeded: false,
+    clarificationQuestion: null,
+    projects: ["e2e-project"],
+    nodes: [
+      { nodeId: "N01", title: "Inspect project", purpose: "Collect bounded repository context.", projectId: "e2e-project", role: "DIAGNOSTIC", type: "DIAGNOSTIC", dependsOn: [], acceptanceCriteria: ["Context is bounded."], allowedPaths: [], verification: ["typecheck"], risk: "LOW", complexity: "LOW", requiresChanges: false, canRunInParallel: true, writeConflictGroup: null, contextFrom: [], skills: [] },
+      { nodeId: "N02", title: "Verify implementation", purpose: "Run the planned verification after inspection.", projectId: "e2e-project", role: "TESTING", type: "VERIFICATION", dependsOn: ["N01"], acceptanceCriteria: ["Verification passes."], allowedPaths: [], verification: ["build"], risk: "MEDIUM", complexity: "MEDIUM", requiresChanges: false, canRunInParallel: false, writeConflictGroup: null, contextFrom: ["N01"], skills: [] },
+    ],
+    integration: { required: true, projectVerification: ["typecheck"], crossProjectVerification: [], previewRequired: false },
+    risk: "MEDIUM",
+    complexity: "MEDIUM",
+    approvedBy: planReviewState === "APPROVED" ? "local:e2e-operator" : null,
+    approvedAt: planReviewState === "APPROVED" ? now : null,
+    createdAt: now,
+    updatedAt: now,
+    planFingerprint: "fixture-plan-fingerprint",
+  })
+
+  const planReviewData = () => ({
+    ...planReviewObjective(),
+    plan: planReviewPlan(),
+    orchestration: null,
+    decisions: [],
+    decisionSummary: { open: [], recent: [] },
+  })
 
   await page.route("**/api/**", async (route) => {
     const request = route.request()
@@ -182,6 +235,53 @@ export async function installLifecycleFixtures(page: Page) {
       activation: { eligible: true, state: "HUMAN_GATE_REQUIRED", requiresHumanConfirmation: true, authority: "EXTERNAL_SUPERVISOR", selfAcceptAllowed: false, inProcessActivationAllowed: false, confirmation: { confirmed: false, approvedBy: null, approvedAt: null } },
     })
     if (pathname === "/api/runs" && method === "GET") return json(route, runs)
+
+    if (pathname === "/api/objectives" && method === "POST") {
+      const body = request.postDataJSON() as { mode?: string; request?: string; projectIds?: string[]; freshProject?: { projectId?: string; targetDirectory?: string; blueprint?: string } }
+      const projectId = body.freshProject?.projectId || body.projectIds?.[0] || "fixture-project"
+      return json(route, {
+        objective: {
+          schemaVersion: 1,
+          revision: 0,
+          objectiveId: "obj-20260822-fresh-fixture",
+          mode: body.mode || "FRESH_PROJECT",
+          state: "GENESIS_REVIEW",
+          request: body.request || "",
+          requestedBy: "e2e-operator",
+          projectIds: [projectId],
+          freshProject: {
+            proposalId: `genesis-${projectId}-frontend-vite`,
+            action: "ONBOARD_WITH_EXISTING_BLUEPRINT",
+            projectId,
+            targetDirectory: body.freshProject?.targetDirectory || "/tmp/fixture-fresh-project",
+            blueprint: body.freshProject?.blueprint || "frontend-vite",
+            request: body.request || "",
+          },
+          activePlanId: null,
+          activeOrchestrationId: null,
+          budget: { maxSubtasks: 8, maxParallelAgents: 1, maxRetriesPerNode: 2, maxTotalTokens: null, deadlineAt: null },
+          createdAt: now,
+          updatedAt: now,
+        },
+        summary: { objectiveId: "obj-20260822-fresh-fixture", mode: body.mode || "FRESH_PROJECT", state: "GENESIS_REVIEW", projectIds: [projectId] },
+        planning: { started: false, readOnly: true, tasksCreated: 0, jobsCreated: 0, runsCreated: 0 },
+      }, 201)
+    }
+
+    if (pathname === "/api/objectives/e2e-plan-review" && method === "GET") return json(route, planReviewData())
+    if (pathname === "/api/objectives/e2e-plan-review/approve-plan" && method === "POST") {
+      planReviewState = "APPROVED"
+      return json(route, { objective: planReviewObjective(), plan: planReviewPlan(), decision: { decisionId: "decision-plan-approval-fixture", objectiveId: "e2e-plan-review", nodeId: null, runId: null, type: "PLAN_APPROVAL", state: "RESOLVED", evidence: {}, requestedAction: "Approve plan", allowedChoices: ["APPROVE"], creator: "SYSTEM", createdAt: now, resolution: { action: "APPROVE", resolvedBy: "local:e2e-operator", resolvedAt: now } }, alreadyApproved: false, planFingerprint: "fixture-plan-fingerprint" }, 201)
+    }
+    if (pathname === "/api/objectives/e2e-plan-review/request-plan-changes" && method === "POST") {
+      planReviewState = "PENDING_APPROVAL"
+      planReviewRevision = 2
+      return json(route, { objective: planReviewObjective(), plan: planReviewPlan(), previousPlan: null }, 201)
+    }
+    if (pathname === "/api/objectives/e2e-plan-review/cancel" && method === "POST") {
+      planReviewState = "CANCELLED"
+      return json(route, { objective: planReviewObjective(), plan: planReviewPlan(), alreadyCancelled: false }, 201)
+    }
 
     if (pathname === "/api/tasks/request" && method === "POST") {
       return json(route, { schemaVersion: 1, action: "TASK_CREATED", project: "e2e-project", task: { id: "E2E-INTAKE", title: "Deterministic intake fixture", path: "02-Projects/e2e-project/tasks/e2e-intake.md", status: "BACKLOG", risk: "low" }, job: null, readiness: { verdict: "PASS", ready: true, summary: { passed: 11, blockers: 0, warnings: 0 }, checks: [{ id: "scope", status: "PASS", message: "Allowed paths are explicit." }], nextActions: [] }, confirmation: { schemaVersion: 1, status: "AWAITING_HUMAN_CONFIRMATION", approvalMode: "EXPLICIT_HUMAN", allowedPaths: ["src/fixture.ts"], verification: ["typecheck", "build"], acceptanceCriteria: ["Fixture change is scoped.", "Verification passes."], risk: "low", requiresChanges: true, readiness: { verdict: "PASS", ready: true, summary: { passed: 11, blockers: 0, warnings: 0 }, checks: [{ id: "scope", status: "PASS", message: "Allowed paths are explicit." }], nextActions: [] } }, nextAction: "Review canonical plan, lalu berikan human approval." }, 201)

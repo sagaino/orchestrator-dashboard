@@ -1,5 +1,5 @@
 import type { FormEvent, Dispatch, SetStateAction } from "react"
-import type { ProjectInfo, DaemonStatus, TaskRequestResult } from "@/services/orchestrator"
+import type { ProjectInfo, DaemonStatus, ObjectiveDecision, ObjectiveIntakeResult, ObjectiveMode, ObjectivePlanReview, ObjectiveRecord, TaskRequestResult } from "@/services/orchestrator"
 
 export interface OrchestratorJob {
   jobId: string
@@ -15,9 +15,17 @@ export interface TaskStatusMessage {
 }
 
 export interface TaskIntakeFormProps {
+  targetMode: ObjectiveMode
+  onTargetModeChange: (mode: ObjectiveMode) => void
   projects: ProjectInfo[]
   selectedProject: string
   onSelectProject: (projectId: string) => void
+  freshProjectId: string
+  onFreshProjectIdChange: (projectId: string) => void
+  freshTargetDirectory: string
+  onFreshTargetDirectoryChange: (targetDirectory: string) => void
+  freshBlueprint: string
+  onFreshBlueprintChange: (blueprint: string) => void
   prompt: string
   onPromptChange: (prompt: string) => void
   queueAfterConfirmation: boolean
@@ -57,13 +65,33 @@ export interface TaskConfirmationModalProps {
   onConfirm: () => Promise<void>
 }
 
+export interface PlanReviewPanelProps {
+  isOpen: boolean
+  objective: ObjectiveRecord | null
+  plan: ObjectivePlanReview | null
+  decisions?: ObjectiveDecision[]
+  actionLoading?: boolean
+  onClose: () => void
+  onApprove: () => Promise<void>
+  onRequestChanges: (reason: string) => Promise<void>
+  onCancel: () => Promise<void>
+}
+
 export interface UseTasksReturn {
+  targetMode: ObjectiveMode
+  setTargetMode: Dispatch<SetStateAction<ObjectiveMode>>
   projects: ProjectInfo[]
   daemon: DaemonStatus | null
   jobs: OrchestratorJob[]
   queueJobs: OrchestratorJob[]
   selectedProject: string
   setSelectedProject: Dispatch<SetStateAction<string>>
+  freshProjectId: string
+  setFreshProjectId: Dispatch<SetStateAction<string>>
+  freshTargetDirectory: string
+  setFreshTargetDirectory: Dispatch<SetStateAction<string>>
+  freshBlueprint: string
+  setFreshBlueprint: Dispatch<SetStateAction<string>>
   prompt: string
   setPrompt: Dispatch<SetStateAction<string>>
   queueAfterConfirmation: boolean
@@ -89,7 +117,17 @@ export interface UseTasksReturn {
   pendingPrompt?: string
   confirmationOpen: boolean
   confirmationResult: TaskRequestResult | null
+  objectiveResult: ObjectiveIntakeResult | null
   confirming: boolean
   handleCloseConfirmation: () => void
   handleConfirmQueue: () => Promise<void>
+  planReviewOpen: boolean
+  planReviewObjective: ObjectiveRecord | null
+  planReview: ObjectivePlanReview | null
+  planReviewDecisions: ObjectiveDecision[]
+  planReviewActionLoading: boolean
+  handleClosePlanReview: () => void
+  handleApprovePlan: () => Promise<void>
+  handleRequestPlanChanges: (reason: string) => Promise<void>
+  handleCancelObjective: () => Promise<void>
 }
