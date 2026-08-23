@@ -112,6 +112,7 @@ export async function installLifecycleFixtures(page: Page) {
   let planReviewState: "PENDING_APPROVAL" | "APPROVED" | "CANCELLED" = "PENDING_APPROVAL"
   let planReviewRevision = 1
   let objectiveDashboardAccepted = false
+  let crossProjectObjectiveAccepted = false
 
   const planReviewObjective = () => ({
     schemaVersion: 1,
@@ -194,6 +195,62 @@ export async function installLifecycleFixtures(page: Page) {
     blockers: [],
     usage: { actual: { totalTokens: 420, agentInvocations: 2, retries: 0 }, budget: objectiveDashboardObjective().budget, remainingTokens: 780 },
     finalAcceptance: { state: objectiveDashboardAccepted ? "ACCEPTED" : "PENDING", canAccept: !objectiveDashboardAccepted, decisionId: objectiveDashboardAccepted ? "decision-objective-dashboard" : null, acceptedBy: objectiveDashboardAccepted ? "local:e2e-operator" : null, acceptedAt: objectiveDashboardAccepted ? now : null, requiredReview: true },
+    decisions: [],
+  })
+
+  const crossProjectObjective = () => ({
+    schemaVersion: 1,
+    revision: crossProjectObjectiveAccepted ? 1 : 0,
+    objectiveId: "e2e-cross-project-review",
+    mode: "CROSS_PROJECT_INCIDENT",
+    state: crossProjectObjectiveAccepted ? "DONE" : "RESULT_REVIEW",
+    request: "Diagnose and verify the frontend/backend contract incident.",
+    requestedBy: "e2e-operator",
+    projectIds: ["e2e-project", "e2e-backend"],
+    freshProject: null,
+    activePlanId: "plan-e2e-cross-project-review-r1",
+    activeOrchestrationId: "orch-e2e-cross-project-review",
+    budget: { maxSubtasks: 6, maxParallelAgents: 2, maxRetriesPerNode: 1, maxTotalTokens: 1800, deadlineAt: null },
+    createdAt: now,
+    updatedAt: now,
+  })
+  const crossProjectEvidence = () => ({
+    schemaVersion: 1,
+    mode: "objective-evidence",
+    objective: crossProjectObjective(),
+    plan: { ...planReviewPlan(), planId: "plan-e2e-cross-project-review-r1", objectiveId: "e2e-cross-project-review", state: "APPROVED", projects: ["e2e-project", "e2e-backend"], integration: { required: true, projectVerification: ["test"], crossProjectVerification: ["e2e-project:test:e2e", "e2e-backend:test:contract"], previewRequired: false } },
+    orchestration: { orchestrationId: "orch-e2e-cross-project-review", state: "DONE", usage: { totalTokens: 820, agentInvocations: 4, retries: 0 } },
+    nodes: [
+      { nodeId: "N01", title: "Diagnose frontend", purpose: "Inspect the frontend contract usage.", projectId: "e2e-project", type: "DIAGNOSTIC", role: "DIAGNOSTIC", dependsOn: [], state: "DONE", runId: "run-cross-frontend-diagnosis", jobId: "job-cross-frontend-diagnosis", commitHash: "frontdiag123", changedPaths: [], allowedPaths: [], verification: [{ command: "npm run test", status: "PASS" }], verificationStatus: "PASS", links: { evidence: null, diff: null, preview: null }, error: null },
+      { nodeId: "N02", title: "Diagnose backend", purpose: "Inspect the backend contract implementation.", projectId: "e2e-backend", type: "DIAGNOSTIC", role: "DIAGNOSTIC", dependsOn: [], state: "DONE", runId: "run-cross-backend-diagnosis", jobId: "job-cross-backend-diagnosis", commitHash: "backdiag123", changedPaths: [], allowedPaths: [], verification: [{ command: "npm run test", status: "PASS" }], verificationStatus: "PASS", links: { evidence: null, diff: null, preview: null }, error: null },
+      { nodeId: "N03", title: "Fix frontend contract usage", purpose: "Apply the approved frontend change.", projectId: "e2e-project", type: "IMPLEMENTATION", role: "IMPLEMENTATION", dependsOn: ["N01"], state: "DONE", runId: "run-cross-frontend-change", jobId: "job-cross-frontend-change", commitHash: "frontchange123", changedPaths: ["src/api/client.ts"], allowedPaths: ["src/api/client.ts"], verification: [{ command: "npm run test", status: "PASS" }], verificationStatus: "PASS", links: { evidence: "/api/runs/run-cross-frontend-change/evidence", diff: "/api/runs/run-cross-frontend-change/diff", preview: null }, error: null },
+      { nodeId: "N04", title: "Fix backend contract", purpose: "Apply the approved backend change.", projectId: "e2e-backend", type: "IMPLEMENTATION", role: "IMPLEMENTATION", dependsOn: ["N02"], state: "DONE", runId: "run-cross-backend-change", jobId: "job-cross-backend-change", commitHash: "backchange123", changedPaths: ["src/routes/orders.ts"], allowedPaths: ["src/routes/orders.ts"], verification: [{ command: "npm run test", status: "PASS" }], verificationStatus: "PASS", links: { evidence: "/api/runs/run-cross-backend-change/evidence", diff: "/api/runs/run-cross-backend-change/diff", preview: null }, error: null },
+      { nodeId: "N05", title: "Verify integration", purpose: "Run contract and E2E checks across both repositories.", projectId: "e2e-project", type: "INTEGRATION", role: "INTEGRATION", dependsOn: ["N03", "N04"], state: "DONE", runId: null, jobId: null, commitHash: null, changedPaths: [], allowedPaths: [], verification: [], verificationStatus: "PASS", links: { evidence: null, diff: null, preview: null }, error: null },
+    ],
+    integration: {
+      schemaVersion: 1,
+      mode: "integration-evidence",
+      status: "PASSED",
+      artifactPath: "runtime/integration/orch-e2e-cross-project-review.json",
+      sourceRuns: [
+        { nodeId: "N03", runId: "run-cross-frontend-change", projectId: "e2e-project", commitHash: "frontchange123", changedPaths: ["src/api/client.ts"], allowedPaths: ["src/api/client.ts"] },
+        { nodeId: "N04", runId: "run-cross-backend-change", projectId: "e2e-backend", commitHash: "backchange123", changedPaths: ["src/routes/orders.ts"], allowedPaths: ["src/routes/orders.ts"] },
+      ],
+      projectBaselines: { "e2e-project": "frontbase123", "e2e-backend": "backbase123" },
+      services: [{ projectId: "e2e-project", status: "PASS", host: "127.0.0.1", port: 5311, url: "http://127.0.0.1:5311" }, { projectId: "e2e-backend", status: "PASS", host: "127.0.0.1", port: 5312, url: "http://127.0.0.1:5312" }],
+      repositoryAcceptance: [
+        { projectId: "e2e-project", baseline: "frontbase123", runIds: ["run-cross-frontend-change"], diffs: [{ runId: "run-cross-frontend-change", changedPaths: ["src/api/client.ts"], allowedPaths: ["src/api/client.ts"] }], checks: [{ projectId: "e2e-project", script: "test", command: "npm run test", scope: "PROJECT", status: "PASS" }], acceptance: { gate: "PER_REPOSITORY", status: "PASS" } },
+        { projectId: "e2e-backend", baseline: "backbase123", runIds: ["run-cross-backend-change"], diffs: [{ runId: "run-cross-backend-change", changedPaths: ["src/routes/orders.ts"], allowedPaths: ["src/routes/orders.ts"] }], checks: [{ projectId: "e2e-backend", script: "test", command: "npm run test", scope: "PROJECT", status: "PASS" }], acceptance: { gate: "PER_REPOSITORY", status: "PASS" } },
+      ],
+      verification: { status: "PASS", results: [{ projectId: "e2e-project", script: "test", command: "npm run test", scope: "PROJECT", status: "PASS" }, { projectId: "e2e-backend", script: "test", command: "npm run test", scope: "PROJECT", status: "PASS" }, { projectId: "e2e-project", script: "test:e2e", command: "npm run test:e2e", scope: "CROSS_PROJECT", status: "PASS", serviceUrls: { "e2e-project": "http://127.0.0.1:5311", "e2e-backend": "http://127.0.0.1:5312" } }, { projectId: "e2e-backend", script: "test:contract", command: "npm run test:contract", scope: "CROSS_PROJECT", status: "PASS", serviceUrls: { "e2e-project": "http://127.0.0.1:5311", "e2e-backend": "http://127.0.0.1:5312" } }] },
+      crossProjectVerification: { required: true, status: "PASS", results: [{ projectId: "e2e-project", script: "test:e2e", command: "npm run test:e2e", scope: "CROSS_PROJECT", status: "PASS", serviceUrls: { "e2e-project": "http://127.0.0.1:5311", "e2e-backend": "http://127.0.0.1:5312" } }, { projectId: "e2e-backend", script: "test:contract", command: "npm run test:contract", scope: "CROSS_PROJECT", status: "PASS", serviceUrls: { "e2e-project": "http://127.0.0.1:5311", "e2e-backend": "http://127.0.0.1:5312" } }] },
+    },
+    diffs: [{ nodeId: "N03", runId: "run-cross-frontend-change", projectId: "e2e-project", href: "/api/runs/run-cross-frontend-change/diff", changedPaths: ["src/api/client.ts"] }, { nodeId: "N04", runId: "run-cross-backend-change", projectId: "e2e-backend", href: "/api/runs/run-cross-backend-change/diff", changedPaths: ["src/routes/orders.ts"] }],
+    previews: [],
+    verification: { status: "PASS", results: [{ command: "npm run test:e2e", status: "PASS" }, { command: "npm run test:contract", status: "PASS" }], integration: { required: true, status: "PASS", artifactPath: "runtime/integration/orch-e2e-cross-project-review.json" } },
+    blockers: [],
+    usage: { actual: { totalTokens: 820, agentInvocations: 4, retries: 0 }, budget: crossProjectObjective().budget, remainingTokens: 980 },
+    finalAcceptance: { state: crossProjectObjectiveAccepted ? "ACCEPTED" : "PENDING", canAccept: !crossProjectObjectiveAccepted, decisionId: crossProjectObjectiveAccepted ? "decision-cross-project-review" : null, acceptedBy: crossProjectObjectiveAccepted ? "local:e2e-operator" : null, acceptedAt: crossProjectObjectiveAccepted ? now : null, requiredReview: true },
     decisions: [],
   })
 
@@ -318,6 +375,12 @@ export async function installLifecycleFixtures(page: Page) {
     if (pathname === "/api/objectives/e2e-objective-dashboard/final-acceptance" && method === "POST") {
       objectiveDashboardAccepted = true
       return json(route, { objective: objectiveDashboardObjective(), decision: { decisionId: "decision-objective-dashboard", objectiveId: "e2e-objective-dashboard", nodeId: null, runId: null, type: "OBJECTIVE_ACCEPTANCE", state: "RESOLVED", evidence: {}, requestedAction: "Accept objective", allowedChoices: ["ACCEPT"], creator: "SYSTEM", createdAt: now, resolution: { action: "ACCEPT", resolvedBy: "local:e2e-operator", resolvedAt: now } }, evidence: objectiveDashboardEvidence(), alreadyAccepted: false }, 201)
+    }
+    if (pathname === "/api/objectives/e2e-cross-project-review" && method === "GET") return json(route, { ...crossProjectObjective(), plan: crossProjectEvidence().plan, orchestration: crossProjectEvidence().orchestration, decisions: [], decisionSummary: { open: [], recent: [] } })
+    if (pathname === "/api/objectives/e2e-cross-project-review/evidence" && method === "GET") return json(route, crossProjectEvidence())
+    if (pathname === "/api/objectives/e2e-cross-project-review/final-acceptance" && method === "POST") {
+      crossProjectObjectiveAccepted = true
+      return json(route, { objective: crossProjectObjective(), decision: { decisionId: "decision-cross-project-review", objectiveId: "e2e-cross-project-review", nodeId: null, runId: null, type: "OBJECTIVE_ACCEPTANCE", state: "RESOLVED", evidence: {}, requestedAction: "Accept objective", allowedChoices: ["ACCEPT"], creator: "SYSTEM", createdAt: now, resolution: { action: "ACCEPT", resolvedBy: "local:e2e-operator", resolvedAt: now } }, evidence: crossProjectEvidence(), alreadyAccepted: false }, 201)
     }
     if (pathname === "/api/objectives/e2e-plan-review/approve-plan" && method === "POST") {
       planReviewState = "APPROVED"

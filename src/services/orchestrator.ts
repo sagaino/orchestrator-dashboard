@@ -992,6 +992,47 @@ export interface ObjectiveEvidenceNode {
   error: { code?: string; message?: string; [key: string]: unknown } | null
 }
 
+export interface IntegrationVerificationResult {
+  projectId?: string | null
+  script?: string | null
+  command?: string | null
+  scope?: string
+  status?: string
+  exitCode?: number | null
+  serviceUrls?: Record<string, string> | null
+  [key: string]: unknown
+}
+
+export interface IntegrationRepositoryAcceptance {
+  projectId: string
+  baseline: string | null
+  runIds: string[]
+  diffs: Array<{ runId: string | null; changedPaths: string[]; allowedPaths: string[] }>
+  checks: IntegrationVerificationResult[]
+  acceptance: { gate: string; status: string }
+}
+
+export interface IntegrationEvidence {
+  schemaVersion?: number
+  mode?: string
+  status?: string
+  artifactPath?: string | null
+  sourceRuns?: Array<{
+    nodeId?: string | null
+    runId?: string | null
+    projectId?: string | null
+    commitHash?: string | null
+    changedPaths?: string[]
+    allowedPaths?: string[]
+  }>
+  projectBaselines?: Record<string, string | null>
+  services?: Array<{ projectId: string; status: string; host?: string; port?: number | null; url?: string | null; error?: string }>
+  repositoryAcceptance?: IntegrationRepositoryAcceptance[]
+  verification?: { status?: string; results?: IntegrationVerificationResult[] }
+  crossProjectVerification?: { required: boolean; status: string; results: IntegrationVerificationResult[] }
+  [key: string]: unknown
+}
+
 export interface ObjectiveEvidence {
   schemaVersion: number
   mode: "objective-evidence"
@@ -999,7 +1040,7 @@ export interface ObjectiveEvidence {
   plan: ObjectivePlanReview | null
   orchestration: Record<string, any> | null
   nodes: ObjectiveEvidenceNode[]
-  integration: Record<string, any> | null
+  integration: IntegrationEvidence | null
   diffs: Array<{ nodeId: string; runId: string; projectId: string; href: string; changedPaths: string[] }>
   previews: Array<{ nodeId: string; runId: string; projectId: string; href: string }>
   verification: {
