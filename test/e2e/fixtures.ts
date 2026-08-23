@@ -198,6 +198,13 @@ export async function installLifecycleFixtures(page: Page) {
     decisions: [],
   })
 
+  const graphForEvidence = (evidenceData: { objective: { objectiveId: string; state: string }; plan?: { planId?: string | null }; orchestration?: { orchestrationId?: string | null }; nodes: Array<{ nodeId: string; title: string; purpose: string; projectId: string; type: string; role: string; dependsOn: string[]; state: string; runId: string | null; jobId: string | null }> }) => {
+    const nodes = evidenceData.nodes.map((node, index) => ({ id: node.nodeId, index, title: node.title, purpose: node.purpose, projectId: node.projectId, type: node.type, role: node.role, state: node.state, statusLabel: node.state.replaceAll("_", " "), runId: node.runId, jobId: node.jobId, dependsOn: node.dependsOn, canRunInParallel: false }))
+    const edges = nodes.flatMap((node) => node.dependsOn.map((dependency) => ({ id: `${dependency}->${node.id}`, source: dependency, target: node.id, type: "DEPENDS_ON", label: "Depends on" })))
+    const stateCounts = nodes.reduce<Record<string, number>>((counts, node) => ({ ...counts, [node.state]: (counts[node.state] ?? 0) + 1 }), {})
+    return { schemaVersion: 1, mode: "objective-graph", objectiveId: evidenceData.objective.objectiveId, objectiveState: evidenceData.objective.state, planId: evidenceData.plan?.planId ?? null, orchestrationId: evidenceData.orchestration?.orchestrationId ?? null, revision: 1, bounded: true, nodes, edges, summary: { totalNodes: nodes.length, totalEdges: edges.length, stateCounts, page: 1, pageSize: 50, totalPages: 1, hasPrevious: false, hasNext: false } }
+  }
+
   const crossProjectObjective = () => ({
     schemaVersion: 1,
     revision: crossProjectObjectiveAccepted ? 1 : 0,
@@ -372,12 +379,14 @@ export async function installLifecycleFixtures(page: Page) {
     if (pathname === "/api/objectives/e2e-plan-review" && method === "GET") return json(route, planReviewData())
     if (pathname === "/api/objectives/e2e-objective-dashboard" && method === "GET") return json(route, { ...objectiveDashboardObjective(), plan: objectiveDashboardEvidence().plan, orchestration: objectiveDashboardEvidence().orchestration, decisions: [], decisionSummary: { open: [], recent: [] } })
     if (pathname === "/api/objectives/e2e-objective-dashboard/evidence" && method === "GET") return json(route, objectiveDashboardEvidence())
+    if (pathname === "/api/objectives/e2e-objective-dashboard/graph" && method === "GET") return json(route, graphForEvidence(objectiveDashboardEvidence()))
     if (pathname === "/api/objectives/e2e-objective-dashboard/final-acceptance" && method === "POST") {
       objectiveDashboardAccepted = true
       return json(route, { objective: objectiveDashboardObjective(), decision: { decisionId: "decision-objective-dashboard", objectiveId: "e2e-objective-dashboard", nodeId: null, runId: null, type: "OBJECTIVE_ACCEPTANCE", state: "RESOLVED", evidence: {}, requestedAction: "Accept objective", allowedChoices: ["ACCEPT"], creator: "SYSTEM", createdAt: now, resolution: { action: "ACCEPT", resolvedBy: "local:e2e-operator", resolvedAt: now } }, evidence: objectiveDashboardEvidence(), alreadyAccepted: false }, 201)
     }
     if (pathname === "/api/objectives/e2e-cross-project-review" && method === "GET") return json(route, { ...crossProjectObjective(), plan: crossProjectEvidence().plan, orchestration: crossProjectEvidence().orchestration, decisions: [], decisionSummary: { open: [], recent: [] } })
     if (pathname === "/api/objectives/e2e-cross-project-review/evidence" && method === "GET") return json(route, crossProjectEvidence())
+    if (pathname === "/api/objectives/e2e-cross-project-review/graph" && method === "GET") return json(route, graphForEvidence(crossProjectEvidence()))
     if (pathname === "/api/objectives/e2e-cross-project-review/final-acceptance" && method === "POST") {
       crossProjectObjectiveAccepted = true
       return json(route, { objective: crossProjectObjective(), decision: { decisionId: "decision-cross-project-review", objectiveId: "e2e-cross-project-review", nodeId: null, runId: null, type: "OBJECTIVE_ACCEPTANCE", state: "RESOLVED", evidence: {}, requestedAction: "Accept objective", allowedChoices: ["ACCEPT"], creator: "SYSTEM", createdAt: now, resolution: { action: "ACCEPT", resolvedBy: "local:e2e-operator", resolvedAt: now } }, evidence: crossProjectEvidence(), alreadyAccepted: false }, 201)

@@ -1033,6 +1033,53 @@ export interface IntegrationEvidence {
   [key: string]: unknown
 }
 
+export interface ObjectiveGraphNode {
+  id: string
+  index: number
+  title: string
+  purpose: string
+  projectId: string
+  type: string
+  role: string
+  state: string
+  statusLabel: string
+  runId: string | null
+  jobId: string | null
+  dependsOn: string[]
+  canRunInParallel: boolean
+}
+
+export interface ObjectiveGraphEdge {
+  id: string
+  source: string
+  target: string
+  type: string
+  label: string
+}
+
+export interface ObjectiveGraph {
+  schemaVersion: number
+  mode: "objective-graph"
+  objectiveId: string
+  objectiveState: string
+  planId: string | null
+  orchestrationId: string | null
+  revision: number
+  bounded: boolean
+  nodes: ObjectiveGraphNode[]
+  edges: ObjectiveGraphEdge[]
+  summary: {
+    totalNodes: number
+    totalEdges: number
+    stateCounts: Record<string, number>
+    page: number
+    pageSize: number
+    totalPages: number
+    hasPrevious: boolean
+    hasNext: boolean
+  }
+}
+
 export interface ObjectiveEvidence {
   schemaVersion: number
   mode: "objective-evidence"
@@ -1281,6 +1328,11 @@ export const OrchestratorApi = {
 
   async getObjectiveEvidence(objectiveId: string) {
     const res = await axios.get<{ success: boolean; data: ObjectiveEvidence }>(`/api/objectives/${encodeURIComponent(objectiveId)}/evidence`)
+    return res.data.data
+  },
+
+  async getObjectiveGraph(objectiveId: string, page = 1, pageSize = 50) {
+    const res = await axios.get<{ success: boolean; data: ObjectiveGraph }>(`/api/objectives/${encodeURIComponent(objectiveId)}/graph`, { params: { page, pageSize } })
     return res.data.data
   },
 

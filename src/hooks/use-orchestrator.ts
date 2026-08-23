@@ -26,6 +26,7 @@ import type {
   ObjectiveMode,
   ObjectiveLifecycleDetail,
   ObjectiveEvidence,
+  ObjectiveGraph,
   ObjectiveSummary,
   ProjectRelationship,
   ProjectRelationshipsResult,
@@ -60,6 +61,7 @@ export const queryKeys = {
   backupRecovery: ["operations", "backups", "status"] as const,
   objective: (id: string) => ["objectives", id] as const,
   objectiveEvidence: (id: string) => ["objectives", id, "evidence"] as const,
+  objectiveGraph: (id: string) => ["objectives", id, "graph"] as const,
   objectives: ["objectives"] as const,
 }
 
@@ -118,6 +120,16 @@ export function useObjectiveEvidence(objectiveId: string | null) {
     queryFn: () => OrchestratorApi.getObjectiveEvidence(objectiveId!),
     enabled: Boolean(objectiveId),
     refetchInterval: objectiveId ? 3_000 : false,
+    staleTime: 1_000,
+  })
+}
+
+export function useObjectiveGraph(objectiveId: string | null, page = 1, pageSize = 50) {
+  return useQuery<ObjectiveGraph>({
+    queryKey: [...queryKeys.objectiveGraph(objectiveId ?? ""), page, pageSize],
+    queryFn: () => OrchestratorApi.getObjectiveGraph(objectiveId!, page, pageSize),
+    enabled: Boolean(objectiveId),
+    refetchInterval: objectiveId ? 5_000 : false,
     staleTime: 1_000,
   })
 }

@@ -19,9 +19,10 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       setLastEvent(evt)
 
       switch (evt.event) {
-        case "connected":
+      case "connected":
           // Initial connection — refresh everything
           queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
+          queryClient.invalidateQueries({ queryKey: queryKeys.objectives })
           queryClient.invalidateQueries({ queryKey: queryKeys.runs })
           queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
           break
@@ -64,15 +65,25 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
         case "PLAN_APPROVED":
         case "PLAN_REVISION_CREATED":
         case "PLAN_CHANGES_REQUESTED":
+        case "PLAN_CLARIFIED":
+        case "TASKS_MATERIALIZED":
         case "INTEGRATION_IN_PROGRESS":
         case "INTEGRATION_BLOCKED":
         case "INTEGRATION_COMPLETED":
         case "INTEGRATION_REPAIR_PROPOSED":
         case "OBJECTIVE_ACCEPTED":
         case "OBJECTIVE_ACCEPTANCE_IDEMPOTENT":
+        case "OBJECTIVE_CANCELLED":
+        case "NODE_RETRY_DECISION_REQUESTED":
+        case "DECISION_RESOLVED":
           queryClient.invalidateQueries({ queryKey: ["objectives"] })
           queryClient.invalidateQueries({ queryKey: queryKeys.runs })
           queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+          if (evt.data?.objectiveId) {
+            queryClient.invalidateQueries({ queryKey: queryKeys.objective(evt.data.objectiveId) })
+            queryClient.invalidateQueries({ queryKey: queryKeys.objectiveEvidence(evt.data.objectiveId) })
+            queryClient.invalidateQueries({ queryKey: queryKeys.objectiveGraph(evt.data.objectiveId) })
+          }
           break
 
         case "KNOWLEDGE_PROMOTED":
