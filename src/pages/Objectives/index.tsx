@@ -15,6 +15,7 @@ import {
 import { useAcceptObjective, useObjective, useObjectiveEvidence, useObjectives, usePreviewRun } from "@/hooks/use-orchestrator"
 import type { ObjectiveEvidence, ObjectiveEvidenceNode, ObjectiveSummary } from "@/services/orchestrator"
 import { CrossProjectIntegrationEvidence } from "./components/CrossProjectIntegrationEvidence"
+import { ObjectiveGraph } from "./components/ObjectiveGraph"
 
 const stateTone = (state: string) => {
   if (["DONE", "ACCEPTED", "PASS", "PASSED"].includes(state)) return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
@@ -107,6 +108,8 @@ function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
         <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4"><p className="text-[10px] uppercase tracking-wider text-slate-500">Verification</p><p className="mt-2"><StatusBadge state={evidence.verification.status} /></p></div>
         <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4"><p className="text-[10px] uppercase tracking-wider text-slate-500">Final review</p><p className="mt-2"><StatusBadge state={evidence.finalAcceptance.state} /></p></div>
       </section>
+
+      <ObjectiveGraph objectiveId={objective.objectiveId} />
 
       <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-5"><div className="flex items-center gap-2"><GitCommitHorizontal className="h-4 w-4 text-indigo-300" /><h2 className="text-sm font-semibold text-white">Node outcomes & evidence</h2></div><div className="mt-4 grid gap-3 lg:grid-cols-2">{evidence.nodes.map((node) => <NodeCard key={node.nodeId} node={node} onPreview={handlePreview} previewing={preview.isPending} />)}</div></section>
 
