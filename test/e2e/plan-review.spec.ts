@@ -53,3 +53,39 @@ test("Plan Review maps revision and cancel actions to separate endpoints", async
   expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/request-plan-changes")
   expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/cancel")
 })
+
+test("Objective Detail can reopen and approve a pending plan after refresh", async ({ page }) => {
+  const mutationPaths: string[] = []
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().includes("/api/objectives/e2e-plan-review")) mutationPaths.push(new URL(request.url()).pathname)
+  })
+
+  await page.goto("/objectives/e2e-plan-review")
+  await expect(page.getByRole("heading", { name: "Review the deterministic multi-node objective plan." })).toBeVisible()
+  await expect(page.getByText("Execution belum dimulai")).toBeVisible()
+
+  await page.getByRole("button", { name: "Review / Approve Plan" }).click()
+  const dialog = page.getByRole("dialog", { name: "Plan Review" })
+  await expect(dialog).toContainText("plan-e2e-plan-review-r1")
+  await expect(dialog).toContainText("N01 · e2e-project")
+  await expect(dialog).toContainText("Read-only")
+  await expect(dialog).toContainText("Project: typecheck")
+
+  const dialogBox = await dialog.boundingBox()
+  const closeBox = await dialog.getByRole("button", { name: "Tutup" }).boundingBox()
+  const approveBox = await dialog.getByRole("button", { name: "Approve & Run" }).boundingBox()
+  const titleBox = await dialog.getByRole("heading", { name: "Plan Review" }).boundingBox()
+  expect(dialogBox).not.toBeNull()
+  expect(closeBox).not.toBeNull()
+  expect(approveBox).not.toBeNull()
+  expect(titleBox).not.toBeNull()
+  expect(closeBox!.x).toBeGreaterThan(dialogBox!.x + dialogBox!.width * 0.6)
+  expect(approveBox!.x + approveBox!.width).toBeGreaterThan(dialogBox!.x + dialogBox!.width * 0.65)
+  expect(dialogBox!.y + dialogBox!.height - approveBox!.y - approveBox!.height).toBeGreaterThanOrEqual(14)
+  expect(titleBox!.y - dialogBox!.y).toBeGreaterThanOrEqual(20)
+
+  await dialog.getByRole("button", { name: "Approve & Run" }).click()
+  await expect(dialog).toHaveCount(0)
+  expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/approve-plan")
+  expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/materialize")
+})
