@@ -83,25 +83,32 @@ export const ProjectRelationshipsModal: React.FC<ProjectRelationshipsModalProps>
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl border border-slate-800 bg-slate-900 p-0 text-slate-100">
-        <DialogHeader className="border-b border-slate-800 p-6">
+      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-3xl gap-0 overflow-hidden border border-slate-800 bg-slate-900 p-0 text-slate-100 shadow-2xl shadow-black/40">
+        <DialogHeader className="shrink-0 border-b border-slate-800 px-6 py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-600/15 text-emerald-400"><Link2 className="h-5 w-5" /></div>
-            <div>
-              <DialogTitle>Project Relationships</DialogTitle>
-              <DialogDescription className="mt-1 text-xs text-slate-400">Atur relationship metadata untuk <span className="font-mono text-emerald-300">{projectId}</span>. Relationship tidak memberi akses tulis ke repository.</DialogDescription>
+            <div className="min-w-0 pr-8">
+              <DialogTitle className="text-lg font-semibold text-slate-100">Project Relationships</DialogTitle>
+              <DialogDescription className="mt-1 text-xs leading-5 text-slate-400">Atur relationship metadata untuk <span className="font-mono text-emerald-300">{projectId}</span>. Relationship hanya menjadi metadata orkestrasi dan tidak memberi akses tulis.</DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="max-h-[65vh] space-y-4 overflow-y-auto p-6">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
           {errorMessage && <div className="flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{errorMessage}</span></div>}
           {successMessage && <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300"><CheckCircle2 className="h-4 w-4 shrink-0" /><span>{successMessage}</span></div>}
           {isLoading ? (
             <div className="flex items-center justify-center gap-2 p-8 text-xs text-slate-400"><Loader2 className="h-4 w-4 animate-spin" /> Memuat relationship...</div>
           ) : (
             <>
-              {drafts.length === 0 && <p className="rounded-lg border border-dashed border-slate-700 p-5 text-center text-xs text-slate-500">Belum ada relationship. Tambahkan project terkait untuk mengaktifkan Linked Projects intake.</p>}
+              {drafts.length === 0 && (
+                <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-700 bg-slate-950/25 px-5 py-8 text-center">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-slate-400"><Link2 className="h-4 w-4" /></div>
+                  <p className="text-sm font-medium text-slate-300">Belum ada relationship</p>
+                  <p className="mt-1 max-w-md text-xs leading-5 text-slate-500">Tambahkan project terkait agar dapat dipilih dari Linked Projects intake.</p>
+                  <button type="button" onClick={addDraft} disabled={availableTargets.length === 0} className="mt-4 flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"><Plus className="h-4 w-4" /> Add relationship</button>
+                </div>
+              )}
               <div className="space-y-3">
                 {drafts.map((draft, index) => (
                   <div key={draft.key} className="space-y-3 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
@@ -128,15 +135,19 @@ export const ProjectRelationshipsModal: React.FC<ProjectRelationshipsModalProps>
                   </div>
                 ))}
               </div>
-              <button type="button" onClick={addDraft} disabled={availableTargets.length === 0} className="flex items-center gap-2 rounded-lg border border-dashed border-emerald-500/40 px-3 py-2 text-xs font-medium text-emerald-300 hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-50"><Plus className="h-4 w-4" /> Add relationship</button>
-              <label className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-slate-800 text-amber-500 focus:ring-amber-500" /><span>Saya mengonfirmasi perubahan relationship ini sebagai operator lokal. Perubahan akan dicatat di audit chain.</span></label>
+              {drafts.length > 0 && (
+                <>
+                  <button type="button" onClick={addDraft} disabled={availableTargets.length === 0} className="flex items-center gap-2 rounded-lg border border-dashed border-emerald-500/40 px-3 py-2 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-50"><Plus className="h-4 w-4" /> Add another relationship</button>
+                  <label className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs leading-5 text-amber-200"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-700 bg-slate-800 text-amber-500 focus:ring-amber-500" /><span>Saya mengonfirmasi perubahan relationship ini sebagai operator lokal. Perubahan akan dicatat di audit chain.</span></label>
+                </>
+              )}
             </>
           )}
         </div>
 
-        <DialogFooter className="border-t border-slate-800 p-6">
-          <button type="button" onClick={onClose} disabled={isPending} className="rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800">Cancel</button>
-          <button type="button" onClick={handleSave} disabled={isPending || isLoading || !confirmed} className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"><Save className="h-4 w-4" /> {isPending ? "Saving..." : "Save Relationships"}</button>
+        <DialogFooter className="m-0 shrink-0 flex-row items-center justify-end gap-2 rounded-none rounded-b-xl border-t border-slate-800 bg-slate-950/55 px-6 py-4">
+          <button type="button" onClick={onClose} disabled={isPending} className="rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">Cancel</button>
+          <button type="button" onClick={handleSave} disabled={isPending || isLoading || drafts.length === 0 || !confirmed} className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"><Save className="h-4 w-4" /> {isPending ? "Saving..." : "Save Relationships"}</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
