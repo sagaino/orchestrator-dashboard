@@ -113,6 +113,7 @@ export async function installLifecycleFixtures(page: Page) {
   let planReviewRevision = 1
   let objectiveDashboardAccepted = false
   let aggregatePreviewSession: Record<string, unknown> | null = null
+  let deliveryCertification: Record<string, any> | null = null
   let crossProjectObjectiveAccepted = false
   const inboxDecisions = [
     { decisionId: "decision-high-old", objectiveId: "e2e-objective-dashboard", nodeId: "N01", runId: "run-e2e-review", type: "INTEGRATION_CONFLICT", state: "OPEN", risk: "HIGH", riskScore: 3, ageMs: 7_200_000, evidence: { risk: "HIGH", reason: "Aggregate verification needs human review." }, requestedAction: "Review the aggregate evidence before continuing.", allowedChoices: ["RETRY", "CANCEL"], creator: "SYSTEM", createdAt: "2026-08-23T01:00:00.000Z", resolution: null },
@@ -223,6 +224,19 @@ export async function installLifecycleFixtures(page: Page) {
       ownership: "Fixture visual evidence remains linked to the source node and run.",
     },
   })
+
+  const deliveryCertificationBundle = () => deliveryCertification ?? {
+    schemaVersion: 1,
+    kind: "objective-delivery-certification",
+    objectiveId: "e2e-objective-dashboard",
+    certificationId: "delivery-e2e-objective-dashboard-fixture",
+    createdAt: now,
+    status: "HUMAN_GATE_REQUIRED",
+    humanGate: { required: true, confirmed: false, approvedBy: null, approvedAt: null },
+    checks: ["PLAN_COMPLETE", "EXECUTION_COMPLETE", "INTEGRATION_COMPLETE", "PREVIEW_COMPLETE", "VISUAL_E2E_EVIDENCE_COMPLETE", "HUMAN_ACCEPTANCE_COMPLETE", "CLEANUP_COMPLETE", "KNOWLEDGE_CAPTURE_COMPLETE"].map((id) => ({ id, status: "PASS", passed: true, message: `${id} fixture check passed.`, evidence: {} })),
+    blockers: [],
+    nextAction: "Human gate must explicitly accept this delivery certification.",
+  }
 
   const graphForEvidence = (evidenceData: { objective: { objectiveId: string; state: string }; plan?: { planId?: string | null }; orchestration?: { orchestrationId?: string | null }; nodes: Array<{ nodeId: string; title: string; purpose: string; projectId: string; type: string; role: string; dependsOn: string[]; state: string; runId: string | null; jobId: string | null }> }) => {
     const nodes = evidenceData.nodes.map((node, index) => ({ id: node.nodeId, index, title: node.title, purpose: node.purpose, projectId: node.projectId, type: node.type, role: node.role, state: node.state, statusLabel: node.state.replaceAll("_", " "), runId: node.runId, jobId: node.jobId, dependsOn: node.dependsOn, canRunInParallel: false }))
@@ -419,6 +433,15 @@ export async function installLifecycleFixtures(page: Page) {
     if (pathname === "/api/objectives/e2e-objective-dashboard" && method === "GET") return json(route, { ...objectiveDashboardObjective(), plan: objectiveDashboardEvidence().plan, orchestration: objectiveDashboardEvidence().orchestration, decisions: [], decisionSummary: { open: [], recent: [] } })
     if (pathname === "/api/objectives/e2e-objective-dashboard/evidence" && method === "GET") return json(route, objectiveDashboardEvidence())
     if (pathname === "/api/objectives/e2e-objective-dashboard/graph" && method === "GET") return json(route, graphForEvidence(objectiveDashboardEvidence()))
+    if (pathname === "/api/objectives/e2e-objective-dashboard/delivery-certification" && method === "GET") return json(route, { latest: deliveryCertification, history: deliveryCertification ? [deliveryCertification] : [] })
+    if (pathname === "/api/objectives/e2e-objective-dashboard/delivery-certification" && method === "POST") {
+      deliveryCertification = deliveryCertificationBundle()
+      return json(route, deliveryCertification, 201)
+    }
+    if (pathname === "/api/objectives/e2e-objective-dashboard/delivery-certification/accept" && method === "POST") {
+      deliveryCertification = { ...deliveryCertificationBundle(), status: "CERTIFIED", humanGate: { required: true, confirmed: true, approvedBy: "local:e2e-operator", approvedAt: now }, nextAction: "Delivery certification accepted." }
+      return json(route, deliveryCertification)
+    }
     if (pathname === "/api/objectives/e2e-objective-dashboard/preview" && method === "POST") {
       aggregatePreviewSession = {
         schemaVersion: 1,

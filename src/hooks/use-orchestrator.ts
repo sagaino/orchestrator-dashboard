@@ -26,6 +26,7 @@ import type {
   ObjectiveMode,
   ObjectiveLifecycleDetail,
   ObjectiveEvidence,
+  DeliveryCertificationHistory,
   ObjectiveGraph,
   ObjectiveSummary,
   AggregatePreview,
@@ -63,6 +64,7 @@ export const queryKeys = {
   backupRecovery: ["operations", "backups", "status"] as const,
   objective: (id: string) => ["objectives", id] as const,
   objectiveEvidence: (id: string) => ["objectives", id, "evidence"] as const,
+  deliveryCertification: (id: string) => ["objectives", id, "delivery-certification"] as const,
   objectiveGraph: (id: string) => ["objectives", id, "graph"] as const,
   objectives: ["objectives"] as const,
   decisionInbox: ["decisions", "inbox"] as const,
@@ -124,6 +126,15 @@ export function useObjectiveEvidence(objectiveId: string | null) {
     enabled: Boolean(objectiveId),
     refetchInterval: objectiveId ? 3_000 : false,
     staleTime: 1_000,
+  })
+}
+
+export function useDeliveryCertification(objectiveId: string | null) {
+  return useQuery<DeliveryCertificationHistory>({
+    queryKey: queryKeys.deliveryCertification(objectiveId ?? ""),
+    queryFn: () => OrchestratorApi.getDeliveryCertification(objectiveId!),
+    enabled: Boolean(objectiveId),
+    staleTime: 3_000,
   })
 }
 
@@ -562,6 +573,33 @@ export function useAcceptObjective() {
     onSuccess: (result, objectiveId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.objective(objectiveId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.objectiveEvidence(objectiveId) })
+    },
+  })
+}
+
+export function useCreateDeliveryCertification() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (objectiveId: string) => OrchestratorApi.createDeliveryCertification(objectiveId),
+    onSuccess: (result, objectiveId) => {
+      queryClient.setQueryData(queryKeys.deliveryCertification(objectiveId), { latest: result, history: [result] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.deliveryCertification(objectiveId) })
+    },
+  })
+}
+
+export function useAcceptDeliveryCertification() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ objectiveId, certificationId }: { objectiveId: string; certificationId?: string }) => OrchestratorApi.acceptDeliveryCertification(objectiveId, certificationId),
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData(queryKeys.deliveryCertification(variables.objectiveId), (current: DeliveryCertificationHistory | undefined) => {
+        const history = current?.history ?? []
+        return { latest: result, history: [result, ...history.filter((item) => item.certificationId !== result.certificationId)] }
+      })
+      queryClient.invalidateQueries({ queryKey: queryKeys.deliveryCertification(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectiveEvidence(variables.objectiveId) })
     },
   })
 }

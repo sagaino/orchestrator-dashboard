@@ -1186,6 +1186,34 @@ export interface ObjectiveEvidence {
   visualEvidence?: ObjectiveVisualEvidence
 }
 
+export interface DeliveryCertificationCheck {
+  id: string
+  status: string
+  passed: boolean
+  message: string
+  evidence: Record<string, unknown>
+}
+
+export interface DeliveryCertification {
+  schemaVersion: number
+  kind: string
+  objectiveId: string
+  certificationId: string
+  createdAt: string
+  status: "BLOCKED" | "HUMAN_GATE_REQUIRED" | "CERTIFIED" | string
+  humanGate: { required: boolean; confirmed: boolean; approvedBy: string | null; approvedAt: string | null }
+  checks: DeliveryCertificationCheck[]
+  blockers: string[]
+  nextAction: string
+  bundlePath?: string
+  checksum?: string
+}
+
+export interface DeliveryCertificationHistory {
+  latest: DeliveryCertification | null
+  history: DeliveryCertification[]
+}
+
 export interface AggregatePreview {
   schemaVersion: number
   action: "AGGREGATE_PROJECT_PREVIEW" | string
@@ -1422,6 +1450,31 @@ export const OrchestratorApi = {
 
   async getObjectiveVisualEvidence(objectiveId: string) {
     const res = await axios.get<{ success: boolean; data: ObjectiveVisualEvidence }>(`/api/objectives/${encodeURIComponent(objectiveId)}/visual-evidence`)
+    return res.data.data
+  },
+
+  async getDeliveryCertification(objectiveId: string) {
+    const res = await axios.get<{ success: boolean; data: DeliveryCertificationHistory }>(`/api/objectives/${encodeURIComponent(objectiveId)}/delivery-certification`)
+    return res.data.data
+  },
+
+  async createDeliveryCertification(objectiveId: string) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: DeliveryCertification }>(
+      `/api/objectives/${encodeURIComponent(objectiveId)}/delivery-certification`,
+      {},
+      { headers: { "Idempotency-Key": `dashboard-delivery-certification-create-${randomPart}` } },
+    )
+    return res.data.data
+  },
+
+  async acceptDeliveryCertification(objectiveId: string, certificationId?: string) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: DeliveryCertification }>(
+      `/api/objectives/${encodeURIComponent(objectiveId)}/delivery-certification/accept`,
+      certificationId ? { certificationId } : {},
+      { headers: { "Idempotency-Key": `dashboard-delivery-certification-${randomPart}` } },
+    )
     return res.data.data
   },
 

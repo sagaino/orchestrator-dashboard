@@ -45,6 +45,14 @@ test("Objective evidence keeps final acceptance separate from evidence review", 
   await expect(page.getByRole("alertdialog")).toContainText("Acceptance akan membuat decision durable")
   await page.getByRole("button", { name: "Accept objective" }).click()
   await expect(page.getByText("ACCEPTED", { exact: true })).toBeVisible()
+
+  await expect(page.getByRole("heading", { name: "Delivery certification" })).toBeVisible()
+  await page.getByRole("button", { name: "Run delivery certification" }).click()
+  await expect(page.getByText("HUMAN GATE REQUIRED", { exact: true })).toBeVisible()
+  await expect(page.getByText("8 / 8 PASS", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "Accept delivery certification" }).click()
+  await page.getByRole("button", { name: "Accept certification" }).click()
+  await expect(page.getByText("CERTIFIED", { exact: true })).toBeVisible()
 })
 
 test("Cross-project result review identifies repositories, checks, blockers, and final action", async ({ page }) => {
