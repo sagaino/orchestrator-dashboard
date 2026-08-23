@@ -97,6 +97,17 @@ export interface OperationsReadiness {
   signals: Record<string, unknown>
 }
 
+export interface OperationsArtifactCoverage {
+  schemaVersion: number
+  requiredCollections: string[]
+  complete: boolean
+  activeStateNeverPurged: boolean
+  protectedActiveRecordCount: number
+  protectedActivePaths: string[]
+  collections: Record<string, { kind: string; dataset: string; pathPrefix: string; present: boolean; included: boolean; fileCount: number; bytes: number; recordCount: number | null; activeRecordCount: number; activePaths: string[]; source: string }>
+  totals: { fileCount: number; bytes: number; recordCount: number }
+}
+
 export interface OperationsAlert {
   alertId: string
   severity: string
@@ -150,6 +161,8 @@ export interface RetentionPlan {
   expiresAt?: string
   summary: { candidateCount: number; bytes: number; fileCount: number }
   candidates: Array<{ category: string; name: string; modifiedAt: string; bytes: number; fileCount: number }>
+  artifactCoverage?: OperationsArtifactCoverage
+  protection?: { activeStateNeverPurged: boolean; protectedActiveRecordCount: number; protectedActivePaths: string[] }
   moved?: Array<{ category: string; name: string; bytes: number }>
 }
 
@@ -185,6 +198,7 @@ export interface BackupRecoveryStatus {
   schedule: (BackupSchedulePreview & { action: string; installedAt?: string; launchctlActivated?: boolean }) | null
   drill: { status: "MISSING" | "FAILED" | "OVERDUE" | "CURRENT"; lastDrill: { performedBy: string; performedAt: string; result: string; evidence: unknown } | null; dueAt: string | null; overdueByMs: number | null; intervalDays: number }
   registeredBackup: Record<string, unknown> | null
+  artifactCoverage?: OperationsArtifactCoverage | null
   guardrails: { automaticRestore: boolean; automaticPromotion: boolean; permanentDelete: boolean }
 }
 
