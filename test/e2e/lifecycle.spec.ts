@@ -57,7 +57,7 @@ test("review evidence can be accepted through explicit confirmation", async ({ p
   await page.getByRole("button", { name: "Accept & Sync Wiki" }).click()
   const dialog = page.getByRole("alertdialog", { name: "Accept & Sinkronisasi Wiki" })
   await expect(dialog).toContainText("diaplikasikan ke branch utama")
-  await dialog.getByRole("checkbox").uncheck()
+  await expect(dialog.getByRole("checkbox")).not.toBeChecked()
   await dialog.getByRole("button", { name: "Setujui Saja" }).click()
   await expect(page.getByText("DONE", { exact: true }).last()).toBeVisible()
 })

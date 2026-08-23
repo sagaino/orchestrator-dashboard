@@ -19,14 +19,14 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
   onClose,
   onConfirm,
 }) => {
-  const [autoCommit, setAutoCommit] = useState(true)
+  const [autoCommit, setAutoCommit] = useState(false)
   const [commitMessage, setCommitMessage] = useState("")
 
   useEffect(() => {
     if (run) {
       const defaultMsg = `feat(${run.task?.id || "TASK"}): ${run.task?.title || "completed task"}`
       setCommitMessage(defaultMsg)
-      setAutoCommit(true)
+      setAutoCommit(false)
     }
   }, [run, isOpen])
 
@@ -76,7 +76,7 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
                   className="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
                 />
                 <GitCommit className="h-4 w-4 text-indigo-400" />
-                <span>Auto-commit ke Git setelah Accept</span>
+                <span>Commit ke Git setelah Accept (opsional)</span>
               </label>
 
               {autoCommit && (
