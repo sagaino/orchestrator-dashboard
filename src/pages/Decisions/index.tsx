@@ -37,6 +37,12 @@ const evidenceSummary = (decision: DecisionInboxItem) => {
   return values[0] ?? null
 }
 
+const actionButtonClass = (action: string) => {
+  if (action === "CANCEL") return "bg-rose-600 text-white hover:bg-rose-500 focus-visible:ring-rose-500"
+  if (action === "RETRY") return "bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:ring-emerald-500"
+  return "bg-indigo-600 text-white hover:bg-indigo-500 focus-visible:ring-indigo-500"
+}
+
 export const DecisionsPage: React.FC = () => {
   const { data: decisions = [], isLoading, isFetching, isError, refetch } = useDecisionInbox()
   const resolve = useResolveDecision()
@@ -97,16 +103,16 @@ export const DecisionsPage: React.FC = () => {
           <p className="mt-4 text-sm leading-relaxed text-slate-300">{decision.requestedAction}</p>
           {summaryText && <p className="mt-2 rounded-lg bg-slate-900/80 px-3 py-2 text-xs text-slate-400">Evidence: {summaryText}</p>}
           <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500"><span>Objective: <Link className="text-indigo-300 hover:text-indigo-200" to={`/objectives/${decision.objectiveId}`}>{decision.objectiveId}</Link></span>{decision.nodeId && <span>Node: {decision.nodeId}</span>}{decision.runId && <span>Run: {decision.runId}</span>}<span>Created: {new Date(decision.createdAt).toLocaleString("id-ID")}</span></div>
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-800 pt-4"><span className="mr-1 text-xs font-medium text-slate-400">Allowed actions:</span>{decision.allowedChoices.map((action) => <Button key={action} size="sm" variant={action === "CANCEL" ? "destructive" : "default"} aria-label={`Resolve ${action} for ${decision.decisionId}`} onClick={() => setPending({ decision, action })}>{action}</Button>)}</div>
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-800 pt-4"><span className="mr-1 text-xs font-medium text-slate-400">Allowed actions:</span>{decision.allowedChoices.map((action) => <Button key={action} size="sm" className={actionButtonClass(action)} aria-label={`Resolve ${action} for ${decision.decisionId}`} onClick={() => setPending({ decision, action })}>{action}</Button>)}</div>
           <p className="mt-3 flex items-center gap-2 text-[11px] text-slate-500"><ShieldCheck className="h-3.5 w-3.5 text-indigo-300" />Resolution akan dicatat dengan identity operator lokal dan dapat diulang secara idempotent.</p>
         </article>
       })}
     </div>
 
     <AlertDialog open={Boolean(pending)} onOpenChange={(open) => { if (!open && !resolve.isPending) setPending(null) }}>
-      <AlertDialogContent className="border border-slate-800 bg-slate-950 text-slate-100">
-        <AlertDialogHeader><AlertDialogTitle>Confirm decision resolution</AlertDialogTitle><AlertDialogDescription className="text-slate-400">Action <strong>{pending?.action}</strong> akan diterapkan pada <strong>{pending?.decision.decisionId}</strong>. Identity resolver diambil dari operator session lokal; mengirim identity dari luar tidak akan mengubah audit.</AlertDialogDescription></AlertDialogHeader>
-        <AlertDialogFooter><AlertDialogCancel disabled={resolve.isPending}>Batal</AlertDialogCancel><AlertDialogAction disabled={resolve.isPending} onClick={(event) => { event.preventDefault(); void confirmResolution() }} className="bg-indigo-600 text-white hover:bg-indigo-500">{resolve.isPending ? "Menyimpan…" : "Confirm resolution"}</AlertDialogAction></AlertDialogFooter>
+      <AlertDialogContent className="max-w-lg border border-slate-800 bg-slate-900 text-slate-100">
+        <AlertDialogHeader className="space-y-3"><AlertDialogTitle className="text-white text-base">Confirm decision resolution</AlertDialogTitle><AlertDialogDescription className="text-slate-300 text-sm leading-relaxed">Action <strong className="text-white">{pending?.action}</strong> akan diterapkan pada <strong className="break-all font-mono text-white">{pending?.decision.decisionId}</strong>. Identity resolver diambil dari operator session lokal; mengirim identity dari luar tidak akan mengubah audit.</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogFooter className="mt-2 border-slate-800 bg-slate-900/50"><AlertDialogCancel disabled={resolve.isPending} className="border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white focus-visible:ring-indigo-500">Batal</AlertDialogCancel><AlertDialogAction disabled={resolve.isPending} onClick={(event) => { event.preventDefault(); void confirmResolution() }} className={actionButtonClass(pending?.action ?? "")}>{resolve.isPending ? "Menyimpan…" : "Confirm resolution"}</AlertDialogAction></AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   </div>
