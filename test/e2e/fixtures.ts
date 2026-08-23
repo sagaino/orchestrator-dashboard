@@ -401,6 +401,13 @@ export async function installLifecycleFixtures(page: Page) {
     if (pathname === "/api/objectives" && method === "GET") return json(route, [objectiveDashboardObjective()])
     if (pathname === "/api/objectives" && method === "POST") {
       const body = request.postDataJSON() as { mode?: string; request?: string; projectIds?: string[]; freshProject?: { projectId?: string; targetDirectory?: string; blueprint?: string } }
+      if (body.mode === "EXISTING_PROJECT") {
+        return json(route, {
+          objective: { ...planReviewObjective(), state: "PLANNING", request: body.request || "", activePlanId: null },
+          summary: { objectiveId: "e2e-plan-review", mode: "EXISTING_PROJECT", state: "PLANNING", projectIds: body.projectIds || ["e2e-project"] },
+          planning: { started: false, readOnly: true, tasksCreated: 0, jobsCreated: 0, runsCreated: 0 },
+        }, 201)
+      }
       const projectId = body.freshProject?.projectId || body.projectIds?.[0] || "fixture-project"
       return json(route, {
         objective: {
@@ -429,6 +436,10 @@ export async function installLifecycleFixtures(page: Page) {
         summary: { objectiveId: "obj-20260822-fresh-fixture", mode: body.mode || "FRESH_PROJECT", state: "GENESIS_REVIEW", projectIds: [projectId] },
         planning: { started: false, readOnly: true, tasksCreated: 0, jobsCreated: 0, runsCreated: 0 },
       }, 201)
+    }
+
+    if (pathname === "/api/objectives/e2e-plan-review/generate-plan" && method === "POST") {
+      return json(route, { objective: planReviewObjective(), plan: planReviewPlan(), status: "PLAN_REVIEW", alreadyPlanned: false, planning: { started: true, readOnly: true, tasksCreated: 0, jobsCreated: 0, runsCreated: 0 } }, 201)
     }
 
     if (pathname === "/api/objectives/e2e-plan-review" && method === "GET") return json(route, planReviewData())
@@ -492,6 +503,10 @@ export async function installLifecycleFixtures(page: Page) {
     if (pathname === "/api/objectives/e2e-plan-review/approve-plan" && method === "POST") {
       planReviewState = "APPROVED"
       return json(route, { objective: planReviewObjective(), plan: planReviewPlan(), decision: { decisionId: "decision-plan-approval-fixture", objectiveId: "e2e-plan-review", nodeId: null, runId: null, type: "PLAN_APPROVAL", state: "RESOLVED", evidence: {}, requestedAction: "Approve plan", allowedChoices: ["APPROVE"], creator: "SYSTEM", createdAt: now, resolution: { action: "APPROVE", resolvedBy: "local:e2e-operator", resolvedAt: now } }, alreadyApproved: false, planFingerprint: "fixture-plan-fingerprint" }, 201)
+    }
+    if (pathname === "/api/objectives/e2e-plan-review/materialize" && method === "POST") {
+      if (!jobs.some((job) => job.jobId === "e2e-objective-job")) jobs.push({ jobId: "e2e-objective-job", taskId: "TASK-001", project: "e2e-project", state: "QUEUED", runId: null })
+      return json(route, { action: "TASKS_MATERIALIZED", objective: { ...planReviewObjective(), state: "MATERIALIZING", activeOrchestrationId: "orch-e2e-plan-review" }, plan: planReviewPlan(), orchestration: { orchestrationId: "orch-e2e-plan-review", state: "CREATED" }, tasks: [{ taskId: "TASK-001", nodeId: "N01", projectId: "e2e-project" }, { taskId: "TASK-002", nodeId: "N02", projectId: "e2e-project" }], planFingerprint: "fixture-plan-fingerprint", alreadyMaterialized: false }, 201)
     }
     if (pathname === "/api/objectives/e2e-plan-review/request-plan-changes" && method === "POST") {
       planReviewState = "PENDING_APPROVAL"

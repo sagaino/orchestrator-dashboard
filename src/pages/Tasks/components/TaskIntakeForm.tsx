@@ -21,8 +21,6 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
   onFreshBlueprintChange,
   prompt,
   onPromptChange,
-  queueAfterConfirmation,
-  onQueueAfterConfirmationChange,
   attachedAssets = [],
   onRemoveAsset,
   isUploadingAsset,
@@ -363,17 +361,10 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
 
         {targetMode === "EXISTING_PROJECT" && <div className="flex items-center justify-between p-3.5 rounded-lg bg-slate-800/40 border border-slate-700/50">
           <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="queueAfterConfirmation"
-              checked={queueAfterConfirmation}
-              onChange={(e) => onQueueAfterConfirmationChange(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-            />
-            <label htmlFor="queueAfterConfirmation" className="text-xs text-slate-300">
-              <span className="font-medium block text-slate-200">Queue setelah konfirmasi</span>
-              Canonical plan selalu ditampilkan dahulu; eksekusi hanya dimulai setelah Approve &amp; Queue
-            </label>
+            <div className="text-xs text-slate-300">
+              <span className="font-medium block text-slate-200">Run setelah approval plan</span>
+              Objective plan selalu ditampilkan dahulu; task baru dibuat setelah Approve &amp; Run
+            </div>
           </div>
         </div>}
 
@@ -408,7 +399,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
             ) : (
               <>
                 <Play className="h-4 w-4 fill-white" />
-                <span>{targetMode === "FRESH_PROJECT" ? "Create Fresh Project Objective" : targetMode === "CROSS_PROJECT_INCIDENT" ? "Create Linked Projects Objective" : "Generate Canonical Plan"}</span>
+                <span>{targetMode === "FRESH_PROJECT" ? "Create Fresh Project Objective" : targetMode === "CROSS_PROJECT_INCIDENT" ? "Create Linked Projects Objective" : "Generate Objective Plan"}</span>
               </>
             )}
           </button>

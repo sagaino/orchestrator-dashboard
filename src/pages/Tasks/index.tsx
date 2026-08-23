@@ -1,6 +1,6 @@
 import React from "react"
 import { useTasks } from "./hooks"
-import { TaskIntakeForm, LiveJobQueue, ClarificationModal, PlanReviewPanel, TaskConfirmationModal } from "./components"
+import { TaskIntakeForm, LiveJobQueue, ClarificationModal, PlanReviewPanel } from "./components"
 
 export const TasksPage: React.FC = () => {
   const {
@@ -23,8 +23,6 @@ export const TasksPage: React.FC = () => {
     setFreshBlueprint,
     prompt,
     setPrompt,
-    queueAfterConfirmation,
-    setQueueAfterConfirmation,
     attachedAssets,
     handleAddAsset,
     handleRemoveAsset,
@@ -41,11 +39,6 @@ export const TasksPage: React.FC = () => {
     handleCloseClarification,
     handleSubmitClarification,
     pendingPrompt,
-    confirmationOpen,
-    confirmationResult,
-    confirming,
-    handleCloseConfirmation,
-    handleConfirmQueue,
     planReviewOpen,
     planReviewObjective,
     planReview,
@@ -90,8 +83,6 @@ export const TasksPage: React.FC = () => {
             onFreshBlueprintChange={setFreshBlueprint}
             prompt={prompt}
             onPromptChange={setPrompt}
-            queueAfterConfirmation={queueAfterConfirmation}
-            onQueueAfterConfirmationChange={setQueueAfterConfirmation}
             attachedAssets={attachedAssets}
             onAddAsset={handleAddAsset}
             onRemoveAsset={handleRemoveAsset}
@@ -119,15 +110,6 @@ export const TasksPage: React.FC = () => {
         onClose={handleCloseClarification}
         onSubmit={handleSubmitClarification}
         originalPrompt={pendingPrompt || prompt}
-      />
-
-      <TaskConfirmationModal
-        isOpen={confirmationOpen}
-        result={confirmationResult}
-        queueAfterConfirmation={queueAfterConfirmation}
-        confirming={confirming}
-        onClose={handleCloseConfirmation}
-        onConfirm={handleConfirmQueue}
       />
 
       <PlanReviewPanel

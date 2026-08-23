@@ -28,9 +28,10 @@ test("Plan Review exposes scope, graph edges, budget, and explicit approval", as
   await expect(dialog).toContainText("plan-e2e-plan-review-r2")
   await expect(dialog).toContainText("diagnostic-review@1.0.0")
 
-  await dialog.getByRole("button", { name: "Approve Plan" }).click()
-  await expect(dialog.getByText("Plan Approved", { exact: true })).toBeVisible()
+  await dialog.getByRole("button", { name: "Approve & Run" }).click()
+  await expect(page).toHaveURL(/\/objectives\/e2e-plan-review$/)
   expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/approve-plan")
+  expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/materialize")
   expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/plan/skills")
 })
 
