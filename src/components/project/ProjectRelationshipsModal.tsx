@@ -101,11 +101,16 @@ export const ProjectRelationshipsModal: React.FC<ProjectRelationshipsModalProps>
             <div className="flex items-center justify-center gap-2 p-8 text-xs text-slate-400"><Loader2 className="h-4 w-4 animate-spin" /> Memuat relationship...</div>
           ) : (
             <>
+              {(data?.incomingRelationships?.length ?? 0) > 0 && <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3 text-xs text-cyan-100">
+                <p className="font-semibold text-cyan-200">Incoming relationship</p>
+                <p className="mt-1 leading-5 text-cyan-100/70">Relationship berikut dikelola dari project sumbernya dan sudah tersedia secara bidirectional untuk Linked Projects intake.</p>
+                <div className="mt-2 space-y-1.5">{data?.incomingRelationships?.map((relationship) => <p key={`${relationship.type}-${relationship.targetProjectId}`} className="font-mono text-[11px] text-cyan-200">{relationship.type} ← {relationship.targetProjectId}</p>)}</div>
+              </div>}
               {drafts.length === 0 && (
                 <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-700 bg-slate-950/25 px-5 py-8 text-center">
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-slate-400"><Link2 className="h-4 w-4" /></div>
-                  <p className="text-sm font-medium text-slate-300">Belum ada relationship</p>
-                  <p className="mt-1 max-w-md text-xs leading-5 text-slate-500">Tambahkan project terkait agar dapat dipilih dari Linked Projects intake.</p>
+                  <p className="text-sm font-medium text-slate-300">Belum ada outgoing relationship</p>
+                  <p className="mt-1 max-w-md text-xs leading-5 text-slate-500">Relationship incoming dikelola dari project sumber. Anda tetap dapat menambahkan relationship outgoing dari project ini.</p>
                   <button type="button" onClick={addDraft} disabled={availableTargets.length === 0} className="mt-4 flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"><Plus className="h-4 w-4" /> Add relationship</button>
                 </div>
               )}
