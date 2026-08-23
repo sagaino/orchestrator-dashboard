@@ -33,8 +33,6 @@ export interface TaskIntakeFormProps {
   onFreshBlueprintChange: (blueprint: string) => void
   prompt: string
   onPromptChange: (prompt: string) => void
-  queueAfterConfirmation: boolean
-  onQueueAfterConfirmationChange: (enabled: boolean) => void
   attachedAssets: import("@/services/orchestrator").AttachedAsset[]
   onAddAsset: (asset: import("@/services/orchestrator").AttachedAsset) => void
   onRemoveAsset: (index: number) => void
@@ -106,8 +104,6 @@ export interface UseTasksReturn {
   setFreshBlueprint: Dispatch<SetStateAction<string>>
   prompt: string
   setPrompt: Dispatch<SetStateAction<string>>
-  queueAfterConfirmation: boolean
-  setQueueAfterConfirmation: Dispatch<SetStateAction<boolean>>
   attachedAssets: import("@/services/orchestrator").AttachedAsset[]
   handleAddAsset: (asset: import("@/services/orchestrator").AttachedAsset) => void
   handleRemoveAsset: (index: number) => void
@@ -127,12 +123,7 @@ export interface UseTasksReturn {
   handleCloseClarification: () => void
   handleSubmitClarification: (e: FormEvent) => Promise<void>
   pendingPrompt?: string
-  confirmationOpen: boolean
-  confirmationResult: TaskRequestResult | null
   objectiveResult: ObjectiveIntakeResult | null
-  confirming: boolean
-  handleCloseConfirmation: () => void
-  handleConfirmQueue: () => Promise<void>
   planReviewOpen: boolean
   planReviewObjective: ObjectiveRecord | null
   planReview: ObjectivePlanReview | null

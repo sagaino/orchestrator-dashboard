@@ -885,6 +885,13 @@ export interface ObjectiveRecord {
     blueprint: string
     request: string
   } | null
+  attachments?: Array<Pick<AttachedAsset, "type" | "fileName" | "relativeVaultPath" | "relativeProjectPath" | "sizeBytes">>
+  planning?: {
+    status: "NEEDS_CLARIFICATION" | string
+    clarificationQuestion: string
+    requestedAt: string
+    requestedBy?: string
+  }
   activePlanId: string | null
   activeOrchestrationId: string | null
   budget: ObjectiveBudget
@@ -1013,6 +1020,20 @@ export interface ObjectiveIntakeResult {
   }
   plan?: ObjectivePlanReview | null
   decisions?: ObjectiveDecision[]
+  status?: string
+  clarificationNeeded?: boolean
+  clarificationQuestion?: string | null
+  alreadyPlanned?: boolean
+}
+
+export interface ObjectiveMaterializationResult {
+  action: string
+  objective: ObjectiveRecord
+  plan: ObjectivePlanReview
+  orchestration: { orchestrationId: string; state: string }
+  tasks: Array<{ taskId?: string; nodeId: string; projectId: string; relativePath?: string }>
+  planFingerprint: string
+  alreadyMaterialized: boolean
 }
 
 export interface ObjectiveLifecycleDetail extends ObjectiveRecord {
@@ -1455,11 +1476,22 @@ export const OrchestratorApi = {
       targetDirectory: string
       blueprint: string
     }
+    attachments?: AttachedAsset[]
   }) {
     const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
     const res = await axios.post<{ success: boolean; data: ObjectiveIntakeResult }>("/api/objectives", payload, {
       headers: { "Idempotency-Key": `dashboard-objective-${randomPart}` },
     })
+    return res.data.data
+  },
+
+  async generateObjectivePlan(objectiveId: string, clarification?: string | null) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: ObjectiveIntakeResult }>(
+      `/api/objectives/${encodeURIComponent(objectiveId)}/generate-plan`,
+      clarification ? { clarification } : {},
+      { headers: { "Idempotency-Key": `dashboard-plan-generation-${randomPart}` } },
+    )
     return res.data.data
   },
 
@@ -1564,6 +1596,16 @@ export const OrchestratorApi = {
       `/api/objectives/${encodeURIComponent(objectiveId)}/approve-plan`,
       planFingerprint ? { planFingerprint } : {},
       { headers: { "Idempotency-Key": `dashboard-plan-approval-${randomPart}` } },
+    )
+    return res.data.data
+  },
+
+  async materializeObjectivePlan(objectiveId: string, planId: string, planFingerprint: string) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: ObjectiveMaterializationResult }>(
+      `/api/objectives/${encodeURIComponent(objectiveId)}/materialize`,
+      { planId, planFingerprint },
+      { headers: { "Idempotency-Key": `dashboard-plan-materialization-${randomPart}` } },
     )
     return res.data.data
   },

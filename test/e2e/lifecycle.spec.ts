@@ -21,22 +21,30 @@ test.afterEach(async () => {
   expect(browserErrors, "browser console and page errors").toEqual([])
 })
 
-test("intake exposes canonical policy before explicit queue approval", async ({ page }) => {
+test("Existing Project intake creates an objective plan before explicit execution approval", async ({ page }) => {
+  const mutationPaths: string[] = []
+  page.on("request", (request) => {
+    if (request.method() === "POST") mutationPaths.push(new URL(request.url()).pathname)
+  })
   await page.goto("/tasks")
   await page.getByRole("combobox").selectOption("e2e-project")
   await page.getByRole("textbox", { name: "Deskripsikan fitur, refactor, atau instruksi slicing UI sesuai desain..." }).fill("Create deterministic fixture")
-  await page.getByRole("button", { name: "Generate Canonical Plan" }).click()
+  await page.getByRole("button", { name: "Generate Objective Plan" }).click()
 
-  const dialog = page.getByRole("dialog", { name: "Review Canonical Plan" })
+  const dialog = page.getByRole("dialog", { name: "Plan Review" })
   await expect(dialog).toBeVisible()
-  await expect(dialog).toContainText("EXPLICIT HUMAN")
-  await expect(dialog).toContainText("src/fixture.ts")
+  await expect(dialog).toContainText("Review the deterministic multi-node objective plan.")
+  await expect(dialog).toContainText("N01")
+  await expect(dialog).toContainText("N02")
   await expect(dialog).toContainText("typecheck")
-  await expect(dialog).toContainText("Fixture change is scoped.")
 
-  await dialog.getByRole("button", { name: "Approve & Queue" }).click()
-  await expect(page.getByText("E2E-INTAKE disetujui dan masuk antrean.")).toBeVisible()
-  await expect(page.getByText("e2e-intake-job")).toBeVisible()
+  await dialog.getByRole("button", { name: "Approve & Run" }).click()
+  await expect(page).toHaveURL(/\/objectives\/e2e-plan-review$/)
+  expect(mutationPaths).toContain("/api/objectives")
+  expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/generate-plan")
+  expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/approve-plan")
+  expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/materialize")
+  expect(mutationPaths).not.toContain("/api/tasks/request")
 })
 
 test("review evidence can be accepted through explicit confirmation", async ({ page }) => {

@@ -1,9 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { useSearchParams } from "react-router-dom"
-import { useProjects, useDaemonStatus, useJobs, useRequestTask, useConfirmTaskQueue, useUploadAsset, useDeleteAsset, useCreateObjective, useApproveObjectivePlan, useAssignObjectivePlanSkills, useRequestObjectivePlanChanges, useCancelObjective, useObjective, useProjectRelationships, useSkillCatalog } from "@/hooks/use-orchestrator"
+import { useNavigate, useSearchParams } from "react-router-dom"
+import { useProjects, useDaemonStatus, useJobs, useUploadAsset, useDeleteAsset, useCreateObjective, useGenerateObjectivePlan, useApproveObjectivePlan, useMaterializeObjectivePlan, useAssignObjectivePlanSkills, useRequestObjectivePlanChanges, useCancelObjective, useObjective, useProjectRelationships, useSkillCatalog } from "@/hooks/use-orchestrator"
 import { crossProjectEnabled } from "@/lib/feature-flags"
 import { toast } from "@/components/ui/toast"
-import type { AttachedAsset, ObjectiveDecision, ObjectiveIntakeResult, ObjectiveMode, ObjectivePlanReview, ObjectiveRecord, SkillCatalog, TaskRequestResult } from "@/services/orchestrator"
+import type { AttachedAsset, ObjectiveDecision, ObjectiveIntakeResult, ObjectiveMode, ObjectivePlanReview, ObjectiveRecord, SkillCatalog } from "@/services/orchestrator"
 import type { UseTasksReturn, TaskStatusMessage } from "../types"
 
 const isClarificationNeeded = (res: any): boolean => {
@@ -44,6 +44,7 @@ const extractErrorMessage = (error: unknown): string => {
 }
 
 export const useTasks = (): UseTasksReturn => {
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const reviewObjectiveId = searchParams.get("objectiveId")
   const { data: projects = [] } = useProjects()
@@ -54,13 +55,13 @@ export const useTasks = (): UseTasksReturn => {
   const { data: objectiveDetail } = useObjective(reviewObjectiveId)
   const { data: daemon = null, refetch: refetchDaemon } = useDaemonStatus()
   const { data: jobs = [] } = useJobs()
-  const { mutateAsync: requestTask, isPending: submitting } = useRequestTask()
   const { mutateAsync: createObjective, isPending: creatingObjective } = useCreateObjective()
+  const { mutateAsync: generateObjectivePlan, isPending: generatingPlan } = useGenerateObjectivePlan()
   const { mutateAsync: approveObjectivePlan, isPending: approvingPlan } = useApproveObjectivePlan()
+  const { mutateAsync: materializeObjectivePlan, isPending: materializingPlan } = useMaterializeObjectivePlan()
   const { mutateAsync: assignObjectivePlanSkills, isPending: assigningPlanSkills } = useAssignObjectivePlanSkills()
   const { mutateAsync: requestObjectivePlanChanges, isPending: requestingPlanChanges } = useRequestObjectivePlanChanges()
   const { mutateAsync: cancelObjective, isPending: cancellingObjective } = useCancelObjective()
-  const { mutateAsync: confirmTaskQueue, isPending: confirming } = useConfirmTaskQueue()
   const { mutateAsync: uploadAsset, isPending: isUploadingAsset } = useUploadAsset()
   const { mutateAsync: deleteAsset } = useDeleteAsset()
   const { data: skillCatalog } = useSkillCatalog()
@@ -69,11 +70,8 @@ export const useTasks = (): UseTasksReturn => {
   const [freshTargetDirectory, setFreshTargetDirectory] = useState("")
   const [freshBlueprint, setFreshBlueprint] = useState("frontend-vite")
   const [prompt, setPrompt] = useState("")
-  const [queueAfterConfirmation, setQueueAfterConfirmation] = useState(true)
   const [statusMessage, setStatusMessage] = useState<TaskStatusMessage | null>(null)
   const [attachedAssets, setAttachedAssets] = useState<AttachedAsset[]>([])
-  const [confirmationOpen, setConfirmationOpen] = useState(false)
-  const [confirmationResult, setConfirmationResult] = useState<TaskRequestResult | null>(null)
   const [objectiveResult, setObjectiveResult] = useState<ObjectiveIntakeResult | null>(null)
   const [planReviewOpen, setPlanReviewOpen] = useState(false)
   const [planReviewObjective, setPlanReviewObjective] = useState<ObjectiveRecord | null>(null)
@@ -108,6 +106,7 @@ export const useTasks = (): UseTasksReturn => {
   const [clarificationQuestion, setClarificationQuestion] = useState("")
   const [clarificationAnswer, setClarificationAnswer] = useState("")
   const [pendingPrompt, setPendingPrompt] = useState("")
+  const [pendingObjectiveId, setPendingObjectiveId] = useState<string | null>(null)
 
   const handleAddAsset = (asset: AttachedAsset) => {
     setAttachedAssets((prev) => [...prev, asset])
@@ -254,18 +253,21 @@ export const useTasks = (): UseTasksReturn => {
 
     try {
       setStatusMessage(null)
-      const res = await requestTask({
-        project: selectedProject,
+      const objective = await createObjective({
+        mode: "EXISTING_PROJECT",
         request: trimmedPrompt,
-        autoStart: false,
-        attachedAssets,
+        projectIds: [selectedProject],
+        attachments: attachedAssets,
       })
+      setObjectiveResult(objective)
+      const res = await generateObjectivePlan({ objectiveId: objective.objective.objectiveId })
 
       if (isClarificationNeeded(res)) {
         const questionText = extractClarificationQuestion(res)
         setClarificationQuestion(questionText)
         setClarificationAnswer("")
         setPendingPrompt(trimmedPrompt)
+        setPendingObjectiveId(objective.objective.objectiveId)
         setClarificationOpen(true)
 
         toast.add({
@@ -276,31 +278,31 @@ export const useTasks = (): UseTasksReturn => {
         return
       }
 
-      const successText = `Task canonical berhasil dibuat: ${res.task.id}. Menunggu review dan persetujuan Anda.`
-      setConfirmationResult(res)
-      setConfirmationOpen(true)
-      setStatusMessage({
-        type: "success",
-        text: successText,
-      })
+      if (!res.plan) throw new Error("Planner tidak menghasilkan plan review.")
+      const successText = `Objective ${res.objective.objectiveId} dan ${res.plan.planId} siap untuk review.`
+      setPlanReviewObjective(res.objective)
+      setPlanReview(res.plan)
+      setPlanReviewDecisions(res.decisions ?? [])
+      setPlanReviewOpen(true)
+      setStatusMessage({ type: "success", text: successText })
       setPrompt("")
       setAttachedAssets([])
       setPendingPrompt("")
-      refetchDaemon?.()
+      setPendingObjectiveId(null)
       toast.add({
-        title: "Task Canonical Dibuat",
+        title: "Plan Objective Siap Direview",
         description: successText,
         type: "success",
       })
     } catch (err: unknown) {
       const errorMessage = extractErrorMessage(err)
-      const errorText = `Gagal membuat task: ${errorMessage}`
+      const errorText = `Gagal membuat objective plan: ${errorMessage}`
       setStatusMessage({
         type: "error",
         text: errorText,
       })
       toast.add({
-        title: "Gagal Membuat Task",
+        title: "Gagal Membuat Objective Plan",
         description: errorMessage,
         type: "error",
       })
@@ -316,22 +318,17 @@ export const useTasks = (): UseTasksReturn => {
     const trimmedAnswer = clarificationAnswer.trim()
     if (!trimmedAnswer || !selectedProject) return
 
-    const basePrompt = pendingPrompt.trim() || prompt.trim()
-    const combinedRequest = `${basePrompt}\n\n[Klarifikasi Tambahan]:\n${trimmedAnswer}`
+    if (!pendingObjectiveId) return
 
     try {
       setStatusMessage(null)
-      const res = await requestTask({
-        project: selectedProject,
-        request: combinedRequest,
-        autoStart: false,
-      })
+      const res = await generateObjectivePlan({ objectiveId: pendingObjectiveId, clarification: trimmedAnswer })
 
       if (isClarificationNeeded(res)) {
         const nextQuestion = extractClarificationQuestion(res)
         setClarificationQuestion(nextQuestion)
         setClarificationAnswer("")
-        setPendingPrompt(combinedRequest)
+        setPendingPrompt(`${pendingPrompt}\n\n[Klarifikasi Tambahan]:\n${trimmedAnswer}`)
         setClarificationOpen(true)
 
         toast.add({
@@ -345,18 +342,18 @@ export const useTasks = (): UseTasksReturn => {
       setClarificationOpen(false)
       setClarificationAnswer("")
       setClarificationQuestion("")
+      if (!res.plan) throw new Error("Planner tidak menghasilkan plan review setelah klarifikasi.")
       setPrompt("")
       setPendingPrompt("")
-
-      const successText = `Task canonical berhasil dibuat: ${res.task.id}. Menunggu review dan persetujuan Anda.`
-      setConfirmationResult(res)
-      setConfirmationOpen(true)
-      setStatusMessage({
-        type: "success",
-        text: successText,
-      })
+      setPendingObjectiveId(null)
+      setPlanReviewObjective(res.objective)
+      setPlanReview(res.plan)
+      setPlanReviewDecisions(res.decisions ?? [])
+      setPlanReviewOpen(true)
+      const successText = `${res.plan.planId} siap untuk review.`
+      setStatusMessage({ type: "success", text: successText })
       toast.add({
-        title: "Task Canonical Dibuat",
+        title: "Plan Objective Siap Direview",
         description: successText,
         type: "success",
       })
@@ -375,41 +372,6 @@ export const useTasks = (): UseTasksReturn => {
     }
   }
 
-  const handleCloseConfirmation = () => {
-    if (confirming) return
-    setConfirmationOpen(false)
-    setStatusMessage({
-      type: "success",
-      text: confirmationResult
-        ? `${confirmationResult.task.id} disimpan di Backlog dan belum dieksekusi.`
-        : "Task disimpan di Backlog.",
-    })
-  }
-
-  const handleConfirmQueue = async () => {
-    if (!confirmationResult) return
-
-    try {
-      const queued = await confirmTaskQueue({
-        projectId: confirmationResult.project,
-        taskInput: confirmationResult.task.id,
-        approvedBy: "user",
-      })
-      setConfirmationOpen(false)
-      setStatusMessage({ type: "success", text: `${confirmationResult.task.id} disetujui dan masuk antrean.` })
-      refetchDaemon?.()
-      toast.add({
-        title: queued.action === "TASK_ALREADY_QUEUED" ? "Task Sudah Diantrekan" : "Task Disetujui",
-        description: queued.nextAction,
-        type: "success",
-      })
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err)
-      setStatusMessage({ type: "error", text: `Gagal mengantrekan task: ${errorMessage}` })
-      toast.add({ title: "Approval Gagal", description: errorMessage, type: "error" })
-    }
-  }
-
   const handleClosePlanReview = () => {
     if (approvingPlan || requestingPlanChanges || cancellingObjective) return
     setPlanReviewOpen(false)
@@ -418,11 +380,16 @@ export const useTasks = (): UseTasksReturn => {
   const handleApprovePlan = async () => {
     if (!planReviewObjective || !planReview) return
     try {
-      const result = await approveObjectivePlan({ objectiveId: planReviewObjective.objectiveId, planFingerprint: planReview.planFingerprint })
-      setPlanReviewObjective(result.objective)
-      setPlanReview(result.plan)
-      setStatusMessage({ type: "success", text: `${result.plan.planId} disetujui. Approval plan belum berarti final result acceptance atau queue execution.` })
-      toast.add({ title: "Plan Disetujui", description: `${result.plan.planId} siap untuk tahap materialization berikutnya.`, type: "success" })
+      const approved = planReview.state === "APPROVED"
+        ? { objective: planReviewObjective, plan: planReview, planFingerprint: planReview.planFingerprint }
+        : await approveObjectivePlan({ objectiveId: planReviewObjective.objectiveId, planFingerprint: planReview.planFingerprint })
+      if (!approved.planFingerprint) throw new Error("Plan fingerprint tidak tersedia untuk materialization.")
+      const materialized = await materializeObjectivePlan({ objectiveId: approved.objective.objectiveId, planId: approved.plan.planId, planFingerprint: approved.planFingerprint })
+      setPlanReviewOpen(false)
+      setStatusMessage({ type: "success", text: `${materialized.tasks.length} task dari ${approved.plan.planId} dibuat dan orchestration ${materialized.orchestration.orchestrationId} dimulai.` })
+      refetchDaemon?.()
+      toast.add({ title: "Objective Mulai Dijalankan", description: `${materialized.tasks.length} task berhasil dimaterialisasi.`, type: "success" })
+      navigate(`/objectives/${approved.objective.objectiveId}`)
     } catch (err: unknown) {
       const errorMessage = extractErrorMessage(err)
       setStatusMessage({ type: "error", text: `Approval plan gagal: ${errorMessage}` })
@@ -479,7 +446,7 @@ export const useTasks = (): UseTasksReturn => {
   }
 
   const queueJobs = daemon?.queue.latestJobs || jobs || []
-  const submittingState = submitting || creatingObjective
+  const submittingState = creatingObjective || generatingPlan
 
   return {
     targetMode,
@@ -503,8 +470,6 @@ export const useTasks = (): UseTasksReturn => {
     setFreshBlueprint,
     prompt,
     setPrompt,
-    queueAfterConfirmation,
-    setQueueAfterConfirmation,
     attachedAssets,
     handleAddAsset,
     handleRemoveAsset,
@@ -524,17 +489,12 @@ export const useTasks = (): UseTasksReturn => {
     handleCloseClarification,
     handleSubmitClarification,
     pendingPrompt,
-    confirmationOpen,
-    confirmationResult,
     objectiveResult,
-    confirming,
-    handleCloseConfirmation,
-    handleConfirmQueue,
     planReviewOpen,
     planReviewObjective,
     planReview,
     planReviewDecisions,
-    planReviewActionLoading: approvingPlan || assigningPlanSkills || requestingPlanChanges || cancellingObjective,
+    planReviewActionLoading: approvingPlan || materializingPlan || assigningPlanSkills || requestingPlanChanges || cancellingObjective,
     skillCatalog: skillCatalog ?? { schemaVersion: 1, mode: "read-only-skill-catalog", registryState: "EMPTY", skills: [] } as SkillCatalog,
     handleAssignPlanSkills,
     handleClosePlanReview,

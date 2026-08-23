@@ -550,7 +550,19 @@ export function useCreateObjective() {
       request: string
       projectIds?: string[]
       freshProject?: { projectId: string; targetDirectory: string; blueprint: string }
+      attachments?: import("@/services/orchestrator").AttachedAsset[]
     }) => OrchestratorApi.createObjective(payload),
+  })
+}
+
+export function useGenerateObjectivePlan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ objectiveId, clarification }: { objectiveId: string; clarification?: string | null }) => OrchestratorApi.generateObjectivePlan(objectiveId, clarification),
+    onSuccess: (result, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectives })
+    },
   })
 }
 
@@ -561,6 +573,20 @@ export function useApproveObjectivePlan() {
     onSuccess: (result, variables) => {
       queryClient.setQueryData(queryKeys.objective(variables.objectiveId), (current: ObjectiveLifecycleDetail | undefined) => current ? { ...current, ...result.objective, plan: result.plan } : current)
       queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+    },
+  })
+}
+
+export function useMaterializeObjectivePlan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ objectiveId, planId, planFingerprint }: { objectiveId: string; planId: string; planFingerprint: string }) => OrchestratorApi.materializeObjectivePlan(objectiveId, planId, planFingerprint),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectives })
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+      queryClient.invalidateQueries({ queryKey: queryKeys.runs })
+      queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
     },
   })
 }
