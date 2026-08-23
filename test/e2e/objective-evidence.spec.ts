@@ -17,6 +17,13 @@ test("Objective evidence keeps final acceptance separate from evidence review", 
   await expect(page.getByText("N01 · DIAGNOSTIC").first()).toBeVisible()
   await expect(page.getByRole("link", { name: "Diff" })).toBeVisible()
 
+  await page.getByRole("button", { name: "Aggregate preview" }).click()
+  await expect(page.getByText("Aggregate project preview")).toBeVisible()
+  await expect(page.getByRole("link", { name: /http:\/\/127\.0\.0\.1:5310/ })).toBeVisible()
+  await expect(page.getByText("Preview unavailable tidak dihitung sebagai verification failure.")).toBeVisible()
+  await page.getByRole("button", { name: "Stop preview" }).click()
+  await expect(page.getByRole("button", { name: "Stop preview" })).toHaveCount(0)
+
   const graphNode = page.getByRole("button", { name: /N01.*DIAGNOSTIC/ })
   await graphNode.focus()
   await graphNode.press("Enter")

@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 import { Link, useParams } from "react-router-dom"
-import { AlertTriangle, CheckCircle2, FileDiff, Eye, Gauge, GitCommitHorizontal, ShieldCheck, Target, XCircle } from "lucide-react"
+import { AlertTriangle, CheckCircle2, ExternalLink, FileDiff, Eye, Gauge, GitCommitHorizontal, Layers3, ShieldCheck, Square, Target, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -12,8 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useAcceptObjective, useObjective, useObjectiveEvidence, useObjectives, usePreviewRun } from "@/hooks/use-orchestrator"
-import type { ObjectiveEvidence, ObjectiveEvidenceNode, ObjectiveSummary } from "@/services/orchestrator"
+import { useAcceptObjective, useAggregatePreview, useObjective, useObjectiveEvidence, useObjectives, usePreviewRun, useStopAggregatePreview } from "@/hooks/use-orchestrator"
+import type { AggregatePreview, ObjectiveEvidence, ObjectiveEvidenceNode, ObjectiveSummary } from "@/services/orchestrator"
 import { CrossProjectIntegrationEvidence } from "./components/CrossProjectIntegrationEvidence"
 import { ObjectiveGraph } from "./components/ObjectiveGraph"
 
@@ -72,11 +72,28 @@ function NodeCard({ node, onPreview, previewing }: { node: ObjectiveEvidenceNode
   )
 }
 
+function AggregatePreviewPanel({ preview, onStop, stopping }: { preview: AggregatePreview | null; onStop: () => void; stopping: boolean }) {
+  if (!preview) return null
+  return <section className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-5">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div><div className="flex items-center gap-2"><Layers3 className="h-4 w-4 text-cyan-300" /><h2 className="text-sm font-semibold text-white">Aggregate project preview</h2><StatusBadge state={preview.status} /></div><p className="mt-2 text-xs text-slate-400">Loopback-only URLs untuk project runnable. Preview unavailable tidak dihitung sebagai verification failure.</p></div>
+      {preview.cleanup.status === "ACTIVE" && <Button type="button" variant="outline" size="sm" disabled={stopping} onClick={onStop} className="gap-2 border-slate-700 text-slate-200 hover:bg-slate-800"><Square className="h-3.5 w-3.5" />{stopping ? "Cleaning…" : "Stop preview"}</Button>}
+    </div>
+    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+      {preview.previews.map((item) => <div key={item.projectId} className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3"><div className="flex items-center justify-between gap-2 text-xs"><span className="font-semibold text-emerald-200">{item.projectId}</span><StatusBadge state={item.status} /></div><a href={item.url} target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-1 break-all font-mono text-xs text-cyan-300 hover:text-cyan-200">{item.url}<ExternalLink className="h-3 w-3 shrink-0" /></a></div>)}
+      {preview.unavailable.map((item, index) => <div key={`${item.projectId ?? "project"}-${index}`} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs"><div className="flex items-center justify-between gap-2"><span className="font-semibold text-amber-200">{item.projectId ?? "Unknown project"}</span><StatusBadge state="UNAVAILABLE" /></div><p className="mt-2 text-amber-100/80">{item.message ?? item.reason}</p><p className="mt-1 text-[11px] text-slate-500">Verification: NOT EVALUATED</p></div>)}
+    </div>
+  </section>
+}
+
 function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
   const [acceptOpen, setAcceptOpen] = useState(false)
   const [previewMessage, setPreviewMessage] = useState<string | null>(null)
+  const [aggregatePreview, setAggregatePreview] = useState<AggregatePreview | null>(null)
   const accept = useAcceptObjective()
   const preview = usePreviewRun()
+  const aggregate = useAggregatePreview()
+  const stopAggregate = useStopAggregatePreview()
   const objective = evidence.objective
   const handlePreview = async (runId: string) => {
     try {
@@ -90,14 +107,26 @@ function EvidenceView({ evidence }: { evidence: ObjectiveEvidence }) {
     await accept.mutateAsync(objective.objectiveId)
     setAcceptOpen(false)
   }
+  const handleAggregatePreview = async () => {
+    try {
+      setAggregatePreview(await aggregate.mutateAsync({ objectiveId: objective.objectiveId }))
+    } catch (error) {
+      setPreviewMessage(error instanceof Error ? error.message : "Aggregate preview tidak tersedia.")
+    }
+  }
+  const handleStopAggregatePreview = async () => {
+    if (!aggregatePreview) return
+    setAggregatePreview(await stopAggregate.mutateAsync({ objectiveId: objective.objectiveId, sessionId: aggregatePreview.sessionId }))
+  }
   return (
     <div className="w-full space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div><Link to="/objectives" className="text-xs text-indigo-300 hover:text-indigo-200">← Semua objectives</Link><div className="mt-3 flex items-center gap-3"><div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-2.5 text-indigo-300"><Target className="h-5 w-5" /></div><div><p className="font-mono text-xs text-indigo-300">{objective.objectiveId}</p><h1 className="text-2xl font-semibold text-white">{objective.request}</h1></div></div></div>
-        <div className="flex flex-col items-end gap-2"><StatusBadge state={objective.state} /><Button type="button" disabled={!evidence.finalAcceptance.canAccept || accept.isPending} onClick={() => setAcceptOpen(true)} className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"><CheckCircle2 className="h-4 w-4" />Final Acceptance</Button></div>
+        <div className="flex flex-col items-end gap-2"><StatusBadge state={objective.state} /><div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="outline" disabled={aggregate.isPending || aggregatePreview?.cleanup.status === "ACTIVE"} onClick={() => void handleAggregatePreview()} className="gap-2 border-cyan-500/30 text-cyan-200 hover:bg-cyan-500/10"><Layers3 className="h-4 w-4" />{aggregate.isPending ? "Starting preview…" : "Aggregate preview"}</Button><Button type="button" disabled={!evidence.finalAcceptance.canAccept || accept.isPending} onClick={() => setAcceptOpen(true)} className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"><CheckCircle2 className="h-4 w-4" />Final Acceptance</Button></div></div>
       </div>
 
       {previewMessage && <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs text-indigo-200">{previewMessage}</div>}
+      <AggregatePreviewPanel preview={aggregatePreview} onStop={() => void handleStopAggregatePreview()} stopping={stopAggregate.isPending} />
       {evidence.finalAcceptance.state !== "ACCEPTED" && evidence.blockers.length > 0 && <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4"><div className="flex items-center gap-2 text-amber-200"><AlertTriangle className="h-4 w-4" /><h2 className="text-sm font-semibold">Unresolved blockers</h2></div><div className="mt-3 space-y-2 text-xs text-amber-100/80">{evidence.blockers.map((blocker) => <div key={blocker.id} className="rounded-lg border border-amber-500/20 bg-slate-950/20 p-2"><span className="font-mono text-amber-200">{blocker.id}</span> · {blocker.message}</div>)}</div></section>}
 
       {objective.mode === "CROSS_PROJECT_INCIDENT" && evidence.integration && <CrossProjectIntegrationEvidence integration={evidence.integration} objectiveProjectIds={objective.projectIds} nodes={evidence.nodes} blockers={evidence.blockers} canAccept={evidence.finalAcceptance.canAccept} />}
