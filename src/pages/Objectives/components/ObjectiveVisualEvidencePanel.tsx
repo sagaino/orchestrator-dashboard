@@ -11,7 +11,7 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
   repairing,
   capturingRunId,
   readOnly = false,
-  defaultOpen = false,
+  defaultOpen = true,
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   const [repairNodeId, setRepairNodeId] = useState<string | null>(null)
@@ -44,10 +44,23 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
 
   return (
     <section className="rounded-xl border border-violet-500/30 bg-violet-500/5 p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        aria-controls="objective-visual-evidence-content"
+        onClick={() => setIsOpen((prev) => !prev)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault()
+            setIsOpen((prev) => !prev)
+          }
+        }}
+        className="flex flex-wrap items-start justify-between gap-3 cursor-pointer select-none rounded-lg p-1 -m-1 transition-colors hover:bg-violet-500/10 outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+      >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <Image className="h-4 w-4 text-violet-300" />
+            <Image className="h-4 w-4 text-violet-300 shrink-0" />
             <h2 className="text-sm font-semibold text-white">Objective visual & E2E evidence</h2>
           </div>
           <p className="mt-2 text-xs text-slate-400">
@@ -73,21 +86,13 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
               </div>
             )}
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsOpen((prev) => !prev)}
-            aria-expanded={isOpen}
-            className="gap-1.5 border-violet-500/30 text-violet-200 hover:bg-violet-500/10"
-          >
-            <span>{isOpen ? "Tutup" : "Buka"}</span>
+          <div className="flex items-center text-violet-300">
             {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
+          </div>
         </div>
       </div>
       {isOpen && (
-        <div className="mt-4 space-y-3">
+        <div id="objective-visual-evidence-content" className="mt-4 space-y-3">
           {report.nodes.map((node) => (
             <div key={node.nodeId} className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
