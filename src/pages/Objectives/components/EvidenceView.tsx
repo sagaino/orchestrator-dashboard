@@ -11,6 +11,7 @@ import {
   TestTube2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +51,11 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
     createDeliveryPending,
     acceptDeliveryPending,
     integrationPending,
+    retryNode,
+    setRetryNode,
+    retryReason,
+    setRetryReason,
+    retryNodePending,
     handlePreview,
     handleAccept,
     handleAggregatePreview,
@@ -59,6 +65,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
     handleDeliveryRun,
     handleDeliveryAccept,
     handleIntegration,
+    handleNodeRetry,
   } = useEvidenceView(evidence)
 
   const objective = evidence.objective
@@ -227,7 +234,9 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
               key={node.nodeId}
               node={node}
               onPreview={(runId) => void handlePreview(runId)}
+              onRequestRetry={setRetryNode}
               previewing={previewPending}
+              retrying={retryNodePending}
             />
           ))}
         </div>
@@ -314,6 +323,47 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
               className="bg-emerald-600 text-white hover:bg-emerald-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50"
             >
               {acceptPending ? "Menyimpan…" : "Accept objective"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={Boolean(retryNode)} onOpenChange={(open) => { if (!open && !retryNodePending) { setRetryNode(null); setRetryReason("") } }}>
+        <AlertDialogContent className="max-w-lg border border-slate-800 bg-slate-900 text-slate-100">
+          <AlertDialogHeader className="space-y-3">
+            <AlertDialogTitle className="text-white">Request node retry</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-300 text-sm leading-relaxed">
+              Buat human decision untuk node <span className="font-mono text-indigo-300">{retryNode?.nodeId}</span>. Task belum langsung dijalankan; setelah decision dibuat, pilih <span className="font-semibold text-emerald-300">RETRY</span> dari Decision Inbox.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <label htmlFor="node-retry-reason" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Alasan review</label>
+            <Textarea
+              id="node-retry-reason"
+              value={retryReason}
+              onChange={(event) => setRetryReason(event.target.value)}
+              placeholder="Contoh: Scope matcher sudah diperbaiki dan worktree sudah direview."
+              className="min-h-24 border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500"
+              disabled={retryNodePending}
+            />
+          </div>
+          <AlertDialogFooter className="border-slate-800 bg-slate-900/50 mt-2">
+            <AlertDialogCancel
+              disabled={retryNodePending}
+              onClick={() => { setRetryNode(null); setRetryReason("") }}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={retryNodePending}
+              onClick={(event) => {
+                event.preventDefault()
+                void handleNodeRetry()
+              }}
+              className="bg-indigo-600 text-white hover:bg-indigo-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50"
+            >
+              {retryNodePending ? "Membuat decision…" : "Buat retry decision"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

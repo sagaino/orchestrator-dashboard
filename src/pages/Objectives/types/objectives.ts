@@ -45,7 +45,9 @@ export interface PlanOnlyViewProps {
 export interface NodeCardProps {
   node: ObjectiveEvidenceNode
   onPreview: (runId: string) => void
+  onRequestRetry: (node: ObjectiveEvidenceNode) => void
   previewing: boolean
+  retrying: boolean
 }
 
 export interface AggregatePreviewPanelProps {
@@ -128,6 +130,11 @@ export interface UseEvidenceViewReturn {
   createDeliveryPending: boolean
   acceptDeliveryPending: boolean
   integrationPending: boolean
+  retryNode: ObjectiveEvidenceNode | null
+  setRetryNode: (node: ObjectiveEvidenceNode | null) => void
+  retryReason: string
+  setRetryReason: (reason: string) => void
+  retryNodePending: boolean
   handlePreview: (runId: string) => Promise<void>
   handleAccept: () => Promise<void>
   handleAggregatePreview: () => Promise<void>
@@ -137,6 +144,7 @@ export interface UseEvidenceViewReturn {
   handleDeliveryRun: () => Promise<void>
   handleDeliveryAccept: () => Promise<void>
   handleIntegration: () => Promise<void>
+  handleNodeRetry: () => Promise<void>
 }
 
 export interface UseObjectivePlanGateReturn {

@@ -28,6 +28,7 @@ export const SummaryList: React.FC<SummaryListProps> = ({ items }) => {
     try {
       setCancelError(null)
       await cancelObjective(cancelObjectiveId)
+      window.localStorage.removeItem("orchestrator.pending-objective.v1")
       setCancelObjectiveId(null)
     } catch (error) {
       setCancelError(error instanceof Error ? error.message : "Objective tidak dapat dibatalkan.")

@@ -647,6 +647,20 @@ export function useAcceptObjective() {
   })
 }
 
+export function useRequestObjectiveNodeRetry() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ objectiveId, orchestrationId, nodeId, reason }: { objectiveId: string; orchestrationId?: string | null; nodeId: string; reason: string }) =>
+      OrchestratorApi.requestObjectiveNodeRetry(objectiveId, { orchestrationId, nodeId, reason }),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.decisionInbox })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectiveEvidence(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectiveGraph(variables.objectiveId) })
+    },
+  })
+}
+
 export function useStartIntegration() {
   const queryClient = useQueryClient()
   return useMutation({

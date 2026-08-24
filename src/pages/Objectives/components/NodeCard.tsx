@@ -1,10 +1,10 @@
 import React from "react"
-import { Eye, FileDiff, ShieldCheck, XCircle } from "lucide-react"
+import { Eye, FileDiff, RotateCcw, ShieldCheck, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "./StatusBadge"
 import type { NodeCardProps } from "../types"
 
-export const NodeCard: React.FC<NodeCardProps> = ({ node, onPreview, previewing }) => {
+export const NodeCard: React.FC<NodeCardProps> = ({ node, onPreview, onRequestRetry, previewing, retrying }) => {
   return (
     <article className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -73,6 +73,18 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node, onPreview, previewing 
           <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {node.error.message ?? "Node memiliki error."}
         </p>
+      )}
+      {node.state === "FAILED" && (
+        <Button
+          type="button"
+          size="sm"
+          className="mt-3 gap-2 bg-indigo-600 text-white hover:bg-indigo-500"
+          disabled={retrying}
+          onClick={() => onRequestRetry(node)}
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          {retrying ? "Membuat decision…" : "Request retry"}
+        </Button>
       )}
     </article>
   )
