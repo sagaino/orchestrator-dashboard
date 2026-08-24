@@ -32,6 +32,7 @@ export const DeliveryCertificationPanel: React.FC<DeliveryCertificationPanelProp
   onAccept,
   running,
   accepting,
+  automatic = false,
 }) => {
   const [acceptOpen, setAcceptOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -69,7 +70,12 @@ export const DeliveryCertificationPanel: React.FC<DeliveryCertificationPanelProp
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
+          {automatic && (
+            <span className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+              Dijalankan otomatis oleh orchestrator
+            </span>
+          )}
+          {!automatic && <Button
             type="button"
             variant="outline"
             size="sm"
@@ -78,8 +84,8 @@ export const DeliveryCertificationPanel: React.FC<DeliveryCertificationPanelProp
             className="border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10"
           >
             {running ? "Checking…" : certification ? "Re-run certification" : "Run delivery certification"}
-          </Button>
-          {certification?.status === "HUMAN_GATE_REQUIRED" && (
+          </Button>}
+          {!automatic && certification?.status === "HUMAN_GATE_REQUIRED" && (
             <Button
               type="button"
               size="sm"
@@ -92,7 +98,7 @@ export const DeliveryCertificationPanel: React.FC<DeliveryCertificationPanelProp
           )}
         </div>
       </div>
-      {!canRun && !certification && (
+      {!automatic && !canRun && !certification && (
         <p className="mt-3 text-xs text-amber-200">
           Jalankan setelah objective final acceptance berstatus ACCEPTED.
         </p>
@@ -113,7 +119,7 @@ export const DeliveryCertificationPanel: React.FC<DeliveryCertificationPanelProp
             <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
               <p className="text-slate-500">Human gate</p>
               <p className="mt-1 text-slate-200">
-                {certification.humanGate.confirmed ? `Accepted by ${certification.humanGate.approvedBy ?? "operator"}` : "Required"}
+                {certification.humanGate.confirmed ? `Accepted by ${certification.humanGate.approvedBy ?? "operator"}` : certification.humanGate.required ? "Required" : "Handled automatically"}
               </p>
             </div>
           </div>

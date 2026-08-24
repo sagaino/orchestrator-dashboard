@@ -43,6 +43,15 @@ const extractErrorMessage = (error: unknown): string => {
   return error instanceof Error ? error.message : String(error)
 }
 
+const automationStarted = (result: ObjectiveIntakeResult | null | undefined): boolean => Boolean(result?.automation?.started)
+
+const openAutomatedObjective = (result: ObjectiveIntakeResult, navigate: (path: string) => void, toastDescription: string) => {
+  if (!automationStarted(result)) return false
+  navigate(`/objectives/${result.objective.objectiveId}`)
+  toast.add({ title: "Objective Mulai Otomatis", description: toastDescription, type: "success" })
+  return true
+}
+
 const PENDING_OBJECTIVE_STORAGE_KEY = "orchestrator.pending-objective.v1"
 
 interface PendingObjectiveDraft {
@@ -262,6 +271,10 @@ export const useTasks = (): UseTasksReturn => {
         })
         clearObjectiveAttempt()
         setObjectiveResult(result)
+        if (openAutomatedObjective(result, navigate, "Fresh Project dibuat, plan dijalankan, dan worker mulai berjalan.")) {
+          setPrompt("")
+          return
+        }
         if (result.plan) {
           setPlanReviewObjective(result.objective)
           setPlanReview(result.plan)
@@ -324,6 +337,13 @@ export const useTasks = (): UseTasksReturn => {
         }
 
         if (!res.plan) throw new Error("Diagnostic planner tidak menghasilkan plan review.")
+        if (openAutomatedObjective(res, navigate, "Plan disetujui, task dimaterialisasi, dan worker mulai berjalan.")) {
+          setPrompt("")
+          setPendingPrompt("")
+          setPendingObjectiveId(null)
+          clearPendingObjectiveDraft()
+          return
+        }
         setPlanReviewObjective(res.objective)
         setPlanReview(res.plan)
         setPlanReviewDecisions(res.decisions ?? [])
@@ -382,6 +402,15 @@ export const useTasks = (): UseTasksReturn => {
       }
 
       if (!res.plan) throw new Error("Planner tidak menghasilkan plan review.")
+      if (openAutomatedObjective(res, navigate, "Plan disetujui, task dimaterialisasi, dan worker mulai berjalan.")) {
+        setPrompt("")
+        setAttachedAssets([])
+        setPendingPrompt("")
+        setPendingObjectiveId(null)
+        clearPendingObjectiveDraft()
+        clearObjectiveAttempt()
+        return
+      }
       const successText = `Objective ${res.objective.objectiveId} dan ${res.plan.planId} siap untuk review.`
       setPlanReviewObjective(res.objective)
       setPlanReview(res.plan)
@@ -448,6 +477,12 @@ export const useTasks = (): UseTasksReturn => {
       setClarificationAnswer("")
       setClarificationQuestion("")
       if (!res.plan) throw new Error("Planner tidak menghasilkan plan review setelah klarifikasi.")
+      if (openAutomatedObjective(res, navigate, "Klarifikasi diterima; task dimaterialisasi dan mulai dijalankan.")) {
+        setPendingPrompt("")
+        setPendingObjectiveId(null)
+        clearPendingObjectiveDraft()
+        return
+      }
       setPrompt("")
       setPendingPrompt("")
       setPendingObjectiveId(null)
@@ -493,6 +528,14 @@ export const useTasks = (): UseTasksReturn => {
         return
       }
       if (!res.plan) throw new Error("Planner tidak menghasilkan plan review.")
+      if (openAutomatedObjective(res, navigate, "Retry planner berhasil; task dimaterialisasi dan mulai dijalankan.")) {
+        setPrompt("")
+        setPendingPrompt("")
+        setPendingObjectiveId(null)
+        clearPendingObjectiveDraft()
+        clearObjectiveAttempt()
+        return
+      }
       setPlanReviewObjective(res.objective)
       setPlanReview(res.plan)
       setPlanReviewDecisions(res.decisions ?? [])
@@ -522,6 +565,15 @@ export const useTasks = (): UseTasksReturn => {
       const approved = planReview.state === "APPROVED"
         ? { objective: planReviewObjective, plan: planReview, planFingerprint: planReview.planFingerprint }
         : await approveObjectivePlan({ objectiveId: planReviewObjective.objectiveId, planFingerprint: planReview.planFingerprint })
+      if ("automation" in approved && approved.automation?.started) {
+        const taskCount = approved.tasks?.length ?? 0
+        setPlanReviewOpen(false)
+        setStatusMessage({ type: "success", text: `${taskCount} task dari ${approved.plan.planId} dibuat dan orchestration ${approved.orchestration?.orchestrationId ?? "dimulai"}.` })
+        refetchDaemon?.()
+        toast.add({ title: "Approval Diterima", description: "Orchestrator melanjutkan materialisasi dan eksekusi otomatis.", type: "success" })
+        navigate(`/objectives/${approved.objective.objectiveId}`)
+        return
+      }
       if (!approved.planFingerprint) throw new Error("Plan fingerprint tidak tersedia untuk materialization.")
       const materialized = await materializeObjectivePlan({ objectiveId: approved.objective.objectiveId, planId: approved.plan.planId, planFingerprint: approved.planFingerprint })
       setPlanReviewOpen(false)

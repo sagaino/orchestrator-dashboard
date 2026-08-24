@@ -45,7 +45,7 @@ export interface PlanOnlyViewProps {
 export interface NodeCardProps {
   node: ObjectiveEvidenceNode
   onPreview: (runId: string) => void
-  onRequestRetry: (node: ObjectiveEvidenceNode) => void
+  onRequestRetry?: (node: ObjectiveEvidenceNode) => void
   previewing: boolean
   retrying: boolean
 }
@@ -54,6 +54,7 @@ export interface AggregatePreviewPanelProps {
   preview: AggregatePreview | null
   onStop: () => void
   stopping: boolean
+  readOnly?: boolean
 }
 
 export interface ObjectiveVisualEvidencePanelProps {
@@ -63,6 +64,7 @@ export interface ObjectiveVisualEvidencePanelProps {
   onCapture: (runId: string, baseUrl: string) => Promise<void>
   repairing: boolean
   capturingRunId: string | null
+  readOnly?: boolean
 }
 
 export interface DeliveryCertificationPanelProps {
@@ -72,6 +74,7 @@ export interface DeliveryCertificationPanelProps {
   onAccept: () => Promise<void>
   running: boolean
   accepting: boolean
+  automatic?: boolean
 }
 
 export interface EvidenceViewProps {

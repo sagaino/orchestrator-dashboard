@@ -115,6 +115,14 @@ export interface RuntimeConfigSnapshot {
   profile: string
   flags: Record<string, boolean>
   capacity: { maxParallelJobs: number }
+  automation?: {
+    approvalMode: string
+    planReviewRequired?: boolean
+    automaticPlanApproval: boolean
+    automaticMaterialization: boolean
+    automaticDeliveryCertification: boolean
+    automaticRecoveryAttempts: number
+  }
 }
 
 export interface QueueCapacitySnapshot {
@@ -1096,6 +1104,17 @@ export interface ObjectiveIntakeResult {
   clarificationQuestion?: string | null
   alreadyPlanned?: boolean
   alreadyExisting?: boolean
+  automation?: {
+    approvalMode: string
+    started: boolean
+    autopilot?: boolean
+    planReviewRequired?: boolean
+    alreadyStarted?: boolean
+    planApproved?: boolean
+    materialized?: boolean
+    approvedBy?: string
+    userAction?: "FINAL_ACCEPT" | string
+  }
 }
 
 export interface ObjectiveMaterializationResult {
@@ -1106,6 +1125,17 @@ export interface ObjectiveMaterializationResult {
   tasks: Array<{ taskId?: string; nodeId: string; projectId: string; relativePath?: string }>
   planFingerprint: string
   alreadyMaterialized: boolean
+}
+
+export interface ObjectivePlanApprovalResult {
+  objective: ObjectiveRecord
+  plan: ObjectivePlanReview
+  decision?: ObjectiveDecision | null
+  alreadyApproved: boolean
+  planFingerprint: string
+  automation?: ObjectiveIntakeResult["automation"]
+  orchestration?: { orchestrationId: string; state: string }
+  tasks?: Array<{ taskId?: string; nodeId: string; projectId: string; relativePath?: string }>
 }
 
 export interface ObjectiveLifecycleDetail extends ObjectiveRecord {
@@ -1316,6 +1346,17 @@ export interface ObjectiveEvidence {
   }
   decisions: ObjectiveDecision[]
   visualEvidence?: ObjectiveVisualEvidence
+  automation?: {
+    approvalMode: string
+    finalAcceptOnly: boolean
+    autopilot?: boolean
+    planReviewRequired?: boolean
+    deliveryCertification?: {
+      status: string
+      blockers: string[]
+      checks: DeliveryCertificationCheck[]
+    }
+  }
 }
 
 export interface DeliveryCertificationCheck {
@@ -1332,7 +1373,7 @@ export interface DeliveryCertification {
   objectiveId: string
   certificationId: string
   createdAt: string
-  status: "BLOCKED" | "HUMAN_GATE_REQUIRED" | "CERTIFIED" | string
+  status: "BLOCKED" | "READY_FOR_FINAL_ACCEPTANCE" | "HUMAN_GATE_REQUIRED" | "CERTIFIED" | string
   humanGate: { required: boolean; confirmed: boolean; approvedBy: string | null; approvedAt: string | null }
   checks: DeliveryCertificationCheck[]
   blockers: string[]
@@ -1683,7 +1724,7 @@ export const OrchestratorApi = {
 
   async acceptObjective(objectiveId: string) {
     const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
-    const res = await axios.post<{ success: boolean; data: { objective: ObjectiveRecord; decision?: ObjectiveDecision; evidence: ObjectiveEvidence; alreadyAccepted: boolean } }>(
+    const res = await axios.post<{ success: boolean; data: { objective: ObjectiveRecord; decision?: ObjectiveDecision; evidence: ObjectiveEvidence; alreadyAccepted: boolean; deliveryCertification?: DeliveryCertification | null; automation?: Record<string, unknown> } }>(
       `/api/objectives/${encodeURIComponent(objectiveId)}/final-acceptance`,
       {},
       { headers: { "Idempotency-Key": `dashboard-objective-acceptance-${randomPart}` } },
@@ -1693,7 +1734,7 @@ export const OrchestratorApi = {
 
   async approveObjectivePlan(objectiveId: string, planFingerprint?: string | null) {
     const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
-    const res = await axios.post<{ success: boolean; data: { objective: ObjectiveRecord; plan: ObjectivePlanReview; decision: ObjectiveDecision; alreadyApproved: boolean; planFingerprint: string } }>(
+    const res = await axios.post<{ success: boolean; data: ObjectivePlanApprovalResult }>(
       `/api/objectives/${encodeURIComponent(objectiveId)}/approve-plan`,
       planFingerprint ? { planFingerprint } : {},
       { headers: { "Idempotency-Key": `dashboard-plan-approval-${randomPart}` } },

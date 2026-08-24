@@ -74,7 +74,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node, onPreview, onRequestRe
           {node.error.message ?? "Node memiliki error."}
         </p>
       )}
-      {node.state === "FAILED" && (
+      {node.state === "FAILED" && onRequestRetry && (
         <Button
           type="button"
           size="sm"

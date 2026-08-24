@@ -69,6 +69,8 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
   } = useEvidenceView(evidence)
 
   const objective = evidence.objective
+  const finalAcceptOnly = evidence.automation?.finalAcceptOnly === true
+  const autopilotEnabled = evidence.automation?.autopilot === true || finalAcceptOnly
   const integrationState = String(
     (evidence.orchestration?.integration as { state?: string } | undefined)?.state
       ?? evidence.integration?.status
@@ -104,7 +106,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
           <StatusBadge state={objective.state} />
           <ObjectivePlanGate lifecycle={lifecycle} />
           <div className="flex flex-wrap gap-2 lg:justify-end">
-            {integrationRequired && (
+            {!autopilotEnabled && integrationRequired && (
               <Button
                 type="button"
                 variant="outline"
@@ -117,7 +119,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
                 {integrationPending ? "Running integration…" : integrationRunning ? "Integration running…" : integrationLabel}
               </Button>
             )}
-            <Button
+            {!autopilotEnabled && <Button
               type="button"
               variant="outline"
               disabled={aggregatePending || aggregatePreview?.cleanup.status === "ACTIVE"}
@@ -126,7 +128,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
             >
               <Layers3 className="h-4 w-4" />
               {aggregatePending ? "Starting preview…" : "Aggregate preview"}
-            </Button>
+            </Button>}
             <Button
               type="button"
               disabled={!evidence.finalAcceptance.canAccept || acceptPending}
@@ -146,10 +148,19 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
         </div>
       )}
 
+      {autopilotEnabled && (
+        <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs text-indigo-200">
+          {evidence.automation?.planReviewRequired
+            ? "Setelah Approve Plan, orchestrator menangani verification, recovery, preview, dan delivery certification secara otomatis. Setelah evidence lengkap, Anda hanya perlu menekan Final Acceptance."
+            : "Orchestrator menangani plan, verification, recovery, preview, dan delivery certification secara otomatis. Setelah evidence lengkap, Anda hanya perlu menekan Final Acceptance."}
+        </div>
+      )}
+
       <AggregatePreviewPanel
         preview={aggregatePreview}
         onStop={() => void handleStopAggregatePreview()}
         stopping={stopAggregatePending}
+        readOnly={autopilotEnabled}
       />
 
       <ObjectiveVisualEvidencePanel
@@ -159,6 +170,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
         onCapture={handleVisualCapture}
         repairing={visualRepairPending}
         capturingRunId={visualCapturePending ? visualCaptureRunId : null}
+        readOnly={autopilotEnabled}
       />
 
       <DeliveryCertificationPanel
@@ -168,6 +180,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
         onAccept={handleDeliveryAccept}
         running={createDeliveryPending}
         accepting={acceptDeliveryPending}
+        automatic={autopilotEnabled}
       />
 
       {evidence.finalAcceptance.state !== "ACCEPTED" && evidence.blockers.length > 0 && (
@@ -234,7 +247,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
               key={node.nodeId}
               node={node}
               onPreview={(runId) => void handlePreview(runId)}
-              onRequestRetry={setRetryNode}
+              onRequestRetry={autopilotEnabled ? undefined : setRetryNode}
               previewing={previewPending}
               retrying={retryNodePending}
             />
