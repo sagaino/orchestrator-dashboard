@@ -29,15 +29,17 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
           break
 
         case "TASK_REQUESTED":
-          queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
-          queryClient.invalidateQueries({ queryKey: queryKeys.runs })
-          queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
-          break
-
+        case "JOB_STARTED":
+        case "JOB_REVIEW_READY":
+        case "JOB_FAILED":
+        case "JOB_AUTOMATICALLY_FINALIZED":
+        case "RUN_STARTED":
         case "RUN_PROGRESS":
-          queryClient.invalidateQueries({ queryKey: queryKeys.runs })
+        case "RUN_FAILED":
           queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+          queryClient.invalidateQueries({ queryKey: queryKeys.runs })
           queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
+          queryClient.invalidateQueries({ queryKey: ["objectives"] })
           break
 
         case "RUN_ACCEPTED":
