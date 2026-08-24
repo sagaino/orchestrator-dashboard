@@ -30,7 +30,7 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
     <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-          {orchestrationManaged ? "Orchestrator Automation" : "Human Review Actions"}
+          Human Review Actions
         </span>
         <span className="text-[11px] text-slate-400 font-mono">allow_self_accept: false</span>
       </div>
@@ -59,7 +59,7 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
         )}
 
         {/* Review Actions if state == REVIEW or RETROSPECTIVE */}
-        {!orchestrationManaged && (selectedRun.state === "REVIEW" || selectedRun.state === "RETROSPECTIVE") && (
+        {(selectedRun.state === "REVIEW" || selectedRun.state === "RETROSPECTIVE") && (
           <>
             <button
               onClick={onRequestChanges}
@@ -87,22 +87,17 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
               <X className="h-3.5 w-3.5" />
               <span>Reject</span>
             </button>
-          </>
-        )}
 
-        {orchestrationManaged && (selectedRun.state === "REVIEW" || selectedRun.state === "RETROSPECTIVE") && (
-          <div className="basis-full flex flex-wrap items-center gap-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2.5 text-xs text-indigo-100">
-            <Sparkles className="h-3.5 w-3.5 shrink-0 text-indigo-300" />
-            <span>Review retrospective dan knowledge sedang diselesaikan otomatis oleh orchestrator.</span>
             {objectiveId && (
               <Link
                 to={`/objectives/${encodeURIComponent(objectiveId)}`}
-                className="font-semibold text-indigo-200 underline decoration-indigo-400/60 underline-offset-2 hover:text-white"
+                className="px-3.5 py-2 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-xs font-medium text-indigo-200 flex items-center gap-1.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
-                Lihat Objective
+                <span>Lihat Objective</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             )}
-          </div>
+          </>
         )}
 
         {/* Failed actions */}
