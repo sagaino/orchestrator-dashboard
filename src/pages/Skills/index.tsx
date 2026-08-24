@@ -34,60 +34,58 @@ export const SkillsPage: React.FC = () => {
   } = useSkills()
 
   return (
-    <div className="min-h-full bg-slate-950 p-4 text-slate-100 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <SkillHeader registryState={catalog?.registryState} />
+    <div className="w-full space-y-6">
+      <SkillHeader registryState={catalog?.registryState} />
 
-        <SkillSummaryCards summary={summary} />
+      <SkillSummaryCards summary={summary} />
 
-        {isLoading && (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-8 text-center text-sm text-slate-400">
-            Loading skill registry…
-          </div>
-        )}
+      {isLoading && (
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-8 text-center text-sm text-slate-400">
+          Loading skill registry…
+        </div>
+      )}
 
-        {isError && (
-          <div
-            role="alert"
-            className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-5 text-sm text-rose-200"
+      {isError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-rose-500/30 bg-rose-950/20 p-5 text-sm text-rose-200"
+        >
+          Skill registry tidak dapat dimuat.{" "}
+          <button
+            type="button"
+            onClick={() => {
+              void refetch()
+            }}
+            className="ml-2 underline"
           >
-            Skill registry tidak dapat dimuat.{" "}
-            <button
-              type="button"
-              onClick={() => {
-                void refetch()
-              }}
-              className="ml-2 underline"
-            >
-              Coba lagi
-            </button>
-          </div>
-        )}
+            Coba lagi
+          </button>
+        </div>
+      )}
 
-        {!isLoading && !isError && (
-          <>
-            <SkillFilters
-              query={query}
-              onQueryChange={setQuery}
-              status={status}
-              onStatusChange={setStatus}
+      {!isLoading && !isError && (
+        <>
+          <SkillFilters
+            query={query}
+            onQueryChange={setQuery}
+            status={status}
+            onStatusChange={setStatus}
+          />
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+            <SkillList
+              skills={filtered}
+              selectedSkill={selected}
+              onSelectSkill={handleSelectSkill}
             />
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
-              <SkillList
-                skills={filtered}
-                selectedSkill={selected}
-                onSelectSkill={handleSelectSkill}
-              />
-              <SkillDetail
-                skill={selected}
-                onToggle={handleOpenToggleModal}
-                busy={isPendingToggle}
-              />
-            </div>
-            <SkillOperatorNotice />
-          </>
-        )}
-      </div>
+            <SkillDetail
+              skill={selected}
+              onToggle={handleOpenToggleModal}
+              busy={isPendingToggle}
+            />
+          </div>
+          <SkillOperatorNotice />
+        </>
+      )}
 
       <SkillConfirmationModal
         confirm={confirm}
