@@ -1,113 +1,150 @@
-import React, { useState } from "react"
-import { AlertTriangle, BookOpen, CheckCircle2, Circle, Clock3, DatabaseBackup, Loader2, RefreshCw, RotateCcw, ShieldAlert, Trash2, UserRound } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useAcknowledgeOperationsAlert, useBackupRecoveryStatus, useDaemonStatus, useOperationsReadiness, usePreviewBackupRotation, usePreviewBackupSchedule, usePreviewRetention, usePurgeRetention, useRecordRecoveryDrill, useReleaseOperations, useResolveOperationsAlert, useRestoreRetention, useRetentionTrash, useVerifyRegisteredBackup } from "@/hooks/use-orchestrator"
-
-const formatBytes = (value: number) => new Intl.NumberFormat("id-ID", { style: "unit", unit: "megabyte", maximumFractionDigits: 1 }).format(value / 1024 / 1024)
+import React from "react"
+import { useOperations } from "./hooks"
+import {
+  OperationsHeader,
+  OperationsReadinessSection,
+  BackupGovernanceSection,
+  ReleaseOperationsSection,
+  SafeRetentionSection,
+} from "./components"
 
 export const OperationsPage: React.FC = () => {
-  const { data: readiness, isLoading, refetch, isFetching } = useOperationsReadiness()
-  const { data: daemon, refetch: refetchDaemon } = useDaemonStatus()
-  const { data: release, isLoading: releaseLoading, refetch: refetchRelease, isFetching: releaseFetching } = useReleaseOperations()
-  const { data: backupRecovery, refetch: refetchBackupRecovery, isFetching: backupRecoveryFetching } = useBackupRecoveryStatus()
-  const { data: trash = [] } = useRetentionTrash()
-  const preview = usePreviewRetention()
-  const purge = usePurgeRetention()
-  const restore = useRestoreRetention()
-  const acknowledgeAlert = useAcknowledgeOperationsAlert()
-  const resolveAlert = useResolveOperationsAlert()
-  const backupSchedule = usePreviewBackupSchedule()
-  const backupRotation = usePreviewBackupRotation()
-  const verifyBackup = useVerifyRegisteredBackup()
-  const recordDrill = useRecordRecoveryDrill()
-  const [days, setDays] = useState(30)
-  const [planId, setPlanId] = useState<string | null>(null)
-  const [confirmed, setConfirmed] = useState(false)
-  const [activationNotice, setActivationNotice] = useState<string | null>(null)
-  const [alertOwners, setAlertOwners] = useState<Record<string, string>>({})
-  const [alertEvidence, setAlertEvidence] = useState<Record<string, string>>({})
-  const [alertSnooze, setAlertSnooze] = useState<Record<string, string>>({})
-  const [backupRoot, setBackupRoot] = useState("")
-  const [backupInterval, setBackupInterval] = useState(24)
-  const [rotationDays, setRotationDays] = useState(30)
-  const [keepLatest, setKeepLatest] = useState(2)
-  const [drillEvidence, setDrillEvidence] = useState("")
-  const activePlan = preview.data
-  const statusClass = readiness?.status === "READY" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : readiness?.status === "DEGRADED" ? "bg-amber-500/15 text-amber-200 border-amber-500/30" : "bg-rose-500/15 text-rose-200 border-rose-500/30"
+  const {
+    readiness,
+    readinessLoading,
+    daemon,
 
-  return <div className="w-full space-y-6 pb-12">
-    <div className="flex flex-wrap items-start justify-between gap-4">
-      <div><p className="text-sm text-slate-400">Operations Center</p><h2 className="text-2xl font-semibold text-white">Kesiapan dan tata kelola sumber daya</h2><p className="mt-1 text-sm text-slate-400">Eksekusi baru berhenti otomatis ketika backup, disk, atau integrity evidence tidak aman.</p></div>
-      <Button variant="outline" onClick={() => { refetch(); refetchDaemon(); refetchRelease(); refetchBackupRecovery() }} disabled={isFetching || releaseFetching || backupRecoveryFetching}><RefreshCw className="mr-2 h-4 w-4" />{isFetching || releaseFetching || backupRecoveryFetching ? "Memeriksa…" : "Periksa ulang"}</Button>
+    release,
+    releaseLoading,
+    releaseConfirmed,
+    setReleaseConfirmed,
+    activationNotice,
+    handlePrepareActivation,
+
+    backupRecovery,
+    backupRoot,
+    setBackupRoot,
+    backupInterval,
+    setBackupInterval,
+    rotationDays,
+    setRotationDays,
+    keepLatest,
+    setKeepLatest,
+    drillEvidence,
+    setDrillEvidence,
+    schedulePreviewData,
+    isPreviewingSchedule,
+    rotationPreviewData,
+    isPreviewingRotation,
+    isVerifyingBackup,
+    isRecordingDrill,
+    handlePreviewSchedule,
+    handleVerifyBackup,
+    handlePreviewRotation,
+    handleRecordDrill,
+
+    alertOwners,
+    handleAlertOwnerChange,
+    alertEvidence,
+    handleAlertEvidenceChange,
+    alertSnooze,
+    handleAlertSnoozeChange,
+    handleAcknowledgeAlert,
+    isAcknowledgingAlert,
+    handleResolveAlert,
+    isResolvingAlert,
+
+    days,
+    setDays,
+    planId,
+    retentionConfirmed,
+    handleRetentionConfirmedChange,
+    activePlan,
+    isPreviewingRetention,
+    isPurgingRetention,
+    isRestoringRetention,
+    trash,
+    handlePreviewRetention,
+    handlePurgeRetention,
+    handleRestoreRetention,
+
+    isRefreshing,
+    handleRefreshAll,
+  } = useOperations()
+
+  return (
+    <div className="w-full space-y-6 pb-12">
+      <OperationsHeader
+        isRefreshing={isRefreshing}
+        onRefresh={handleRefreshAll}
+      />
+
+      <OperationsReadinessSection
+        readiness={readiness}
+        isLoading={readinessLoading}
+        daemon={daemon}
+        alertOwners={alertOwners}
+        onAlertOwnerChange={handleAlertOwnerChange}
+        alertEvidence={alertEvidence}
+        onAlertEvidenceChange={handleAlertEvidenceChange}
+        alertSnooze={alertSnooze}
+        onAlertSnoozeChange={handleAlertSnoozeChange}
+        onAcknowledgeAlert={handleAcknowledgeAlert}
+        isAcknowledgingAlert={isAcknowledgingAlert}
+        onResolveAlert={handleResolveAlert}
+        isResolvingAlert={isResolvingAlert}
+      />
+
+      <BackupGovernanceSection
+        backupRecovery={backupRecovery}
+        backupRoot={backupRoot}
+        onBackupRootChange={setBackupRoot}
+        backupInterval={backupInterval}
+        onBackupIntervalChange={setBackupInterval}
+        rotationDays={rotationDays}
+        onRotationDaysChange={setRotationDays}
+        keepLatest={keepLatest}
+        onKeepLatestChange={setKeepLatest}
+        drillEvidence={drillEvidence}
+        onDrillEvidenceChange={setDrillEvidence}
+        onPreviewSchedule={handlePreviewSchedule}
+        isPreviewingSchedule={isPreviewingSchedule}
+        schedulePreviewData={schedulePreviewData}
+        onVerifyBackup={handleVerifyBackup}
+        isVerifyingBackup={isVerifyingBackup}
+        onPreviewRotation={handlePreviewRotation}
+        isPreviewingRotation={isPreviewingRotation}
+        rotationPreviewData={rotationPreviewData}
+        onRecordDrill={handleRecordDrill}
+        isRecordingDrill={isRecordingDrill}
+      />
+
+      <ReleaseOperationsSection
+        release={release}
+        releaseLoading={releaseLoading}
+        confirmed={releaseConfirmed}
+        onConfirmedChange={setReleaseConfirmed}
+        activationNotice={activationNotice}
+        onPrepareActivation={handlePrepareActivation}
+      />
+
+      <SafeRetentionSection
+        days={days}
+        onDaysChange={setDays}
+        onPreviewRetention={handlePreviewRetention}
+        isPreviewingRetention={isPreviewingRetention}
+        activePlan={activePlan}
+        planId={planId}
+        retentionConfirmed={retentionConfirmed}
+        onRetentionConfirmedChange={handleRetentionConfirmedChange}
+        onPurgeRetention={handlePurgeRetention}
+        isPurgingRetention={isPurgingRetention}
+        trash={trash}
+        onRestoreRetention={handleRestoreRetention}
+        isRestoringRetention={isRestoringRetention}
+      />
     </div>
-    {isLoading ? <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-slate-400">Memuat readiness…</div> : readiness && <>
-      <div className={`rounded-xl border p-5 ${statusClass}`}><div className="flex items-center gap-3">{readiness.status === "READY" ? <CheckCircle2 /> : <ShieldAlert />}<div><p className="font-semibold">{readiness.status}</p><p className="text-sm opacity-90">{readiness.admission.allowed ? "Admission aktif untuk pekerjaan baru." : `${readiness.admission.blockers.length} blocker harus diselesaikan sebelum admission dibuka.`}</p></div></div></div>
-      {readiness.alerts.length > 0 && <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4"><div className="mb-3 flex items-center gap-2 font-medium text-amber-200"><AlertTriangle className="h-4 w-4" />Alert ownership & runbook</div><div className="space-y-3">{readiness.alerts.map((alert) => { const owner = alertOwners[alert.alertId] ?? alert.owner ?? ""; const evidence = alertEvidence[alert.alertId] ?? ""; const snooze = alertSnooze[alert.alertId] ?? ""; return <div key={alert.alertId} className="rounded-lg border border-amber-500/20 bg-slate-950/30 p-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm text-amber-100">{alert.message}</p><p className="mt-1 text-xs text-amber-200/70">{alert.alertId} · {alert.acknowledgementState ?? "UNACKNOWLEDGED"} · owner role: {alert.ownerRole ?? "operations"}</p></div>{alert.snoozeUntil && <span className="inline-flex items-center gap-1 rounded bg-slate-900 px-2 py-1 text-[10px] text-slate-300"><Clock3 className="h-3 w-3" />Snooze sampai {new Date(alert.snoozeUntil).toLocaleString("id-ID")}</span>}</div><div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-400">{(alert.runbookSteps ?? []).map((step) => <span key={step} className="inline-flex items-center gap-1 rounded bg-slate-900 px-2 py-1"><BookOpen className="h-3 w-3 text-indigo-300" />{step}</span>)}</div><div className="mt-3 grid gap-2 md:grid-cols-[1fr_100px_auto]"><label className="sr-only" htmlFor={`alert-owner-${alert.alertId}`}>Owner alert {alert.alertId}</label><div className="flex items-center gap-2 rounded border border-slate-700 bg-slate-900 px-2"><UserRound className="h-3.5 w-3.5 text-slate-500" /><input id={`alert-owner-${alert.alertId}`} value={owner} onChange={(event) => setAlertOwners((current) => ({ ...current, [alert.alertId]: event.target.value }))} placeholder="owner" className="min-w-0 flex-1 bg-transparent py-1.5 text-xs text-slate-200 outline-none" /></div><input aria-label={`Snooze ${alert.alertId}`} value={snooze} onChange={(event) => setAlertSnooze((current) => ({ ...current, [alert.alertId]: event.target.value }))} placeholder="menit" type="number" min="1" className="rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-200" /><Button size="sm" disabled={!owner.trim() || acknowledgeAlert.isPending} onClick={() => acknowledgeAlert.mutate({ alertId: alert.alertId, owner: owner.trim(), snoozeMinutes: snooze ? Number(snooze) : undefined })}>{acknowledgeAlert.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Ambil ownership"}</Button></div><div className="mt-2 flex flex-wrap gap-2"><input aria-label={`Evidence resolution ${alert.alertId}`} value={evidence} onChange={(event) => setAlertEvidence((current) => ({ ...current, [alert.alertId]: event.target.value }))} placeholder="resolution evidence / run ID" className="min-w-[240px] flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-200" /><Button size="sm" variant="outline" disabled={!owner.trim() || !evidence.trim() || resolveAlert.isPending} onClick={() => resolveAlert.mutate({ alertId: alert.alertId, resolvedBy: owner.trim(), evidence: evidence.trim() })}>{resolveAlert.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><CheckCircle2 className="mr-1 h-3 w-3" />Catat resolution</>}</Button></div>{alert.resolution && <p className="mt-2 text-xs text-emerald-300">Resolution oleh {alert.resolution.resolvedBy} pada {alert.resolution.resolvedAt ? new Date(alert.resolution.resolvedAt).toLocaleString("id-ID") : "-"}.</p>}</div> })}</div></div>}
-      <div className="grid gap-3 lg:grid-cols-2">{readiness.checks.map((item) => <div key={item.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"><div className="flex items-center justify-between gap-3"><p className="font-medium text-slate-100">{item.id}</p><span className={`rounded border px-2 py-0.5 text-xs ${item.status === "PASS" ? "border-emerald-500/30 text-emerald-300" : item.status === "WARN" ? "border-amber-500/30 text-amber-200" : "border-rose-500/30 text-rose-200"}`}>{item.status}</span></div><p className="mt-2 text-sm text-slate-300">{item.message}</p><p className="mt-2 text-xs text-slate-500">Tindakan: {item.action}</p></div>)}</div>
-      {daemon?.restartReconciliation && <section aria-labelledby="restart-reconciliation-title" className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"><div className="flex items-center justify-between gap-3"><div><h3 id="restart-reconciliation-title" className="font-medium text-slate-100">Restart reconciliation</h3><p className="mt-1 text-sm text-slate-400">Pemulihan ledger saat daemon terakhir dimulai.</p></div><span className={`rounded border px-2 py-0.5 text-xs ${daemon.restartReconciliation.status === "COMPLETE" ? "border-emerald-500/30 text-emerald-300" : daemon.restartReconciliation.status === "FAILED" ? "border-rose-500/30 text-rose-200" : "border-amber-500/30 text-amber-200"}`}>{daemon.restartReconciliation.status}</span></div><p className="mt-2 text-xs text-slate-500">{daemon.restartReconciliation.runs} run · {daemon.restartReconciliation.jobs} job direkonsiliasi{daemon.restartReconciliation.completedAt ? ` · selesai ${new Date(daemon.restartReconciliation.completedAt).toLocaleString("id-ID")}` : ""}</p>{daemon.restartReconciliation.error && <p className="mt-2 text-xs text-rose-300">{daemon.restartReconciliation.error}</p>}</section>}
-    </>}
-    <section className="rounded-xl border border-cyan-500/25 bg-cyan-950/10 p-5" aria-labelledby="backup-recovery-title">
-      <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm text-cyan-300">P8.3 · Backup Rotation & Recovery Review</p><h3 id="backup-recovery-title" className="text-xl font-semibold text-white">Backup governance</h3><p className="mt-1 text-sm text-slate-400">Jadwal dan rotasi selalu berupa preview/evidence. Dashboard tidak mengaktifkan launchd, restore, promotion, atau penghapusan permanen.</p></div><DatabaseBackup className="h-6 w-6 text-cyan-300" /></div>
-      {backupRecovery && <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"><ReleaseMetric label="Target" value={backupRecovery.target.independentTarget === true ? "INDEPENDENT" : backupRecovery.target.independentTarget === false ? "NOT INDEPENDENT" : "UNKNOWN"} detail={backupRecovery.target.configuredTarget || "Belum dikonfigurasi"} tone={backupRecovery.target.independentTarget === true ? "good" : "bad"} /><ReleaseMetric label="Schedule" value={backupRecovery.schedule?.launchctlActivated ? "ACTIVE" : "ARTIFACT ONLY"} detail={backupRecovery.schedule ? `${backupRecovery.schedule.intervalHours} jam · ${backupRecovery.schedule.label}` : "Belum ada schedule artifact"} /><ReleaseMetric label="Recovery drill" value={backupRecovery.drill.status} detail={backupRecovery.drill.dueAt ? `Due ${new Date(backupRecovery.drill.dueAt).toLocaleDateString("id-ID")}` : "Belum ada evidence"} tone={backupRecovery.drill.status === "CURRENT" ? "good" : "bad"} /><ReleaseMetric label="Artifact coverage" value={backupRecovery.artifactCoverage?.complete ? "COMPLETE" : "MISSING"} detail={backupRecovery.artifactCoverage ? `${backupRecovery.artifactCoverage.protectedActiveRecordCount} active protected` : "Belum ada snapshot"} tone={backupRecovery.artifactCoverage?.complete ? "good" : "bad"} /><ReleaseMetric label="Guardrails" value="ON" detail="Restore · promotion · delete manual" tone="good" /></div>}
-      {backupRecovery?.artifactCoverage && <div className="mt-3 rounded-lg border border-slate-700 bg-slate-950/50 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-medium text-slate-100">Cakupan artefak operasi</p><p className="mt-1 text-xs text-slate-400">Objective, plan, orchestration, decision, dan integration artifact diverifikasi sebagai bagian backup; state aktif tidak eligible untuk purge.</p></div><span className="rounded border border-emerald-500/30 px-2 py-1 text-xs text-emerald-300">{backupRecovery.artifactCoverage.complete && backupRecovery.artifactCoverage.activeStateNeverPurged ? "PROTECTED" : "REVIEW"}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-3"><ReleaseMetric label="Collections" value={String(backupRecovery.artifactCoverage.requiredCollections.length)} detail={backupRecovery.artifactCoverage.requiredCollections.join(" · ")} tone="good" /><ReleaseMetric label="Files" value={String(backupRecovery.artifactCoverage.totals.fileCount)} detail={`${backupRecovery.artifactCoverage.totals.bytes} bytes`} /><ReleaseMetric label="Active state" value={String(backupRecovery.artifactCoverage.protectedActiveRecordCount)} detail="protected from retention purge" tone="good" /></div></div>}
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-4"><p className="font-medium text-slate-100">Schedule preview</p><div className="mt-3 grid gap-2 sm:grid-cols-[1fr_100px_auto]"><input aria-label="Backup target path" value={backupRoot || backupRecovery?.target.configuredTarget || ""} onChange={(event) => setBackupRoot(event.target.value)} placeholder="/absolute/external-backups" className="rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-200" /><input aria-label="Backup interval hours" type="number" min="1" value={backupInterval} onChange={(event) => setBackupInterval(Number(event.target.value))} className="rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-200" /><Button size="sm" disabled={!String(backupRoot || backupRecovery?.target.configuredTarget || "").trim() || backupSchedule.isPending} onClick={() => backupSchedule.mutate({ backupRoot: (backupRoot || backupRecovery?.target.configuredTarget || "").trim(), intervalHours: backupInterval })}>{backupSchedule.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Buat preview"}</Button></div>{backupSchedule.data && <p className="mt-2 text-xs text-cyan-200">{backupSchedule.data.label} · {backupSchedule.data.intervalHours} jam · launchctl activated: {String(backupSchedule.data.launchd.activated)}</p>}<Button className="mt-3" size="sm" variant="outline" disabled={!backupRecovery?.registeredBackup || verifyBackup.isPending} onClick={() => verifyBackup.mutate()}>{verifyBackup.isPending ? "Verifikasi…" : "Verifikasi backup terdaftar"}</Button></div>
-        <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-4"><p className="font-medium text-slate-100">Rotation preview & drill</p><div className="mt-3 grid gap-2 sm:grid-cols-[1fr_90px_90px_auto]"><input aria-label="Rotation backup target" value={backupRoot || backupRecovery?.target.configuredTarget || ""} onChange={(event) => setBackupRoot(event.target.value)} placeholder="backup root" className="rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-200" /><input aria-label="Rotation age days" type="number" min="1" value={rotationDays} onChange={(event) => setRotationDays(Number(event.target.value))} className="rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-200" /><input aria-label="Keep latest backups" type="number" min="1" value={keepLatest} onChange={(event) => setKeepLatest(Number(event.target.value))} className="rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-200" /><Button size="sm" disabled={!String(backupRoot || backupRecovery?.target.configuredTarget || "").trim() || backupRotation.isPending} onClick={() => backupRotation.mutate({ backupRoot: (backupRoot || backupRecovery?.target.configuredTarget || "").trim(), olderThanDays: rotationDays, keepLatest })}>{backupRotation.isPending ? "Memuat…" : "Preview rotasi"}</Button></div>{backupRotation.data && <p className="mt-2 text-xs text-cyan-200">{backupRotation.data.summary.candidateCount} kandidat · {backupRotation.data.guardrail}</p>}<div className="mt-3 flex gap-2"><input aria-label="Recovery drill evidence" value={drillEvidence} onChange={(event) => setDrillEvidence(event.target.value)} placeholder="evidence recovery drill" className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-200" /><Button size="sm" disabled={!drillEvidence.trim() || recordDrill.isPending} onClick={() => recordDrill.mutate({ evidence: drillEvidence.trim(), result: "PASS" })}>{recordDrill.isPending ? "Mencatat…" : "Catat drill PASS"}</Button></div></div>
-      </div>
-    </section>
-    <section className="rounded-xl border border-indigo-500/25 bg-indigo-950/10 p-5" aria-labelledby="release-operations-title">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div><p className="text-sm text-indigo-300">P6.4 · Release Operations</p><h3 id="release-operations-title" className="text-xl font-semibold text-white">Guarded release</h3><p className="mt-1 text-sm text-slate-400">Bukti kandidat dan kesiapan aktivasi ditampilkan terpisah dari eksekusi supervisor.</p></div>
-        {release && <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${release.activation.eligible ? "border-amber-400/40 text-amber-200" : "border-rose-400/40 text-rose-200"}`}>{release.activation.state}</span>}
-      </div>
-      {releaseLoading ? <div className="mt-5 text-sm text-slate-400">Memuat release evidence…</div> : release && <>
-        {(() => {
-          const pendingTotal = release.queueDrain.pending?.total ?? 0
-          const stopDaemonOnly = release.queueDrain.activation?.daemonStopOnly === true
-          const queueMetric = release.queueDrain.drained
-            ? { value: "DRAINED", detail: "Tidak ada pekerjaan aktif." }
-            : stopDaemonOnly
-              ? { value: "STOP REQUIRED", detail: "Ledger kosong; daemon perlu dihentikan supervisor eksternal." }
-              : pendingTotal > 0
-                ? { value: "PENDING WORK", detail: `${pendingTotal} pekerjaan aktif/uncertain.` }
-                : { value: "BLOCKED", detail: `${release.queueDrain.blockers.length} blocker evidence.` }
-          return <>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <ReleaseMetric label="Current runtime" value={release.current.runtimeVersion} detail="stable" />
-          <ReleaseMetric label="Candidate" value={release.candidate.runtimeVersion || "Tidak tersedia"} detail={release.candidate.releaseId || release.candidate.status} />
-          <ReleaseMetric label="Compatibility" value={release.compatibility.outcome} detail={release.compatibility.errors.length ? `${release.compatibility.errors.length} error` : "contract valid"} tone={release.compatibility.compatible ? "good" : "bad"} />
-          <ReleaseMetric label="Queue drain" value={queueMetric.value} detail={queueMetric.detail} tone={release.queueDrain.drained ? "good" : "bad"} />
-        </div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-3">
-          <ReleaseEvidenceCard title="Backup" status={release.backup.status} body={release.backup.backupId || "Belum ada backup runtime"} detail={release.backup.backedUpAt ? `Backed up ${new Date(release.backup.backedUpAt).toLocaleString("id-ID")}${release.backup.verifiedAt ? ` · verified ${new Date(release.backup.verifiedAt).toLocaleString("id-ID")}` : ""}` : "Rollback belum siap"} />
-          <ReleaseEvidenceCard title="Health checks" status={release.health.status} body={release.health.daemon.healthy ? "Daemon healthy" : "Daemon belum healthy"} detail={release.health.daemon.heartbeatAgeMs === null ? "Heartbeat tidak tersedia" : `Heartbeat ${Math.round(release.health.daemon.heartbeatAgeMs / 1000)}s lalu`} />
-          <ReleaseEvidenceCard title="Rollback evidence" status={release.rollback.evidenceStatus} body={release.rollback.backupId || "Missing"} detail={release.rollback.message} />
-        </div>
-        <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/50 p-4">
-          <div className="flex items-start gap-3"><Circle className="mt-0.5 h-4 w-4 text-amber-300" /><div><p className="font-medium text-slate-100">Konfirmasi aktivasi eksternal</p><p className="mt-1 text-sm text-slate-400">UI ini tidak mengaktifkan kandidat. Supervisor eksternal tetap membutuhkan identitas OS, session, nonce, dan konfirmasi manusia.</p></div></div>
-          <label className="mt-3 flex items-start gap-2 text-sm text-slate-300"><input aria-label="Saya memahami aktivasi dilakukan oleh external supervisor" type="checkbox" checked={confirmed} disabled={!release.activation.eligible} onChange={(event) => { setConfirmed(event.target.checked); setActivationNotice(null) }} /><span>Saya memahami bahwa aktivasi dan rollback dilakukan oleh <code className="text-indigo-300">external-supervisor</code>.</span></label>
-          <Button className="mt-3" disabled={!release.activation.eligible || !confirmed} onClick={() => setActivationNotice("Konfirmasi UI siap diteruskan ke external supervisor; tidak ada aktivasi yang dijalankan dari dashboard.")}>Siapkan konfirmasi aktivasi</Button>
-          {activationNotice && <p role="status" className="mt-3 text-sm text-emerald-300">{activationNotice}</p>}
-        </div>
-          </>
-        })()}
-      </>}
-    </section>
-    <section className="rounded-xl border border-slate-800 bg-slate-950/40 p-5"><h3 className="text-lg font-semibold text-white">Retention aman</h3><p className="mt-1 text-sm text-slate-400">Preview hanya memilih artefak lama. Purge memindahkan data ke trash yang dapat dipulihkan—tidak ada penghapusan otomatis.</p><div className="mt-4 flex flex-wrap items-center gap-3"><label className="text-sm text-slate-300">Usia minimum <input className="ml-2 w-20 rounded border border-slate-700 bg-slate-900 px-2 py-1" type="number" min="1" value={days} onChange={(event) => setDays(Number(event.target.value))} /> hari</label><Button onClick={() => preview.mutate(days)} disabled={preview.isPending}>{preview.isPending ? "Membuat preview…" : "Buat preview"}</Button></div>
-      {activePlan && <div className="mt-4 rounded-lg border border-slate-700 p-4"><p className="font-medium text-slate-100">{activePlan.summary.candidateCount} kandidat · {formatBytes(activePlan.summary.bytes)}</p><p className="mt-1 text-xs text-slate-500">Plan {activePlan.planId} kedaluwarsa {new Date(activePlan.expiresAt || "").toLocaleString("id-ID")}</p>{activePlan.protection && <p className="mt-2 text-xs text-emerald-300">{activePlan.protection.protectedActiveRecordCount} active state dilindungi dan tidak masuk kandidat purge.</p>}<label className="mt-3 flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" checked={confirmed && planId === activePlan.planId} onChange={(event) => { setConfirmed(event.target.checked); setPlanId(activePlan.planId) }} /> Saya memahami data dipindahkan ke trash yang dapat dipulihkan.</label><Button className="mt-3" variant="destructive" disabled={!confirmed || planId !== activePlan.planId || purge.isPending} onClick={() => purge.mutate(activePlan.planId)}><Trash2 className="mr-2 h-4 w-4" />Pindahkan ke trash</Button></div>}
-      {trash.length > 0 && <div className="mt-5 border-t border-slate-800 pt-4"><p className="font-medium text-slate-200">Trash yang dapat dipulihkan</p>{trash.map((item) => <div key={item.planId} className="mt-2 flex items-center justify-between rounded border border-slate-800 px-3 py-2 text-sm"><span>{item.moved?.length ?? 0} item · {item.planId}</span><Button size="sm" variant="outline" disabled={restore.isPending} onClick={() => restore.mutate(item.planId)}><RotateCcw className="mr-2 h-3.5 w-3.5" />Pulihkan</Button></div>)}</div>}
-    </section>
-  </div>
-}
-
-function ReleaseMetric({ label, value, detail, tone = "neutral" }: { label: string; value: string; detail: string; tone?: "neutral" | "good" | "bad" }) {
-  const color = tone === "good" ? "text-emerald-300" : tone === "bad" ? "text-rose-300" : "text-slate-100"
-  return <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3"><p className="text-xs uppercase tracking-wide text-slate-500">{label}</p><p className={`mt-2 truncate text-sm font-semibold ${color}`} title={value}>{value}</p><p className="mt-1 truncate text-xs text-slate-500" title={detail}>{detail}</p></div>
-}
-
-function ReleaseEvidenceCard({ title, status, body, detail }: { title: string; status: string; body: string; detail: string }) {
-  const good = ["PASS", "READY", "AVAILABLE"].includes(status)
-  return <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-4"><div className="flex items-center justify-between gap-2"><p className="text-sm font-medium text-slate-200">{title}</p><span className={`rounded border px-2 py-0.5 text-xs ${good ? "border-emerald-500/30 text-emerald-300" : "border-amber-500/30 text-amber-200"}`}>{status}</span></div><p className="mt-3 truncate text-sm text-slate-100" title={body}>{body}</p><p className="mt-1 text-xs text-slate-500">{detail}</p></div>
+  )
 }
 
 export default OperationsPage
