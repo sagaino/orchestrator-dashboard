@@ -1,8 +1,10 @@
-import React from "react"
+import React, { useState } from "react"
 import { Link } from "react-router-dom"
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Gauge,
   GitCommitHorizontal,
   Layers3,
@@ -66,6 +68,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
     handleNodeRetry,
   } = useEvidenceView(evidence)
 
+  const [nodesOpen, setNodesOpen] = useState(false)
   const objective = evidence.objective
   const finalAcceptOnly = evidence.automation?.finalAcceptOnly === true
   const autopilotEnabled = evidence.automation?.autopilot === true || finalAcceptOnly
@@ -235,20 +238,57 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
       <ObjectiveGraph objectiveId={objective.objectiveId} />
 
       <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
-        <div className="flex items-center gap-2">
-          <GitCommitHorizontal className="h-4 w-4 text-indigo-300" />
-          <h2 className="text-sm font-semibold text-white">Node outcomes & evidence</h2>
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={nodesOpen}
+          aria-controls="node-outcomes-content"
+          onClick={() => setNodesOpen((prev) => !prev)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault()
+              setNodesOpen((prev) => !prev)
+            }
+          }}
+          className="flex flex-wrap items-start justify-between gap-3 cursor-pointer select-none rounded-lg p-1 -m-1 transition-colors hover:bg-slate-800/50 outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <GitCommitHorizontal className="h-4 w-4 text-indigo-300 shrink-0" />
+              <h2 className="text-sm font-semibold text-white">Node outcomes & evidence</h2>
+            </div>
+            <p className="mt-2 text-xs text-slate-400">
+              Hasil eksekusi per node, verifikasi, diff, dan akses log atau preview terisolasi.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="text-right text-[11px] text-slate-400">
+              <div>
+                {evidence.nodes.filter((node) => node.state === "DONE").length} / {evidence.nodes.length} nodes done
+              </div>
+              {evidence.nodes.some((node) => node.state === "FAILED") && (
+                <div className="text-rose-300">
+                  {evidence.nodes.filter((node) => node.state === "FAILED").length} failed
+                </div>
+              )}
+            </div>
+            <div className="flex items-center text-indigo-300">
+              {nodesOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
+          </div>
         </div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {evidence.nodes.map((node) => (
-            <NodeCard
-              key={node.nodeId}
-              node={node}
-              onRequestRetry={autopilotEnabled ? undefined : setRetryNode}
-              retrying={retryNodePending}
-            />
-          ))}
-        </div>
+        {nodesOpen && (
+          <div id="node-outcomes-content" className="mt-4 grid gap-3 lg:grid-cols-2">
+            {evidence.nodes.map((node) => (
+              <NodeCard
+                key={node.nodeId}
+                node={node}
+                onRequestRetry={autopilotEnabled ? undefined : setRetryNode}
+                retrying={retryNodePending}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">

@@ -11,7 +11,7 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
   repairing,
   capturingRunId,
   readOnly = false,
-  defaultOpen = true,
+  defaultOpen = false,
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   const [repairNodeId, setRepairNodeId] = useState<string | null>(null)

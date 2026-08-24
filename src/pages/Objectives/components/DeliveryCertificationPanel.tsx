@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { ShieldCheck } from "lucide-react"
+import { ChevronDown, ChevronUp, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -33,7 +33,9 @@ export const DeliveryCertificationPanel: React.FC<DeliveryCertificationPanelProp
   running,
   accepting,
   automatic = false,
+  defaultOpen = false,
 }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen)
   const [acceptOpen, setAcceptOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -58,10 +60,23 @@ export const DeliveryCertificationPanel: React.FC<DeliveryCertificationPanelProp
 
   return (
     <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        aria-controls="delivery-certification-content"
+        onClick={() => setIsOpen((prev) => !prev)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault()
+            setIsOpen((prev) => !prev)
+          }
+        }}
+        className="flex flex-wrap items-start justify-between gap-3 cursor-pointer select-none rounded-lg p-1 -m-1 transition-colors hover:bg-emerald-500/10 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+      >
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-emerald-300" />
+            <ShieldCheck className="h-4 w-4 text-emerald-300 shrink-0" />
             <h2 className="text-sm font-semibold text-white">Delivery certification</h2>
             {certification && <StatusBadge state={certification.status} />}
           </div>
@@ -69,78 +84,113 @@ export const DeliveryCertificationPanel: React.FC<DeliveryCertificationPanelProp
             Satu bundle durable yang memeriksa plan, execution, integration, preview, visual/E2E evidence, human acceptance, cleanup, dan knowledge capture.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {automatic && (
-            <span className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
-              Dijalankan otomatis oleh orchestrator
-            </span>
+        <div className="flex flex-wrap items-center gap-3">
+          {certification && (
+            <div className="text-right text-[11px] text-slate-400">
+              <div>
+                {certification.checks.filter((check) => check.passed).length} / {certification.checks.length} PASS
+              </div>
+              <div>
+                {certification.humanGate.confirmed
+                  ? `Accepted by ${certification.humanGate.approvedBy ?? "operator"}`
+                  : certification.humanGate.required
+                    ? "Human gate required"
+                    : "Handled automatically"}
+              </div>
+              {certification.blockers.length > 0 && (
+                <div className="text-rose-300">
+                  {certification.blockers.length} blocker{certification.blockers.length > 1 ? "s" : ""}
+                </div>
+              )}
+            </div>
           )}
-          {!automatic && <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!canRun || running}
-            onClick={() => void run()}
-            className="border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10"
+          <div
+            className="flex flex-wrap items-center gap-2"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
           >
-            {running ? "Checking…" : certification ? "Re-run certification" : "Run delivery certification"}
-          </Button>}
-          {!automatic && certification?.status === "HUMAN_GATE_REQUIRED" && (
-            <Button
-              type="button"
-              size="sm"
-              disabled={accepting}
-              onClick={() => setAcceptOpen(true)}
-              className="bg-emerald-600 text-white hover:bg-emerald-500"
-            >
-              Accept delivery certification
-            </Button>
-          )}
+            {automatic && (
+              <span className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+                Dijalankan otomatis oleh orchestrator
+              </span>
+            )}
+            {!automatic && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRun || running}
+                onClick={() => void run()}
+                className="border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10"
+              >
+                {running ? "Checking…" : certification ? "Re-run certification" : "Run delivery certification"}
+              </Button>
+            )}
+            {!automatic && certification?.status === "HUMAN_GATE_REQUIRED" && (
+              <Button
+                type="button"
+                size="sm"
+                disabled={accepting}
+                onClick={() => setAcceptOpen(true)}
+                className="bg-emerald-600 text-white hover:bg-emerald-500"
+              >
+                Accept delivery certification
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center text-emerald-300">
+            {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
         </div>
       </div>
-      {!automatic && !canRun && !certification && (
-        <p className="mt-3 text-xs text-amber-200">
-          Jalankan setelah objective final acceptance berstatus ACCEPTED.
-        </p>
-      )}
-      {certification && (
-        <>
-          <div className="mt-4 grid gap-2 text-xs sm:grid-cols-3">
-            <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
-              <p className="text-slate-500">Certification ID</p>
-              <p className="mt-1 break-all font-mono text-slate-200">{certification.certificationId}</p>
-            </div>
-            <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
-              <p className="text-slate-500">Machine checks</p>
-              <p className="mt-1 font-semibold text-white">
-                {certification.checks.filter((check) => check.passed).length} / {certification.checks.length} PASS
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
-              <p className="text-slate-500">Human gate</p>
-              <p className="mt-1 text-slate-200">
-                {certification.humanGate.confirmed ? `Accepted by ${certification.humanGate.approvedBy ?? "operator"}` : certification.humanGate.required ? "Required" : "Handled automatically"}
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {certification.checks.map((check) => (
-              <div key={check.id} className="flex items-start justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/30 p-3 text-xs">
-                <div>
-                  <p className="font-mono text-slate-200">{check.id}</p>
-                  <p className="mt-1 text-slate-500">{check.message}</p>
-                </div>
-                <StatusBadge state={check.status} />
-              </div>
-            ))}
-          </div>
-          {certification.blockers.length > 0 && (
-            <p className="mt-3 text-xs text-rose-300">Blockers: {certification.blockers.join(", ")}</p>
+      {isOpen && (
+        <div id="delivery-certification-content" className="mt-4 space-y-3">
+          {!automatic && !canRun && !certification && (
+            <p className="text-xs text-amber-200">
+              Jalankan setelah objective final acceptance berstatus ACCEPTED.
+            </p>
           )}
-          <p className="mt-3 text-xs text-slate-500">{certification.nextAction}</p>
-        </>
+          {certification && (
+            <>
+              <div className="grid gap-2 text-xs sm:grid-cols-3">
+                <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
+                  <p className="text-slate-500">Certification ID</p>
+                  <p className="mt-1 break-all font-mono text-slate-200">{certification.certificationId}</p>
+                </div>
+                <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
+                  <p className="text-slate-500">Machine checks</p>
+                  <p className="mt-1 font-semibold text-white">
+                    {certification.checks.filter((check) => check.passed).length} / {certification.checks.length} PASS
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
+                  <p className="text-slate-500">Human gate</p>
+                  <p className="mt-1 text-slate-200">
+                    {certification.humanGate.confirmed ? `Accepted by ${certification.humanGate.approvedBy ?? "operator"}` : certification.humanGate.required ? "Required" : "Handled automatically"}
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {certification.checks.map((check) => (
+                  <div key={check.id} className="flex items-start justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/30 p-3 text-xs">
+                    <div>
+                      <p className="font-mono text-slate-200">{check.id}</p>
+                      <p className="mt-1 text-slate-500">{check.message}</p>
+                    </div>
+                    <StatusBadge state={check.status} />
+                  </div>
+                ))}
+              </div>
+              {certification.blockers.length > 0 && (
+                <p className="text-xs text-rose-300">Blockers: {certification.blockers.join(", ")}</p>
+              )}
+              <p className="text-xs text-slate-500">{certification.nextAction}</p>
+            </>
+          )}
+          {message && <p className="text-xs text-rose-300">{message}</p>}
+        </div>
       )}
-      {message && <p className="mt-3 text-xs text-rose-300">{message}</p>}
+      {!isOpen && message && <p className="mt-3 text-xs text-rose-300">{message}</p>}
       <AlertDialog open={acceptOpen} onOpenChange={setAcceptOpen}>
         <AlertDialogContent className="max-w-lg border border-slate-800 bg-slate-900 text-slate-100">
           <AlertDialogHeader className="space-y-3">
