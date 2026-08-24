@@ -1,4 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react"
+import { useSearchParams } from "react-router-dom"
 import type { RunManifest } from "@/services/orchestrator"
 import { 
   useRuns, 
@@ -15,6 +16,7 @@ import type { UseRunsPageReturn, RunFilterState, RunTabType, InlineComment, Visu
 
 export const useRunsPage = (): UseRunsPageReturn => {
   const { data: runs = [], isLoading: runsLoading, refetch: refetchRuns } = useRuns()
+  const [searchParams, setSearchParams] = useSearchParams()
   
   const [filterState, setFilterState] = useState<RunFilterState>("ALL")
   const [searchQuery, setSearchQuery] = useState("")
@@ -27,6 +29,11 @@ export const useRunsPage = (): UseRunsPageReturn => {
   const [acceptModalOpen, setAcceptModalOpen] = useState(false)
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState("Rejected by user")
+  const requestedRunId = searchParams.get("runId")
+  const requestedTab = searchParams.get("tab")
+  const deepLinkedTab: RunTabType = requestedTab === "DIFF" || requestedTab === "LOGS" || requestedTab === "QA" || requestedTab === "RETROSPECTIVE"
+    ? requestedTab
+    : "OVERVIEW"
 
   const { data: diffData, isLoading: diffLoading } = useRunDiff(
     (selectedRun && (activeTab === "DIFF" || activeTab === "QA")) ? selectedRun.runId : null
@@ -43,7 +50,12 @@ export const useRunsPage = (): UseRunsPageReturn => {
 
   // Keep selectedRun in sync if runs change
   useEffect(() => {
-    if (!selectedRun && runs.length > 0) {
+    if (requestedRunId && runs.length > 0) {
+      const requestedRun = runs.find((run) => run.runId === requestedRunId)
+      if (requestedRun && selectedRun?.runId !== requestedRun.runId) {
+        setSelectedRun(requestedRun)
+      }
+    } else if (!selectedRun && runs.length > 0) {
       setSelectedRun(runs[0])
     } else if (selectedRun && runs.length > 0) {
       const updated = runs.find((r) => r.runId === selectedRun.runId)
@@ -51,7 +63,31 @@ export const useRunsPage = (): UseRunsPageReturn => {
         setSelectedRun(updated)
       }
     }
-  }, [runs, selectedRun])
+  }, [runs, requestedRunId, selectedRun])
+
+  useEffect(() => {
+    if (requestedTab) setActiveTab(deepLinkedTab)
+  }, [deepLinkedTab, requestedTab])
+
+  const handleSelectRun = (run: RunManifest | null) => {
+    setSelectedRun(run)
+    if (!run) return
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set("runId", run.runId)
+      return next
+    }, { replace: true })
+  }
+
+  const handleTabChange = (tab: RunTabType) => {
+    setActiveTab(tab)
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set("tab", tab)
+      if (selectedRun) next.set("runId", selectedRun.runId)
+      return next
+    }, { replace: true })
+  }
 
   // Reset inline comments & visual annotations when active run changes
   useEffect(() => {
@@ -312,9 +348,9 @@ export const useRunsPage = (): UseRunsPageReturn => {
     searchQuery,
     setSearchQuery,
     selectedRun,
-    setSelectedRun,
+    setSelectedRun: handleSelectRun,
     activeTab,
-    setActiveTab,
+    setActiveTab: handleTabChange,
     revisionModalOpen,
     setRevisionModalOpen,
     revisionReason,
