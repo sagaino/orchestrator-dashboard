@@ -68,7 +68,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
     handleNodeRetry,
   } = useEvidenceView(evidence)
 
-  const [nodesOpen, setNodesOpen] = useState(false)
+  const [nodesOpen, setNodesOpen] = useState(true)
   const objective = evidence.objective
   const finalAcceptOnly = evidence.automation?.finalAcceptOnly === true
   const autopilotEnabled = evidence.automation?.autopilot === true || finalAcceptOnly
@@ -79,6 +79,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
       ?? "NOT_READY",
   )
   const allNodesDone = evidence.nodes.length > 0 && evidence.nodes.every((node) => node.state === "DONE")
+  const nodesWaitingReview = evidence.nodes.filter((n) => n.state === "REVIEW" || n.state === "RETROSPECTIVE")
   const integrationRequired = evidence.plan?.integration.required === true || evidence.verification.integration.required === true
   const integrationFinished = ["PASS", "PASSED", "DONE"].includes(integrationState)
   const integrationRunning = ["RUNNING", "INTEGRATING"].includes(integrationState)
@@ -134,7 +135,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
               type="button"
               disabled={!evidence.finalAcceptance.canAccept || acceptPending}
               onClick={() => setAcceptOpen(true)}
-              className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+              className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500 font-semibold shadow-sm"
             >
               <CheckCircle2 className="h-4 w-4" />
               Final Acceptance
@@ -143,6 +144,46 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
         </div>
       </div>
 
+      {/* Actionable Operator Guidance Callout */}
+      {nodesWaitingReview.length > 0 && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-200 flex flex-wrap items-center justify-between gap-3 shadow-md shadow-amber-500/5">
+          <div className="flex items-center gap-2.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-400 animate-ping shrink-0" />
+            <div>
+              <span className="font-semibold text-white mr-1.5">Review Subtask Diperlukan:</span>
+              <span>Terdapat {nodesWaitingReview.length} subtask yang selesai dikerjakan agent dan menunggu review manusia sebelum Final Acceptance.</span>
+            </div>
+          </div>
+          <Link
+            to={`/runs?runId=${encodeURIComponent(nodesWaitingReview[0].runId || "")}`}
+            className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shrink-0"
+          >
+            <span>Review {nodesWaitingReview[0].nodeId} Sekarang</span>
+          </Link>
+        </div>
+      )}
+
+      {allNodesDone && evidence.finalAcceptance.canAccept && (
+        <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-xs text-emerald-200 flex flex-wrap items-center justify-between gap-3 shadow-md shadow-emerald-500/5">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+            <div>
+              <span className="font-semibold text-white mr-1.5">Semua Subtask Selesai & Lulus:</span>
+              <span>Seluruh deliverable dan verifikasi telah diverifikasi. Klik tombol Final Acceptance untuk menyelesaikan objective dan menerapkan perubahan ke codebase utama & Wiki.</span>
+            </div>
+          </div>
+          <Button
+            type="button"
+            onClick={() => setAcceptOpen(true)}
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs gap-1.5 shadow-sm shrink-0"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            <span>Final Acceptance</span>
+          </Button>
+        </div>
+      )}
+
       {previewMessage && (
         <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs text-indigo-200">
           {previewMessage}
@@ -150,10 +191,13 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
       )}
 
       {autopilotEnabled && (
-        <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs text-indigo-200">
-          {evidence.automation?.planReviewRequired
-            ? "Setelah Approve Plan, orchestrator menangani verification, recovery, preview, dan delivery certification secara otomatis. Setelah evidence lengkap, Anda hanya perlu menekan Final Acceptance."
-            : "Orchestrator menangani plan, verification, recovery, preview, dan delivery certification secara otomatis. Setelah evidence lengkap, Anda hanya perlu menekan Final Acceptance."}
+        <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-xs text-slate-300 flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-cyan-400 shrink-0" />
+          <span>
+            {evidence.automation?.planReviewRequired
+              ? "Autopilot Mode: Orchestrator menangani verifikasi, recovery, dev server preview, dan delivery certification secara otonom. Anda memegang kendali penuh pada review subtask dan Final Acceptance."
+              : "Orchestrator menangani plan, verification, recovery, preview, dan delivery certification secara otomatis. Anda memegang kendali pada Final Acceptance."}
+          </span>
         </div>
       )}
 
