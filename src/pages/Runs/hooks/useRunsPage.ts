@@ -50,19 +50,30 @@ export const useRunsPage = (): UseRunsPageReturn => {
 
   // Keep selectedRun in sync if runs change
   useEffect(() => {
-    if (requestedRunId && runs.length > 0) {
-      const requestedRun = runs.find((run) => run.runId === requestedRunId)
-      if (requestedRun && selectedRun?.runId !== requestedRun.runId) {
-        setSelectedRun(requestedRun)
-      }
-    } else if (!selectedRun && runs.length > 0) {
-      setSelectedRun(runs[0])
-    } else if (selectedRun && runs.length > 0) {
-      const updated = runs.find((r) => r.runId === selectedRun.runId)
-      if (updated && updated !== selectedRun) {
-        setSelectedRun(updated)
+    if (runs.length === 0) {
+      setSelectedRun(null)
+      return
+    }
+
+    const targetRunId = requestedRunId || selectedRun?.runId
+    if (targetRunId) {
+      const match = runs.find((r) => r.runId === targetRunId)
+      if (match) {
+        if (
+          !selectedRun ||
+          selectedRun.runId !== match.runId ||
+          selectedRun.state !== match.state ||
+          selectedRun.task?.status !== match.task?.status ||
+          selectedRun !== match
+        ) {
+          setSelectedRun(match)
+        }
+        return
       }
     }
+
+    // Fallback to first run if targetRunId not found
+    setSelectedRun(runs[0])
   }, [runs, requestedRunId, selectedRun])
 
   useEffect(() => {

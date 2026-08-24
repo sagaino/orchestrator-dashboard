@@ -53,6 +53,7 @@ const openAutomatedObjective = (result: ObjectiveIntakeResult, navigate: (path: 
 }
 
 const PENDING_OBJECTIVE_STORAGE_KEY = "orchestrator.pending-objective.v1"
+const INTAKE_PROMPT_STORAGE_KEY = "orchestrator.intake-prompt.v1"
 
 interface PendingObjectiveDraft {
   objectiveId: string
@@ -108,7 +109,24 @@ export const useTasks = (): UseTasksReturn => {
   const [freshProjectId, setFreshProjectId] = useState("")
   const [freshTargetDirectory, setFreshTargetDirectory] = useState("")
   const [freshBlueprint, setFreshBlueprint] = useState("frontend-vite")
-  const [prompt, setPrompt] = useState("")
+  const [prompt, setPrompt] = useState(() => {
+    if (intakePrompt) return intakePrompt
+    if (typeof window !== "undefined") {
+      return window.localStorage.getItem(INTAKE_PROMPT_STORAGE_KEY) || ""
+    }
+    return ""
+  })
+
+  // Auto-save draft prompt to localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (prompt.trim()) {
+      window.localStorage.setItem(INTAKE_PROMPT_STORAGE_KEY, prompt)
+    } else {
+      window.localStorage.removeItem(INTAKE_PROMPT_STORAGE_KEY)
+    }
+  }, [prompt])
+
   const [statusMessage, setStatusMessage] = useState<TaskStatusMessage | null>(null)
   const [attachedAssets, setAttachedAssets] = useState<AttachedAsset[]>([])
   const [objectiveResult, setObjectiveResult] = useState<ObjectiveIntakeResult | null>(null)

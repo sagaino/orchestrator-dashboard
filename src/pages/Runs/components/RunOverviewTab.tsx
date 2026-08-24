@@ -34,6 +34,19 @@ export const RunOverviewTab: React.FC<RunOverviewTabProps> = ({
 }) => {
   const [expandedLogs, setExpandedLogs] = useState<Record<string, boolean>>({})
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    scope: true,
+    verification: true,
+    finalization: true,
+    visual: true,
+  })
+
+  const toggleSection = (key: string) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }))
+  }
 
   const toggleLog = (scriptKey: string) => {
     setExpandedLogs((prev) => ({
@@ -142,60 +155,83 @@ export const RunOverviewTab: React.FC<RunOverviewTabProps> = ({
 
       {/* Scope Audit Card */}
       <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 space-y-2.5">
-        <div className="flex items-center justify-between">
+        <div 
+          onClick={() => toggleSection("scope")}
+          className="flex items-center justify-between cursor-pointer select-none"
+        >
           <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <ShieldCheck className="h-4 w-4 text-emerald-400" />
             Scope Audit Guard
           </span>
-          <span
-            className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded ${
-              evidenceTone(scopeStatus)
-            }`}
-          >
-            {scopeStatus}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded ${
+                evidenceTone(scopeStatus)
+              }`}
+            >
+              {scopeStatus}
+            </span>
+            {openSections.scope ? (
+              <ChevronUp className="h-4 w-4 text-slate-400" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-slate-400" />
+            )}
+          </div>
         </div>
 
-        <div className="text-xs space-y-1.5 text-slate-400">
-          <div>
-            <span className="text-slate-500">Allowed Paths: </span>
-            <span className="font-mono text-slate-300">
-              {evidence.scope.allowedPaths.join(", ") || "None"}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500">Changed Paths: </span>
-            <span className="font-mono text-slate-300">
-              {evidence.scope.changedPaths.join(", ") || "None"}
-            </span>
-          </div>
-          {evidence.scope.outOfScopePaths.length > 0 && (
+        {openSections.scope && (
+          <div className="text-xs space-y-1.5 text-slate-400 pt-1 border-t border-slate-800/50">
             <div>
-              <span className="text-rose-400">Out of Scope: </span>
-              <span className="font-mono text-rose-300">
-                {evidence.scope.outOfScopePaths.join(", ")}
+              <span className="text-slate-500">Allowed Paths: </span>
+              <span className="font-mono text-slate-300">
+                {evidence.scope.allowedPaths.join(", ") || "None"}
               </span>
             </div>
-          )}
-        </div>
+            <div>
+              <span className="text-slate-500">Changed Paths: </span>
+              <span className="font-mono text-slate-300">
+                {evidence.scope.changedPaths.join(", ") || "None"}
+              </span>
+            </div>
+            {evidence.scope.outOfScopePaths.length > 0 && (
+              <div>
+                <span className="text-rose-400">Out of Scope: </span>
+                <span className="font-mono text-rose-300">
+                  {evidence.scope.outOfScopePaths.join(", ")}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Verification Results with Collapsible Terminal Viewer */}
       <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 space-y-3">
-        <div className="flex items-center justify-between">
+        <div 
+          onClick={() => toggleSection("verification")}
+          className="flex items-center justify-between cursor-pointer select-none"
+        >
           <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <Terminal className="h-4 w-4 text-indigo-400" />
             Verification & Test Gates
           </span>
-          {results.length > 0 && (
-            <span className="text-[11px] font-mono text-slate-400">
-              {results.filter((r) => r.status === "PASS").length}/{results.length} Passed
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {results.length > 0 && (
+              <span className="text-[11px] font-mono text-slate-400">
+                {results.filter((r) => r.status === "PASS").length}/{results.length} Passed
+              </span>
+            )}
+            {openSections.verification ? (
+              <ChevronUp className="h-4 w-4 text-slate-400" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-slate-400" />
+            )}
+          </div>
         </div>
 
-        {results.length > 0 ? (
-          <div className="space-y-2.5">
+        {openSections.verification && (
+          results.length > 0 ? (
+            <div className="space-y-2.5 pt-1">
             {results.map((v: RunEvidenceVerificationResult) => {
               const isExpanded = !!expandedLogs[v.command]
               const hasOutput = Boolean(v.stdoutTail?.trim() || v.stderrTail?.trim())
@@ -326,77 +362,89 @@ export const RunOverviewTab: React.FC<RunOverviewTabProps> = ({
           </div>
         ) : (
           <p className="text-xs text-slate-500 italic">Belum ada data verifikasi yang dicatat.</p>
-        )}
+        ))}
       </div>
 
       {/* Transactional finalization evidence */}
       <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-800 space-y-3">
-        <div className="flex items-center justify-between">
+        <div 
+          onClick={() => toggleSection("finalization")}
+          className="flex items-center justify-between cursor-pointer select-none"
+        >
           <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <GitCommit className="h-4 w-4 text-cyan-400" />
             Acceptance & Finalization
           </span>
-          <span className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded ${
-            evidence.finalization.status === "APPLIED"
-              ? "bg-emerald-500/15 text-emerald-300"
-              : evidence.finalization.status === "FAILED"
-                ? "bg-rose-500/15 text-rose-300"
-                : "bg-amber-500/15 text-amber-300"
-          }`}>
-            {evidence.finalization.status}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded ${
+              evidence.finalization.status === "APPLIED"
+                ? "bg-emerald-500/15 text-emerald-300"
+                : evidence.finalization.status === "FAILED"
+                  ? "bg-rose-500/15 text-rose-300"
+                  : "bg-amber-500/15 text-amber-300"
+            }`}>
+              {evidence.finalization.status}
+            </span>
+            {openSections.finalization ? (
+              <ChevronUp className="h-4 w-4 text-slate-400" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-slate-400" />
+            )}
+          </div>
         </div>
 
-        <div className="grid gap-2 text-xs text-slate-400 md:grid-cols-2">
-          <div className="flex items-center gap-1.5">
-            <UserCheck className="h-3.5 w-3.5 text-slate-500" />
-            <span>Human acceptance: </span>
-            <span className="font-mono text-slate-200">
-              {evidence.finalization.humanApproved
-                ? `${evidence.finalization.acceptedBy || "unknown"}${evidence.finalization.acceptedAt ? ` • ${new Date(evidence.finalization.acceptedAt).toLocaleString()}` : ""}`
-                : "UNAVAILABLE"}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500">Git: </span>
-            <span className="font-mono text-slate-200">{evidence.finalization.git.status}</span>
-          </div>
-          <div className="md:col-span-2">
-            <span className="text-slate-500">Applied Paths: </span>
-            <span className="font-mono text-slate-200">
-              {evidence.finalization.appliedPaths.join(", ") || "None"}
-            </span>
-          </div>
-          {evidence.finalization.git.commitHash && (
+        {openSections.finalization && (
+          <div className="grid gap-2 text-xs text-slate-400 md:grid-cols-2 pt-1 border-t border-slate-800/50">
+            <div className="flex items-center gap-1.5">
+              <UserCheck className="h-3.5 w-3.5 text-slate-500" />
+              <span>Human acceptance: </span>
+              <span className="font-mono text-slate-200">
+                {evidence.finalization.humanApproved
+                  ? `${evidence.finalization.acceptedBy || "unknown"}${evidence.finalization.acceptedAt ? ` • ${new Date(evidence.finalization.acceptedAt).toLocaleString()}` : ""}`
+                  : "UNAVAILABLE"}
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-500">Git: </span>
+              <span className="font-mono text-slate-200">{evidence.finalization.git.status}</span>
+            </div>
             <div className="md:col-span-2">
-              <span className="text-slate-500">Commit: </span>
-              <span className="font-mono text-cyan-300">{evidence.finalization.git.commitHash}</span>
+              <span className="text-slate-500">Applied Paths: </span>
+              <span className="font-mono text-slate-200">
+                {evidence.finalization.appliedPaths.join(", ") || "None"}
+              </span>
             </div>
-          )}
-          <div>
-            <span className="text-slate-500">Post-apply gates: </span>
-            <span className={`font-mono ${
-              evidence.finalization.postApplyVerification.status === "PASS"
-                ? "text-emerald-300"
-                : evidence.finalization.postApplyVerification.status === "FAIL"
-                  ? "text-rose-300"
-                  : "text-amber-300"
-            }`}>
-              {evidence.finalization.postApplyVerification.status}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500">Workspace: </span>
-            <span className="font-mono text-slate-200">{evidence.finalization.workspaceState || "UNAVAILABLE"}</span>
-          </div>
-          {evidence.finalization.artifactPath && (
-            <div className="md:col-span-2 flex items-center gap-1.5">
-              <Archive className="h-3.5 w-3.5 text-slate-500" />
-              <span className="text-slate-500">Artifact: </span>
-              <span className="font-mono text-slate-200">{evidence.finalization.artifactPath}</span>
+            {evidence.finalization.git.commitHash && (
+              <div className="md:col-span-2">
+                <span className="text-slate-500">Commit: </span>
+                <span className="font-mono text-cyan-300">{evidence.finalization.git.commitHash}</span>
+              </div>
+            )}
+            <div>
+              <span className="text-slate-500">Post-apply gates: </span>
+              <span className={`font-mono ${
+                evidence.finalization.postApplyVerification.status === "PASS"
+                  ? "text-emerald-300"
+                  : evidence.finalization.postApplyVerification.status === "FAIL"
+                    ? "text-rose-300"
+                    : "text-amber-300"
+              }`}>
+                {evidence.finalization.postApplyVerification.status}
+              </span>
             </div>
-          )}
-        </div>
+            <div>
+              <span className="text-slate-500">Workspace: </span>
+              <span className="font-mono text-slate-200">{evidence.finalization.workspaceState || "UNAVAILABLE"}</span>
+            </div>
+            {evidence.finalization.artifactPath && (
+              <div className="md:col-span-2 flex items-center gap-1.5">
+                <Archive className="h-3.5 w-3.5 text-slate-500" />
+                <span className="text-slate-500">Artifact: </span>
+                <span className="font-mono text-slate-200">{evidence.finalization.artifactPath}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {evidence.integrity.status === "WARNING" && (

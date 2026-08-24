@@ -16,10 +16,12 @@ import {
   Target,
   Inbox,
   Wrench,
+  Search,
 } from "lucide-react"
 import { useDaemonStatus, useNotifications, useMarkNotificationsRead } from "@/hooks/use-orchestrator"
 import { useSSEEvents } from "@/providers/EventsContext"
 import { AddProjectModal } from "@/components/project/AddProjectModal"
+import { GlobalCommandPalette } from "@/components/layout/GlobalCommandPalette"
 import { FloatingHarvestProgress } from "@/components/knowledge/FloatingHarvestProgress"
 import {
   Popover,
@@ -53,6 +55,7 @@ export const DashboardLayout: React.FC = () => {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [addProjectOpen, setAddProjectOpen] = useState(false)
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
 
   const navItems = [
     { label: "Overview", to: "/", icon: LayoutDashboard },
@@ -231,6 +234,18 @@ export const DashboardLayout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
+            {/* Quick Command Palette Button */}
+            <button
+              type="button"
+              onClick={() => setCommandPaletteOpen(true)}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-xs text-slate-400 hover:text-slate-200 transition-colors shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
+              title="Command Palette (Cmd+K)"
+            >
+              <Search className="h-3.5 w-3.5 text-slate-400" />
+              <span className="hidden sm:inline">Search...</span>
+              <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-slate-900 border border-slate-700 rounded text-slate-400">⌘K</kbd>
+            </button>
+
             {/* Add Project Button */}
             <button
               type="button"
@@ -351,6 +366,13 @@ export const DashboardLayout: React.FC = () => {
       <AddProjectModal
         isOpen={addProjectOpen}
         onClose={() => setAddProjectOpen(false)}
+      />
+
+      {/* Global Command Palette */}
+      <GlobalCommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        onAddProject={() => setAddProjectOpen(true)}
       />
 
       {/* Floating Background Harvest Progress Dock */}
