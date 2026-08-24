@@ -26,7 +26,9 @@ import type {
   ObjectiveMode,
   ObjectiveLifecycleDetail,
   ObjectiveEvidence,
+  DeliveryCertification,
   DeliveryCertificationHistory,
+  VisualCaptureReport,
   SkillCatalog,
   ObjectiveGraph,
   ObjectiveSummary,
@@ -70,6 +72,14 @@ export const queryKeys = {
   objectives: ["objectives"] as const,
   skills: ["skills"] as const,
   decisionInbox: ["decisions", "inbox"] as const,
+}
+
+function blockedDeliveryCertificationFromError(error: unknown): DeliveryCertification | null {
+  const payload = (error as { response?: { data?: { data?: unknown } } })?.response?.data?.data
+  if (!payload || typeof payload !== "object") return null
+  const candidate = payload as Partial<DeliveryCertification>
+  if (typeof candidate.certificationId !== "string" || !Array.isArray(candidate.checks) || !Array.isArray(candidate.blockers)) return null
+  return payload as DeliveryCertification
 }
 
 // --- Query Hooks ---
@@ -621,6 +631,7 @@ export function useCancelObjective() {
     onSuccess: (result, objectiveId) => {
       queryClient.setQueryData(queryKeys.objective(objectiveId), (current: ObjectiveLifecycleDetail | undefined) => current ? { ...current, ...result.objective, plan: result.plan } : current)
       queryClient.invalidateQueries({ queryKey: queryKeys.objective(objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectives })
     },
   })
 }
@@ -659,6 +670,18 @@ export function useCreateDeliveryCertification() {
       queryClient.setQueryData(queryKeys.deliveryCertification(objectiveId), { latest: result, history: [result] })
       queryClient.invalidateQueries({ queryKey: queryKeys.deliveryCertification(objectiveId) })
     },
+    onError: (error, objectiveId) => {
+      // The API returns HTTP 409 when a certification bundle is created but
+      // remains blocked. Preserve that bundle so the UI shows the latest
+      // machine-check result instead of leaving the previous certification visible.
+      const result = blockedDeliveryCertificationFromError(error)
+      if (!result) return
+      queryClient.setQueryData(queryKeys.deliveryCertification(objectiveId), (current: DeliveryCertificationHistory | undefined) => {
+        const history = current?.history ?? []
+        return { latest: result, history: [result, ...history.filter((item) => item.certificationId !== result.certificationId)] }
+      })
+      queryClient.invalidateQueries({ queryKey: queryKeys.deliveryCertification(objectiveId) })
+    },
   })
 }
 
@@ -686,6 +709,18 @@ export function useRequestObjectiveVisualChanges() {
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.objectiveEvidence(variables.objectiveId) })
+    },
+  })
+}
+
+export function useCaptureVisualEvidence() {
+  const queryClient = useQueryClient()
+  return useMutation<VisualCaptureReport, Error, { objectiveId: string; runId: string; baseUrl: string; route?: string }>({
+    mutationFn: ({ runId, baseUrl, route }) => OrchestratorApi.captureRunVisualEvidence(runId, { baseUrl, route }),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectiveEvidence(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.deliveryCertification(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.runVisualEvidence(variables.runId) })
     },
   })
 }

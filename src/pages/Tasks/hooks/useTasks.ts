@@ -43,16 +43,44 @@ const extractErrorMessage = (error: unknown): string => {
   return error instanceof Error ? error.message : String(error)
 }
 
+const PENDING_OBJECTIVE_STORAGE_KEY = "orchestrator.pending-objective.v1"
+
+interface PendingObjectiveDraft {
+  objectiveId: string
+  request: string
+  mode: ObjectiveMode
+}
+
+function readPendingObjectiveDraft(): PendingObjectiveDraft | null {
+  if (typeof window === "undefined") return null
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(PENDING_OBJECTIVE_STORAGE_KEY) || "null")
+    if (!parsed || typeof parsed.objectiveId !== "string" || typeof parsed.request !== "string") return null
+    return parsed as PendingObjectiveDraft
+  } catch {
+    return null
+  }
+}
+
+function savePendingObjectiveDraft(draft: PendingObjectiveDraft) {
+  if (typeof window !== "undefined") window.localStorage.setItem(PENDING_OBJECTIVE_STORAGE_KEY, JSON.stringify(draft))
+}
+
+function clearPendingObjectiveDraft() {
+  if (typeof window !== "undefined") window.localStorage.removeItem(PENDING_OBJECTIVE_STORAGE_KEY)
+}
+
 export const useTasks = (): UseTasksReturn => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const reviewObjectiveId = searchParams.get("objectiveId")
+  const [storedPendingObjective] = useState(readPendingObjectiveDraft)
   const { data: projects = [] } = useProjects()
   const [targetMode, setTargetMode] = useState<ObjectiveMode>("EXISTING_PROJECT")
   const [selectedProject, setSelectedProject] = useState("orchestrator-dashboard")
   const [linkedProjectIds, setLinkedProjectIds] = useState<string[]>([])
   const { data: relationshipData, isLoading: relationshipsLoading } = useProjectRelationships(selectedProject, crossProjectEnabled && targetMode === "CROSS_PROJECT_INCIDENT")
-  const { data: objectiveDetail } = useObjective(reviewObjectiveId)
+  const { data: objectiveDetail } = useObjective(reviewObjectiveId || storedPendingObjective?.objectiveId || null)
   const { data: daemon = null, refetch: refetchDaemon } = useDaemonStatus()
   const { data: jobs = [] } = useJobs()
   const { mutateAsync: createObjective, isPending: creatingObjective } = useCreateObjective()
@@ -105,8 +133,24 @@ export const useTasks = (): UseTasksReturn => {
   const [clarificationOpen, setClarificationOpen] = useState(false)
   const [clarificationQuestion, setClarificationQuestion] = useState("")
   const [clarificationAnswer, setClarificationAnswer] = useState("")
-  const [pendingPrompt, setPendingPrompt] = useState("")
-  const [pendingObjectiveId, setPendingObjectiveId] = useState<string | null>(null)
+  const [pendingPrompt, setPendingPrompt] = useState(storedPendingObjective?.request || "")
+  const [pendingObjectiveId, setPendingObjectiveId] = useState<string | null>(storedPendingObjective?.objectiveId || null)
+
+  useEffect(() => {
+    if (reviewObjectiveId || !storedPendingObjective || !objectiveDetail) return
+    if (!["PLANNING", "NEEDS_CLARIFICATION"].includes(objectiveDetail.state)) return
+    setTargetMode(objectiveDetail.mode as ObjectiveMode)
+    setSelectedProject(objectiveDetail.projectIds[0] || "")
+    setPrompt(objectiveDetail.request)
+    setPendingPrompt(objectiveDetail.request)
+    setPendingObjectiveId(objectiveDetail.objectiveId)
+    setObjectiveResult({
+      objective: objectiveDetail,
+      summary: {},
+      planning: { started: false, readOnly: true, tasksCreated: 0, jobsCreated: 0, runsCreated: 0 },
+    })
+    setStatusMessage({ type: "error", text: "Objective plan belum selesai. Lanjutkan dengan Retry Generate Plan." })
+  }, [objectiveDetail, reviewObjectiveId, storedPendingObjective])
 
   const handleAddAsset = (asset: AttachedAsset) => {
     setAttachedAssets((prev) => [...prev, asset])
@@ -236,6 +280,7 @@ export const useTasks = (): UseTasksReturn => {
         setObjectiveResult(objective)
         setPendingObjectiveId(objective.objective.objectiveId)
         setPendingPrompt(trimmedPrompt)
+        savePendingObjectiveDraft({ objectiveId: objective.objective.objectiveId, request: trimmedPrompt, mode: "CROSS_PROJECT_INCIDENT" })
         const res = await generateObjectivePlan({ objectiveId: objective.objective.objectiveId })
 
         if (isClarificationNeeded(res)) {
@@ -255,6 +300,7 @@ export const useTasks = (): UseTasksReturn => {
         setPrompt("")
         setPendingPrompt("")
         setPendingObjectiveId(null)
+        clearPendingObjectiveDraft()
         const successText = `Linked Projects objective ${res.objective.objectiveId} dan ${res.plan.planId} siap untuk review.`
         setStatusMessage({ type: "success", text: successText })
         toast.add({ title: "Linked Projects Plan Siap Direview", description: "Review diagnostic evidence, relationship, contract checks, dan plan sebelum melanjutkan.", type: "success" })
@@ -283,6 +329,7 @@ export const useTasks = (): UseTasksReturn => {
       setObjectiveResult(objective)
       setPendingObjectiveId(objective.objective.objectiveId)
       setPendingPrompt(trimmedPrompt)
+      savePendingObjectiveDraft({ objectiveId: objective.objective.objectiveId, request: trimmedPrompt, mode: "EXISTING_PROJECT" })
       const res = await generateObjectivePlan({ objectiveId: objective.objective.objectiveId })
 
       if (isClarificationNeeded(res)) {
@@ -312,6 +359,7 @@ export const useTasks = (): UseTasksReturn => {
       setAttachedAssets([])
       setPendingPrompt("")
       setPendingObjectiveId(null)
+      clearPendingObjectiveDraft()
       toast.add({
         title: "Plan Objective Siap Direview",
         description: successText,
@@ -369,6 +417,7 @@ export const useTasks = (): UseTasksReturn => {
       setPrompt("")
       setPendingPrompt("")
       setPendingObjectiveId(null)
+      clearPendingObjectiveDraft()
       setPlanReviewObjective(res.objective)
       setPlanReview(res.plan)
       setPlanReviewDecisions(res.decisions ?? [])
@@ -392,6 +441,37 @@ export const useTasks = (): UseTasksReturn => {
         description: errorMessage,
         type: "error",
       })
+    }
+  }
+
+  const handleRetryPlan = async () => {
+    if (!pendingObjectiveId) return
+    try {
+      setStatusMessage(null)
+      const res = await generateObjectivePlan({ objectiveId: pendingObjectiveId })
+      if (isClarificationNeeded(res)) {
+        const questionText = extractClarificationQuestion(res)
+        setClarificationQuestion(questionText)
+        setClarificationAnswer("")
+        setClarificationOpen(true)
+        setStatusMessage({ type: "error", text: "Klarifikasi diperlukan sebelum plan dapat dibuat." })
+        return
+      }
+      if (!res.plan) throw new Error("Planner tidak menghasilkan plan review.")
+      setPlanReviewObjective(res.objective)
+      setPlanReview(res.plan)
+      setPlanReviewDecisions(res.decisions ?? [])
+      setPlanReviewOpen(true)
+      setPrompt("")
+      setPendingPrompt("")
+      setPendingObjectiveId(null)
+      clearPendingObjectiveDraft()
+      setStatusMessage({ type: "success", text: `Objective ${res.objective.objectiveId} dan ${res.plan.planId} siap untuk review.` })
+      toast.add({ title: "Plan Objective Siap Direview", description: "Retry berhasil melanjutkan objective yang sama.", type: "success" })
+    } catch (err: unknown) {
+      const errorMessage = extractErrorMessage(err)
+      setStatusMessage({ type: "error", text: `Retry objective plan gagal: ${errorMessage}` })
+      toast.add({ title: "Retry Plan Gagal", description: errorMessage, type: "error" })
     }
   }
 
@@ -459,6 +539,9 @@ export const useTasks = (): UseTasksReturn => {
       setPlanReviewObjective(result.objective)
       setPlanReview(result.plan)
       setPlanReviewOpen(false)
+      setPendingPrompt("")
+      setPendingObjectiveId(null)
+      clearPendingObjectiveDraft()
       setStatusMessage({ type: "success", text: `Objective ${result.objective.objectiveId} dibatalkan. Tidak ada task atau run yang dijalankan.` })
       toast.add({ title: "Objective Dibatalkan", description: "Plan aktif tidak lagi dapat dieksekusi.", type: "success" })
     } catch (err: unknown) {
@@ -502,6 +585,7 @@ export const useTasks = (): UseTasksReturn => {
     setStatusMessage,
     submitting: submittingState,
     handleSubmit,
+    handleRetryPlan,
     refetchDaemon,
     clarificationOpen,
     setClarificationOpen,

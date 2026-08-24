@@ -26,6 +26,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
   isUploadingAsset,
   onUploadFile,
   statusMessage,
+  onRetryPlan,
   submitting,
   onSubmit,
 }) => {
@@ -382,6 +383,16 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
               <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
             )}
             <span>{statusMessage.text}</span>
+            {statusMessage.type === "error" && onRetryPlan && (
+              <button
+                type="button"
+                onClick={onRetryPlan}
+                disabled={submitting}
+                className="ml-auto shrink-0 rounded-md border border-rose-400/40 bg-rose-500/10 px-2.5 py-1.5 font-medium text-rose-200 transition-colors hover:bg-rose-500/20 disabled:opacity-50"
+              >
+                Retry Generate Plan
+              </button>
+            )}
           </div>
         )}
 

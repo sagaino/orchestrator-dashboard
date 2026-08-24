@@ -6,6 +6,7 @@ import {
   useAggregatePreview,
   useStopAggregatePreview,
   useRequestObjectiveVisualChanges,
+  useCaptureVisualEvidence,
   useDeliveryCertification,
   useCreateDeliveryCertification,
   useAcceptDeliveryCertification,
@@ -24,6 +25,7 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
   const aggregate = useAggregatePreview()
   const stopAggregate = useStopAggregatePreview()
   const visualRepair = useRequestObjectiveVisualChanges()
+  const visualCapture = useCaptureVisualEvidence()
   const delivery = useDeliveryCertification(objective.objectiveId)
   const createDelivery = useCreateDeliveryCertification()
   const acceptDelivery = useAcceptDeliveryCertification()
@@ -62,6 +64,11 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     setPreviewMessage(`Visual repair untuk ${nodeId} disetujui.`)
   }
 
+  const handleVisualCapture = async (runId: string, baseUrl: string) => {
+    await visualCapture.mutateAsync({ objectiveId: objective.objectiveId, runId, baseUrl, route: "/" })
+    setPreviewMessage(`Visual capture untuk ${runId} selesai.`)
+  }
+
   const handleDeliveryRun = async () => {
     await createDelivery.mutateAsync(objective.objectiveId)
   }
@@ -98,6 +105,8 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     aggregatePending: aggregate.isPending,
     stopAggregatePending: stopAggregate.isPending,
     visualRepairPending: visualRepair.isPending,
+    visualCapturePending: visualCapture.isPending,
+    visualCaptureRunId: visualCapture.variables?.runId ?? null,
     createDeliveryPending: createDelivery.isPending,
     acceptDeliveryPending: acceptDelivery.isPending,
     integrationPending: integration.isPending,
@@ -106,6 +115,7 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     handleAggregatePreview,
     handleStopAggregatePreview,
     handleVisualRepair,
+    handleVisualCapture,
     handleDeliveryRun,
     handleDeliveryAccept,
     handleIntegration,

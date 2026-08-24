@@ -45,6 +45,8 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
     aggregatePending,
     stopAggregatePending,
     visualRepairPending,
+    visualCapturePending,
+    visualCaptureRunId,
     createDeliveryPending,
     acceptDeliveryPending,
     integrationPending,
@@ -53,6 +55,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
     handleAggregatePreview,
     handleStopAggregatePreview,
     handleVisualRepair,
+    handleVisualCapture,
     handleDeliveryRun,
     handleDeliveryAccept,
     handleIntegration,
@@ -144,8 +147,11 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
 
       <ObjectiveVisualEvidencePanel
         report={evidence.visualEvidence}
+        preview={aggregatePreview}
         onRepair={handleVisualRepair}
+        onCapture={handleVisualCapture}
         repairing={visualRepairPending}
+        capturingRunId={visualCapturePending ? visualCaptureRunId : null}
       />
 
       <DeliveryCertificationPanel

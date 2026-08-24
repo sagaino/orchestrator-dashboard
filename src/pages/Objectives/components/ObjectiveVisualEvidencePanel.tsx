@@ -5,8 +5,11 @@ import type { ObjectiveVisualEvidencePanelProps } from "../types"
 
 export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanelProps> = ({
   report,
+  preview,
   onRepair,
+  onCapture,
   repairing,
+  capturingRunId,
 }) => {
   const [repairNodeId, setRepairNodeId] = useState<string | null>(null)
   const [reason, setReason] = useState("")
@@ -24,6 +27,15 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
       setReason("")
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Repair path tidak dapat dibuat.")
+    }
+  }
+
+  const capture = async (runId: string, baseUrl: string) => {
+    try {
+      await onCapture(runId, baseUrl)
+      setMessage(`Visual capture untuk ${runId} selesai.`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Visual capture tidak dapat dibuat.")
     }
   }
 
@@ -56,21 +68,39 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
                 <p className="font-mono text-xs text-violet-200">{node.nodeId} · {node.projectId}</p>
                 <p className="mt-1 text-[11px] text-slate-500">Run: {node.runId ?? "—"} · State: {node.runState ?? "NO_RUN"}</p>
               </div>
-              {node.requestChanges.available && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={repairing}
-                  onClick={() => {
-                    setRepairNodeId(node.nodeId)
-                    setMessage(null)
-                  }}
-                  className="gap-1.5 border-violet-500/30 text-violet-200 hover:bg-violet-500/10"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />Request changes
-                </Button>
-              )}
+              <div className="flex flex-wrap justify-end gap-2">
+                {preview?.cleanup.status === "ACTIVE" && preview.status !== "UNAVAILABLE" && node.runId && (() => {
+                  const projectPreview = preview.previews.find((item) => item.projectId === node.projectId && item.url)
+                  if (!projectPreview) return null
+                  return (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={capturingRunId !== null}
+                      onClick={() => void capture(node.runId!, projectPreview.url)}
+                      className="border-cyan-500/30 text-cyan-200 hover:bg-cyan-500/10"
+                    >
+                      {capturingRunId === node.runId ? "Capturing…" : node.captureRefs.length > 0 ? "Capture again" : "Capture visual"}
+                    </Button>
+                  )
+                })()}
+                {node.requestChanges.available && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={repairing}
+                    onClick={() => {
+                      setRepairNodeId(node.nodeId)
+                      setMessage(null)
+                    }}
+                    className="gap-1.5 border-violet-500/30 text-violet-200 hover:bg-violet-500/10"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />Request changes
+                  </Button>
+                )}
+              </div>
             </div>
             {node.verificationChecks.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">

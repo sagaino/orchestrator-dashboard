@@ -56,8 +56,11 @@ export interface AggregatePreviewPanelProps {
 
 export interface ObjectiveVisualEvidencePanelProps {
   report?: ObjectiveVisualEvidence
+  preview: AggregatePreview | null
   onRepair: (nodeId: string, reason: string) => Promise<void>
+  onCapture: (runId: string, baseUrl: string) => Promise<void>
   repairing: boolean
+  capturingRunId: string | null
 }
 
 export interface DeliveryCertificationPanelProps {
@@ -120,6 +123,8 @@ export interface UseEvidenceViewReturn {
   aggregatePending: boolean
   stopAggregatePending: boolean
   visualRepairPending: boolean
+  visualCapturePending: boolean
+  visualCaptureRunId: string | null
   createDeliveryPending: boolean
   acceptDeliveryPending: boolean
   integrationPending: boolean
@@ -128,6 +133,7 @@ export interface UseEvidenceViewReturn {
   handleAggregatePreview: () => Promise<void>
   handleStopAggregatePreview: () => Promise<void>
   handleVisualRepair: (nodeId: string, reason: string) => Promise<void>
+  handleVisualCapture: (runId: string, baseUrl: string) => Promise<void>
   handleDeliveryRun: () => Promise<void>
   handleDeliveryAccept: () => Promise<void>
   handleIntegration: () => Promise<void>

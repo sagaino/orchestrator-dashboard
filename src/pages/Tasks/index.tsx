@@ -31,6 +31,7 @@ export const TasksPage: React.FC = () => {
     statusMessage,
     submitting,
     handleSubmit,
+    handleRetryPlan,
     refetchDaemon,
     clarificationOpen,
     clarificationQuestion,
@@ -89,6 +90,7 @@ export const TasksPage: React.FC = () => {
             isUploadingAsset={isUploadingAsset}
             onUploadFile={handleUploadFile}
             statusMessage={statusMessage}
+            onRetryPlan={handleRetryPlan}
             submitting={submitting}
             onSubmit={handleSubmit}
           />
