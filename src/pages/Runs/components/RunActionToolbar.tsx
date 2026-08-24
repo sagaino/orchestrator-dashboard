@@ -20,11 +20,11 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
   onAccept,
   onReject,
   onRecover,
-  onRetry,
 }) => {
   const taskFailed = String(selectedRun.task.status ?? "").toUpperCase() === "FAILED"
   const objectiveId = selectedRun.task.objectiveId ?? selectedRun.execution?.orchestration?.objectiveId ?? null
   const orchestrationManaged = selectedRun.task.orchestrationManaged === true || Boolean(objectiveId)
+  const legacyObjectivePath = `/tasks?projectId=${encodeURIComponent(selectedRun.project.id)}&prompt=${encodeURIComponent(selectedRun.task.title || selectedRun.task.id)}`
 
   return (
     <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 space-y-3">
@@ -111,14 +111,16 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
                 <span>Request retry via Objective</span>
               </Link>
             ) : !orchestrationManaged && taskFailed ? (
-              <button
-                onClick={() => onRetry(selectedRun.runId)}
-                disabled={actionLoading}
-                className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Retry Task</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  to={legacyObjectivePath}
+                  className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  <ArrowRight className="h-3.5 w-3.5" />
+                  <span>Buat Objective pengganti</span>
+                </Link>
+                <span className="max-w-sm text-[11px] leading-relaxed text-slate-400">Task ini berasal dari flow lama. Task baru diproses melalui Objective agar dependency dan audit tetap konsisten.</span>
+              </div>
             ) : (
               <p className="max-w-sm text-[11px] leading-relaxed text-slate-400">
                 Retry node dilakukan dari Objective melalui Decision Inbox agar dependency, batas worker, dan audit tetap konsisten.

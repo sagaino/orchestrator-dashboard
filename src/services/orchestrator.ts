@@ -104,7 +104,29 @@ export interface OperationsReadiness {
   admission: { allowed: boolean; blockers: Array<{ id: string; message: string; action: string }> }
   checks: OperationsCheck[]
   alerts: Array<OperationsAlert>
-  signals: Record<string, unknown>
+  signals: Record<string, unknown> & {
+    runtimeConfig?: RuntimeConfigSnapshot
+    queue?: QueueCapacitySnapshot
+  }
+}
+
+export interface RuntimeConfigSnapshot {
+  schemaVersion: number
+  profile: string
+  flags: Record<string, boolean>
+  capacity: { maxParallelJobs: number }
+}
+
+export interface QueueCapacitySnapshot {
+  queued: number
+  running: number
+  review: number
+  oldestAgeMs: number
+  maxWorkers: number | null
+  activeWorkers: number
+  availableWorkerSlots: number | null
+  eligibleQueuedJobCount: number | null
+  blockedQueuedJobCount: number | null
 }
 
 export interface OperationsArtifactCoverage {
@@ -245,6 +267,13 @@ export interface ProjectRelationshipsResult {
   effectiveRelationships?: ProjectRelationship[]
   allowedTypes: ProjectRelationshipType[]
   registeredProjectIds: string[]
+  diagnostics?: Array<{
+    type: ProjectRelationshipType
+    targetProjectId: string
+    status: "READY" | "METADATA_ONLY" | string
+    warnings: string[]
+  }>
+  hasMetadataOnlyRelationships?: boolean
 }
 
 export interface ReplaceProjectRelationshipsResult extends ProjectRelationshipsResult {

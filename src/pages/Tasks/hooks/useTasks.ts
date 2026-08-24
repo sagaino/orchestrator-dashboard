@@ -602,6 +602,7 @@ export const useTasks = (): UseTasksReturn => {
     selectedProject,
     setSelectedProject,
     projectRelationships: relationshipData?.effectiveRelationships ?? relationshipData?.relationships ?? [],
+    relationshipDiagnostics: relationshipData?.diagnostics ?? [],
     linkedProjectIds,
     setLinkedProjectIds,
     relationshipsLoading,

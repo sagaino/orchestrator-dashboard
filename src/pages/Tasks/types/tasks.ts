@@ -22,6 +22,7 @@ export interface TaskIntakeFormProps {
   selectedProject: string
   onSelectProject: (projectId: string) => void
   projectRelationships: ProjectRelationship[]
+  relationshipDiagnostics?: Array<{ type: string; targetProjectId: string; status: string; warnings: string[] }>
   linkedProjectIds: string[]
   onLinkedProjectIdsChange: (projectIds: string[]) => void
   relationshipsLoading?: boolean
@@ -94,6 +95,7 @@ export interface UseTasksReturn {
   selectedProject: string
   setSelectedProject: Dispatch<SetStateAction<string>>
   projectRelationships: ProjectRelationship[]
+  relationshipDiagnostics: Array<{ type: string; targetProjectId: string; status: string; warnings: string[] }>
   linkedProjectIds: string[]
   setLinkedProjectIds: Dispatch<SetStateAction<string[]>>
   relationshipsLoading: boolean
