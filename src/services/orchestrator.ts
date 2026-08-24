@@ -1529,10 +1529,10 @@ export const OrchestratorApi = {
       blueprint: string
     }
     attachments?: AttachedAsset[]
-  }) {
-    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  }, idempotencyKey?: string) {
+    const requestKey = idempotencyKey || globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
     const res = await axios.post<{ success: boolean; data: ObjectiveIntakeResult }>("/api/objectives", payload, {
-      headers: { "Idempotency-Key": `dashboard-objective-${randomPart}` },
+      headers: { "Idempotency-Key": `dashboard-objective-${requestKey}` },
     })
     return res.data.data
   },

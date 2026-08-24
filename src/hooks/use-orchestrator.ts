@@ -561,7 +561,11 @@ export function useCreateObjective() {
       projectIds?: string[]
       freshProject?: { projectId: string; targetDirectory: string; blueprint: string }
       attachments?: import("@/services/orchestrator").AttachedAsset[]
-    }) => OrchestratorApi.createObjective(payload),
+      idempotencyKey?: string
+    }) => {
+      const { idempotencyKey, ...objectivePayload } = payload
+      return OrchestratorApi.createObjective(objectivePayload, idempotencyKey)
+    },
   })
 }
 

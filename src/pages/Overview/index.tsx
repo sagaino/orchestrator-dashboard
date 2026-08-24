@@ -9,7 +9,6 @@ import {
 } from "./components"
 import { RemoveProjectModal } from "@/components/project/RemoveProjectModal"
 import { ProjectRelationshipsModal } from "@/components/project/ProjectRelationshipsModal"
-import { TaskConfirmationModal } from "@/pages/Tasks/components"
 
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate()
@@ -24,16 +23,9 @@ export const OverviewPage: React.FC = () => {
     setQuickPrompt,
     selectedProject,
     setSelectedProject,
-    submitting,
-    quickSuccess,
     reviewRuns,
     completedRuns,
     handleQuickSubmit,
-    confirmationOpen,
-    confirmationResult,
-    confirming,
-    handleCloseConfirmation,
-    handleConfirmQueue,
   } = useOverview()
 
   const handleLaunchTask = () => {
@@ -83,8 +75,6 @@ export const OverviewPage: React.FC = () => {
             onSelectProject={setSelectedProject}
             prompt={quickPrompt}
             onPromptChange={setQuickPrompt}
-            submitting={submitting}
-            successMessage={quickSuccess}
             onSubmit={handleQuickSubmit}
           />
         </div>
@@ -107,14 +97,6 @@ export const OverviewPage: React.FC = () => {
         onClose={() => setRelationshipProjectId(null)}
       />
 
-      <TaskConfirmationModal
-        isOpen={confirmationOpen}
-        result={confirmationResult}
-        queueAfterConfirmation
-        confirming={confirming}
-        onClose={handleCloseConfirmation}
-        onConfirm={handleConfirmQueue}
-      />
     </div>
   )
 }

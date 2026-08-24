@@ -1,5 +1,5 @@
 import React from "react"
-import { Sparkles, CheckCircle2, Play } from "lucide-react"
+import { ArrowRight, Sparkles } from "lucide-react"
 import type { QuickTaskIntakeProps } from "../types/overview"
 
 export const QuickTaskIntake: React.FC<QuickTaskIntakeProps> = ({
@@ -8,26 +8,25 @@ export const QuickTaskIntake: React.FC<QuickTaskIntakeProps> = ({
   onSelectProject,
   prompt,
   onPromptChange,
-  submitting,
-  successMessage,
   onSubmit,
 }) => {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-white flex items-center gap-2">
         <Sparkles className="h-5 w-5 text-purple-400" />
-        Quick Task Intake
+        Task Intake (Objective)
       </h2>
 
       <div className="p-6 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
         <p className="text-xs text-slate-400">
-          Kirim instruksi fitur/bugfix dengan bahasa alami. Orchestrator akan merancang canonical task di Wiki dan menjalankannya secara otonom.
+          Semua task baru diproses melalui Objective: buat plan, review, lalu jalankan dengan batas worker dan audit yang jelas.
         </p>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">Target Project</label>
+            <label htmlFor="overview-task-project" className="block text-xs font-medium text-slate-300 mb-1.5">Target Project</label>
             <select
+              id="overview-task-project"
               value={selectedProject}
               onChange={(e) => onSelectProject(e.target.value)}
               className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
@@ -41,8 +40,9 @@ export const QuickTaskIntake: React.FC<QuickTaskIntakeProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">Natural Language Prompt</label>
+            <label htmlFor="overview-task-prompt" className="block text-xs font-medium text-slate-300 mb-1.5">Natural Language Prompt</label>
             <textarea
+              id="overview-task-prompt"
               rows={4}
               value={prompt}
               onChange={(e) => onPromptChange(e.target.value)}
@@ -51,30 +51,16 @@ export const QuickTaskIntake: React.FC<QuickTaskIntakeProps> = ({
             />
           </div>
 
-          {successMessage && (
-            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span>{successMessage}</span>
-            </div>
-          )}
-
           <button
             type="submit"
-            disabled={submitting || !prompt.trim()}
+            disabled={!prompt.trim()}
             className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/20 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
-            {submitting ? (
-              <span>Planning & Queuing...</span>
-            ) : (
-              <>
-                <Play className="h-4 w-4 fill-white" />
-                <span>Dispatch Task to Agent</span>
-              </>
-            )}
+            <ArrowRight className="h-4 w-4" />
+            <span>Buka Task Intake</span>
           </button>
         </form>
       </div>
     </div>
   )
 }
-

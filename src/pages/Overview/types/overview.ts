@@ -1,4 +1,4 @@
-import type { DaemonStatus, ProjectInfo, RunManifest, TaskRequestResult } from "@/services/orchestrator"
+import type { DaemonStatus, ProjectInfo, RunManifest } from "@/services/orchestrator"
 
 export interface OverviewMetricsData {
   activeWorkers: number
@@ -32,8 +32,6 @@ export interface QuickTaskIntakeProps {
   onSelectProject: (projectId: string) => void
   prompt: string
   onPromptChange: (prompt: string) => void
-  submitting: boolean
-  successMessage: string | null
   onSubmit: (e: React.FormEvent) => void
 }
 
@@ -46,16 +44,9 @@ export interface UseOverviewReturn {
   setQuickPrompt: React.Dispatch<React.SetStateAction<string>>
   selectedProject: string
   setSelectedProject: React.Dispatch<React.SetStateAction<string>>
-  submitting: boolean
-  quickSuccess: string | null
   reviewRuns: RunManifest[]
   activeRuns: RunManifest[]
   completedRuns: RunManifest[]
-  handleQuickSubmit: (e: React.FormEvent) => Promise<void>
-  confirmationOpen: boolean
-  confirmationResult: TaskRequestResult | null
-  confirming: boolean
-  handleCloseConfirmation: () => void
-  handleConfirmQueue: () => Promise<void>
+  handleQuickSubmit: (e: React.FormEvent) => void
   loadData: () => Promise<void>
 }
