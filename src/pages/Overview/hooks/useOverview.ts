@@ -21,8 +21,8 @@ export const useOverview = (): UseOverviewReturn => {
     navigate(`/tasks?${params.toString()}`)
   }
 
-  const reviewRuns = runs.filter((r) => r.state === "REVIEW")
-  const activeRuns = runs.filter((r) => ["CLAIMED", "EXECUTING", "VERIFYING", "SCOPE_AUDIT"].includes(r.state))
+  const reviewRuns = runs.filter((r) => r.state === "REVIEW" || r.state === "RETROSPECTIVE")
+  const activeRuns = runs.filter((r) => ["PENDING_APPROVAL", "APPROVED", "CLAIMING", "CLAIMED", "RUNNING", "EXECUTING", "VERIFYING", "SCOPE_AUDIT"].includes(r.state))
   const completedRuns = runs.filter((r) => r.state === "DONE")
 
   return {
