@@ -138,6 +138,12 @@ export const useTasks = (): UseTasksReturn => {
 
   useEffect(() => {
     if (reviewObjectiveId || !storedPendingObjective || !objectiveDetail) return
+    if (["CANCELLED", "DONE", "FAILED"].includes(objectiveDetail.state)) {
+      clearPendingObjectiveDraft()
+      setPendingObjectiveId(null)
+      setPendingPrompt("")
+      return
+    }
     if (!["PLANNING", "NEEDS_CLARIFICATION"].includes(objectiveDetail.state)) return
     setTargetMode(objectiveDetail.mode as ObjectiveMode)
     setSelectedProject(objectiveDetail.projectIds[0] || "")

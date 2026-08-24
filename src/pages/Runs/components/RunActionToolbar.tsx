@@ -1,4 +1,5 @@
 import React from "react"
+import { Link } from "react-router-dom"
 import {
   ExternalLink,
   Sparkles,
@@ -6,6 +7,7 @@ import {
   Check,
   X,
   Wrench,
+  ArrowRight,
 } from "lucide-react"
 import type { RunActionToolbarProps } from "../types"
 
@@ -21,6 +23,8 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
   onRetry,
 }) => {
   const taskFailed = String(selectedRun.task.status ?? "").toUpperCase() === "FAILED"
+  const objectiveId = selectedRun.task.objectiveId ?? selectedRun.execution?.orchestration?.objectiveId ?? null
+  const orchestrationManaged = selectedRun.task.orchestrationManaged === true || Boolean(objectiveId)
 
   return (
     <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 space-y-3">
@@ -95,10 +99,18 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
               className="px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               <Wrench className="h-3.5 w-3.5" />
-              <span>Auto Recover</span>
+              <span>Recover verification</span>
             </button>
 
-            {taskFailed ? (
+            {orchestrationManaged && objectiveId ? (
+              <Link
+                to={`/objectives/${encodeURIComponent(objectiveId)}`}
+                className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                <ArrowRight className="h-3.5 w-3.5" />
+                <span>Request retry via Objective</span>
+              </Link>
+            ) : !orchestrationManaged && taskFailed ? (
               <button
                 onClick={() => onRetry(selectedRun.runId)}
                 disabled={actionLoading}
@@ -109,7 +121,7 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
               </button>
             ) : (
               <p className="max-w-sm text-[11px] leading-relaxed text-slate-400">
-                Retry Task tidak tersedia karena status task sudah <span className="font-mono text-slate-300">{selectedRun.task.status || "UNKNOWN"}</span>. Untuk retry orchestration, gunakan Decision Inbox.
+                Retry node dilakukan dari Objective melalui Decision Inbox agar dependency, batas worker, dan audit tetap konsisten.
               </p>
             )}
           </>

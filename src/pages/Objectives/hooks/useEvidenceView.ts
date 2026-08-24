@@ -10,14 +10,17 @@ import {
   useDeliveryCertification,
   useCreateDeliveryCertification,
   useAcceptDeliveryCertification,
+  useRequestObjectiveNodeRetry,
 } from "@/hooks/use-orchestrator"
-import type { AggregatePreview, ObjectiveEvidence, UseEvidenceViewReturn } from "../types"
+import type { AggregatePreview, ObjectiveEvidence, ObjectiveEvidenceNode, UseEvidenceViewReturn } from "../types"
 
 export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewReturn => {
   const objective = evidence.objective
   const [acceptOpen, setAcceptOpen] = useState(false)
   const [previewMessage, setPreviewMessage] = useState<string | null>(null)
   const [aggregatePreview, setAggregatePreview] = useState<AggregatePreview | null>(null)
+  const [retryNode, setRetryNode] = useState<ObjectiveEvidenceNode | null>(null)
+  const [retryReason, setRetryReason] = useState("")
 
   const accept = useAcceptObjective()
   const integration = useStartIntegration()
@@ -29,6 +32,7 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
   const delivery = useDeliveryCertification(objective.objectiveId)
   const createDelivery = useCreateDeliveryCertification()
   const acceptDelivery = useAcceptDeliveryCertification()
+  const nodeRetry = useRequestObjectiveNodeRetry()
 
   const handlePreview = async (runId: string) => {
     try {
@@ -94,6 +98,20 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     }
   }
 
+  const handleNodeRetry = async () => {
+    if (!retryNode) return
+    const reason = retryReason.trim() || "Retry setelah human review atas kegagalan node orchestration."
+    await nodeRetry.mutateAsync({
+      objectiveId: objective.objectiveId,
+      orchestrationId: typeof evidence.orchestration?.orchestrationId === "string" ? evidence.orchestration.orchestrationId : null,
+      nodeId: retryNode.nodeId,
+      reason,
+    })
+    setRetryNode(null)
+    setRetryReason("")
+    setPreviewMessage(`Retry decision untuk ${retryNode.nodeId} dibuat. Buka Decision Inbox untuk memilih RETRY.`)
+  }
+
   return {
     acceptOpen,
     setAcceptOpen,
@@ -110,6 +128,11 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     createDeliveryPending: createDelivery.isPending,
     acceptDeliveryPending: acceptDelivery.isPending,
     integrationPending: integration.isPending,
+    retryNode,
+    setRetryNode,
+    retryReason,
+    setRetryReason,
+    retryNodePending: nodeRetry.isPending,
     handlePreview,
     handleAccept,
     handleAggregatePreview,
@@ -119,5 +142,6 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     handleDeliveryRun,
     handleDeliveryAccept,
     handleIntegration,
+    handleNodeRetry,
   }
 }

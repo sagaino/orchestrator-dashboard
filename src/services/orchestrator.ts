@@ -533,6 +533,10 @@ export interface RunManifest {
     verification?: string[]
     allowedPaths?: string[]
     requiresChanges?: boolean
+    orchestrationManaged?: boolean
+    objectiveId?: string | null
+    orchestrationId?: string | null
+    nodeId?: string | null
     sources?: string[]
   }
   execution?: {
@@ -553,6 +557,13 @@ export interface RunManifest {
     graphify?: {
       skipped: boolean
       exitCode?: number
+    }
+    orchestration?: {
+      objectiveId?: string | null
+      orchestrationId?: string | null
+      nodeId?: string | null
+      attempt?: number
+      sameProjectParallel?: boolean
     }
   }
   telemetry?: {
@@ -1519,8 +1530,9 @@ export const OrchestratorApi = {
     }
     attachments?: AttachedAsset[]
   }) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
     const res = await axios.post<{ success: boolean; data: ObjectiveIntakeResult }>("/api/objectives", payload, {
-      headers: { "Idempotency-Key": `dashboard-objective-${stableRequestHash(payload)}` },
+      headers: { "Idempotency-Key": `dashboard-objective-${randomPart}` },
     })
     return res.data.data
   },
@@ -1607,6 +1619,16 @@ export const OrchestratorApi = {
 
   async requestObjectiveVisualChanges(objectiveId: string, payload: { nodeId: string; reason: string; requestedBy?: string; inlineComments?: InlineDiffComment[]; visualAnnotations?: Array<{ id?: string; x: number; y: number; width?: number; height?: number; comment: string; createdAt?: string }> }) {
     const res = await axios.post<{ success: boolean; data: ObjectiveVisualRepair }>(`/api/objectives/${encodeURIComponent(objectiveId)}/visual-evidence/request-changes`, payload)
+    return res.data.data
+  },
+
+  async requestObjectiveNodeRetry(objectiveId: string, payload: { orchestrationId?: string | null; nodeId: string; reason: string }) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: { decision: ObjectiveDecision; alreadyRequested: boolean } }>(
+      `/api/objectives/${encodeURIComponent(objectiveId)}/retry-node`,
+      payload,
+      { headers: { "Idempotency-Key": `dashboard-node-retry-${objectiveId}-${payload.nodeId}-${randomPart}` } },
+    )
     return res.data.data
   },
 
