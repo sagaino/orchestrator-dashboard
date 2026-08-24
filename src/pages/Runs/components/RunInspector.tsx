@@ -29,7 +29,6 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
   onAccept,
   onReject,
   onRecover,
-  onRetry,
 }) => {
   const {
     data: evidence,
@@ -95,7 +94,6 @@ export const RunInspector: React.FC<RunInspectorProps> = ({
         onAccept={onAccept}
         onReject={onReject}
         onRecover={onRecover}
-        onRetry={onRetry}
       />
 
       {/* Execution Timeline / State Stepper */}

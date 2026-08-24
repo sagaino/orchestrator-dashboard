@@ -8,8 +8,7 @@ import {
   useRequestChanges, 
   useStartRun,
   usePreviewRun,
-  useRecoverRun,
-  useRetryRun
+  useRecoverRun
 } from "@/hooks/use-orchestrator"
 import { toast } from "@/components/ui/toast"
 import type { UseRunsPageReturn, RunFilterState, RunTabType, InlineComment, VisualAnnotation } from "../types"
@@ -39,9 +38,8 @@ export const useRunsPage = (): UseRunsPageReturn => {
   const { mutateAsync: startRun, isPending: startPending } = useStartRun()
   const { mutateAsync: previewRun, isPending: previewPending } = usePreviewRun()
   const { mutateAsync: recoverRun, isPending: recoverPending } = useRecoverRun()
-  const { mutateAsync: retryRun, isPending: retryPending } = useRetryRun()
 
-  const actionLoading = acceptPending || rejectPending || changesPending || startPending || previewPending || recoverPending || retryPending
+  const actionLoading = acceptPending || rejectPending || changesPending || startPending || previewPending || recoverPending
 
   // Keep selectedRun in sync if runs change
   useEffect(() => {
@@ -305,25 +303,6 @@ export const useRunsPage = (): UseRunsPageReturn => {
     }
   }
 
-  const handleRetry = async (runId: string) => {
-    try {
-      await retryRun(runId)
-      toast.add({
-        title: "Task Diantrekan Ulang",
-        description: "Task berhasil didaftarkan ulang ke antrean!",
-        type: "success",
-      })
-    } catch (err: unknown) {
-      const response = (err as { response?: { data?: { error?: { message?: string } } } })?.response
-      const errorMessage = response?.data?.error?.message || (err instanceof Error ? err.message : String(err))
-      toast.add({
-        title: "Gagal Retry",
-        description: errorMessage,
-        type: "error",
-      })
-    }
-  }
-
   return {
     runs,
     runsLoading,
@@ -369,6 +348,5 @@ export const useRunsPage = (): UseRunsPageReturn => {
     handleConfirmReject,
     handleRequestChangesSubmit,
     handleRecover,
-    handleRetry,
   }
 }

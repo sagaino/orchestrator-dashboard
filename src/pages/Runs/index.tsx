@@ -51,7 +51,6 @@ export const RunsPage: React.FC = () => {
     handleConfirmReject,
     handleRequestChangesSubmit,
     handleRecover,
-    handleRetry,
   } = useRunsPage()
 
   return (
@@ -101,7 +100,6 @@ export const RunsPage: React.FC = () => {
             onAccept={handleAccept}
             onReject={handleReject}
             onRecover={handleRecover}
-            onRetry={handleRetry}
           />
         </div>
       </div>
@@ -144,4 +142,3 @@ export const RunsPage: React.FC = () => {
 }
 
 export default RunsPage
-

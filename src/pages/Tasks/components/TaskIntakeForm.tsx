@@ -10,6 +10,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
   selectedProject,
   onSelectProject,
   projectRelationships,
+  relationshipDiagnostics = [],
   linkedProjectIds,
   onLinkedProjectIdsChange,
   relationshipsLoading = false,
@@ -141,6 +142,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
                   <div className="space-y-2">
                     {projectRelationships.map((relationship) => {
                       const checked = linkedProjectIds.includes(relationship.targetProjectId)
+                      const diagnostic = relationshipDiagnostics.find((item) => item.targetProjectId === relationship.targetProjectId && item.type === relationship.type)
                       return (
                         <label key={`${relationship.type}-${relationship.targetProjectId}`} className="flex items-start gap-3 rounded-md border border-slate-800 bg-slate-950/40 p-3 cursor-pointer">
                           <input
@@ -154,6 +156,7 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
                             <span className="block font-semibold text-slate-200">{relationship.targetProjectId} <span className="font-mono text-[10px] text-emerald-300">{relationship.type}</span></span>
                             <span className="mt-1 block text-[11px] text-slate-500">Contract: {relationship.contractPaths.length ? relationship.contractPaths.join(", ") : "tidak dikonfigurasi"}</span>
                             <span className="block text-[11px] text-slate-500">Checks: {relationship.verification.length ? relationship.verification.join(", ") : "tidak dikonfigurasi"}</span>
+                            {diagnostic?.status === "METADATA_ONLY" && <span className="mt-1 block text-[11px] text-amber-300">Peringatan: relationship hanya metadata. Tambahkan contract path dan verification check agar validasi lintas project bermakna.</span>}
                           </span>
                         </label>
                       )

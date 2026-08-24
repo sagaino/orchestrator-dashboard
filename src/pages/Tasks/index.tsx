@@ -12,6 +12,7 @@ export const TasksPage: React.FC = () => {
     selectedProject,
     setSelectedProject,
     projectRelationships,
+    relationshipDiagnostics,
     linkedProjectIds,
     setLinkedProjectIds,
     relationshipsLoading,
@@ -73,6 +74,7 @@ export const TasksPage: React.FC = () => {
             selectedProject={selectedProject}
             onSelectProject={setSelectedProject}
             projectRelationships={projectRelationships}
+            relationshipDiagnostics={relationshipDiagnostics}
             linkedProjectIds={linkedProjectIds}
             onLinkedProjectIdsChange={setLinkedProjectIds}
             relationshipsLoading={relationshipsLoading}

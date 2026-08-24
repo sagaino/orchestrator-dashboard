@@ -61,7 +61,6 @@ export interface RunActionToolbarProps {
   onAccept: (runId: string) => void | Promise<void>
   onReject: (runId: string) => void | Promise<void>
   onRecover: (runId: string) => Promise<void>
-  onRetry: (runId: string) => Promise<void>
 }
 
 export interface RunOverviewTabProps {
@@ -102,7 +101,6 @@ export interface RunInspectorProps {
   onAccept: (runId: string) => void | Promise<void>
   onReject: (runId: string) => void | Promise<void>
   onRecover: (runId: string) => Promise<void>
-  onRetry: (runId: string) => Promise<void>
 }
 
 export interface RequestChangesModalProps {
@@ -181,5 +179,4 @@ export interface UseRunsPageReturn {
   handleConfirmReject: (e: FormEvent) => Promise<void>
   handleRequestChangesSubmit: (e: FormEvent) => Promise<void>
   handleRecover: (runId: string) => Promise<void>
-  handleRetry: (runId: string) => Promise<void>
 }

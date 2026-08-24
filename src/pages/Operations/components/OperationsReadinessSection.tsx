@@ -45,6 +45,13 @@ export const OperationsReadinessSection: React.FC<OperationsReadinessSectionProp
         ? "bg-amber-500/15 text-amber-200 border-amber-500/30"
         : "bg-rose-500/15 text-rose-200 border-rose-500/30"
 
+  const runtimeConfig = readiness.signals.runtimeConfig
+  const queue = readiness.signals.queue
+  const formatQueueAge = (ageMs: number | undefined) => {
+    if (!Number.isFinite(ageMs) || !ageMs || ageMs < 1000) return "0 menit"
+    return `${Math.floor(ageMs / 60_000)} menit`
+  }
+
   return (
     <>
       <div className={`rounded-xl border p-5 ${statusClass}`}>
@@ -59,6 +66,47 @@ export const OperationsReadinessSection: React.FC<OperationsReadinessSectionProp
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <section aria-labelledby="runtime-profile-title" className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 id="runtime-profile-title" className="font-medium text-slate-100">Runtime profile</h3>
+              <p className="mt-1 text-xs text-slate-500">Konfigurasi efektif yang sedang digunakan daemon.</p>
+            </div>
+            <span className="rounded border border-indigo-500/30 px-2 py-0.5 text-xs text-indigo-200">{runtimeConfig?.profile ?? "UNKNOWN"}</span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">
+            <span>Objective scheduler: <strong className="text-slate-200">{runtimeConfig?.flags.objectiveScheduler ? "ON" : "OFF"}</strong></span>
+            <span>Cross-project: <strong className="text-slate-200">{runtimeConfig?.flags.crossProject ? "ON" : "OFF"}</strong></span>
+            <span>Same-project parallel: <strong className="text-slate-200">{runtimeConfig?.flags.sameProjectParallel ? "ON" : "OFF"}</strong></span>
+            <span>Parallel objectives: <strong className="text-slate-200">{runtimeConfig?.flags.parallelObjectives ? "ON" : "OFF"}</strong></span>
+            <span>Skills: <strong className="text-slate-200">{runtimeConfig?.flags.skills ? "ON" : "OFF"}</strong></span>
+            <span>Max parallel jobs: <strong className="text-slate-200">{runtimeConfig?.capacity.maxParallelJobs ?? "-"}</strong></span>
+          </div>
+        </section>
+
+        <section aria-labelledby="worker-capacity-title" className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 id="worker-capacity-title" className="font-medium text-slate-100">Worker capacity & queue</h3>
+              <p className="mt-1 text-xs text-slate-500">Status antrean diperbarui bersama readiness.</p>
+            </div>
+            <span className="rounded border border-cyan-500/30 px-2 py-0.5 text-xs text-cyan-200">{daemon?.parallel.activeWorkers ?? queue?.activeWorkers ?? 0}/{daemon?.parallel.maxWorkers ?? queue?.maxWorkers ?? "-"} workers</span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">
+            <span>Queued: <strong className="text-slate-200">{daemon?.queue.queuedJobCount ?? queue?.queued ?? 0}</strong></span>
+            <span>Running: <strong className="text-slate-200">{daemon?.queue.runningJobCount ?? queue?.running ?? 0}</strong></span>
+            <span>Review: <strong className="text-slate-200">{daemon?.queue.reviewJobCount ?? queue?.review ?? 0}</strong></span>
+            <span>Slot tersedia: <strong className="text-slate-200">{daemon?.parallel.availableWorkerSlots ?? queue?.availableWorkerSlots ?? "-"}</strong></span>
+            <span>Eligible queued: <strong className="text-slate-200">{daemon?.parallel.eligibleQueuedJobCount ?? queue?.eligibleQueuedJobCount ?? "-"}</strong></span>
+            <span>Usia tertua: <strong className="text-slate-200">{formatQueueAge(queue?.oldestAgeMs)}</strong></span>
+          </div>
+          {((daemon?.parallel.blockedQueuedJobCount ?? queue?.blockedQueuedJobCount ?? 0) > 0) && (
+            <p className="mt-3 text-xs text-amber-200">Ada {daemon?.parallel.blockedQueuedJobCount ?? queue?.blockedQueuedJobCount} job menunggu dependency atau reservation project.</p>
+          )}
+        </section>
       </div>
 
       {readiness.alerts.length > 0 && (
