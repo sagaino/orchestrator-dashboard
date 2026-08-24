@@ -17,7 +17,10 @@ import { requestSections } from "./ObjectiveRequestHeading"
 import type { SummaryListProps } from "../types"
 
 export const SummaryList: React.FC<SummaryListProps> = ({ items }) => {
-  const [filter, setFilter] = React.useState<"ACTIVE" | "ALL" | "DONE" | "CANCELLED">("ACTIVE")
+  const [filter, setFilter] = React.useState<"ACTIVE" | "ALL" | "DONE" | "CANCELLED">(() => {
+    const hasActive = items.some((item) => item.state !== "CANCELLED" && item.state !== "DONE")
+    return hasActive ? "ACTIVE" : "ALL"
+  })
   const visibleItems = items.filter((item) => {
     if (filter === "ALL") return true
     if (filter === "DONE") return item.state === "DONE"
