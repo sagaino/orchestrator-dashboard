@@ -44,9 +44,7 @@ export interface PlanOnlyViewProps {
 
 export interface NodeCardProps {
   node: ObjectiveEvidenceNode
-  onPreview: (runId: string) => void
   onRequestRetry?: (node: ObjectiveEvidenceNode) => void
-  previewing: boolean
   retrying: boolean
 }
 

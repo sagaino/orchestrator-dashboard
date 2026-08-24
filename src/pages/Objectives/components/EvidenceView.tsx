@@ -41,7 +41,6 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
     previewMessage,
     aggregatePreview,
     delivery,
-    previewPending,
     acceptPending,
     aggregatePending,
     stopAggregatePending,
@@ -56,7 +55,6 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
     retryReason,
     setRetryReason,
     retryNodePending,
-    handlePreview,
     handleAccept,
     handleAggregatePreview,
     handleStopAggregatePreview,
@@ -246,9 +244,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
             <NodeCard
               key={node.nodeId}
               node={node}
-              onPreview={(runId) => void handlePreview(runId)}
               onRequestRetry={autopilotEnabled ? undefined : setRetryNode}
-              previewing={previewPending}
               retrying={retryNodePending}
             />
           ))}

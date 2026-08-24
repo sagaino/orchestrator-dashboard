@@ -1,10 +1,21 @@
 import React from "react"
-import { Eye, FileDiff, RotateCcw, ShieldCheck, XCircle } from "lucide-react"
+import { Brain, Eye, FileDiff, RotateCcw, ShieldCheck, Terminal, XCircle } from "lucide-react"
+import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "./StatusBadge"
 import type { NodeCardProps } from "../types"
 
-export const NodeCard: React.FC<NodeCardProps> = ({ node, onPreview, onRequestRetry, previewing, retrying }) => {
+const runPath = (runId: string, tab: "OVERVIEW" | "DIFF" | "LOGS" | "QA" | "RETROSPECTIVE") =>
+  `/runs?runId=${encodeURIComponent(runId)}&tab=${tab}`
+
+const runLinkClass = "inline-flex items-center gap-1 text-indigo-300 hover:text-indigo-200"
+
+export const NodeCard: React.FC<NodeCardProps> = ({ node, onRequestRetry, retrying }) => {
+  const showLogs = Boolean(
+    node.runId &&
+      (node.error || ["FAILED", "BLOCKED"].includes(String(node.state).toUpperCase())),
+  )
+
   return (
     <article className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -32,37 +43,32 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node, onPreview, onRequestRe
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
-        {node.links.evidence && (
-          <a
-            className="inline-flex items-center gap-1 text-indigo-300 hover:text-indigo-200"
-            href={node.links.evidence}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <ShieldCheck className="h-3.5 w-3.5" />Evidence
-          </a>
-        )}
-        {node.links.diff && (
-          <a
-            className="inline-flex items-center gap-1 text-indigo-300 hover:text-indigo-200"
-            href={node.links.diff}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <FileDiff className="h-3.5 w-3.5" />Diff
-          </a>
-        )}
-        {node.runId && (
-          <Button
-            type="button"
-            variant="link"
-            size="sm"
-            className="h-auto p-0 text-indigo-300"
-            disabled={previewing}
-            onClick={() => onPreview(node.runId!)}
-          >
-            <Eye className="h-3.5 w-3.5" />Preview
-          </Button>
+        {node.runId ? (
+          <>
+            <Link className={runLinkClass} to={runPath(node.runId, "OVERVIEW")}>
+              <ShieldCheck className="h-3.5 w-3.5" />Evidence
+            </Link>
+            <Link className={runLinkClass} to={runPath(node.runId, "DIFF")}>
+              <FileDiff className="h-3.5 w-3.5" />Diff
+            </Link>
+            <Link className={runLinkClass} to={runPath(node.runId, "QA")}>
+              <Eye className="h-3.5 w-3.5" />Preview
+            </Link>
+            <Link className={runLinkClass} to={runPath(node.runId, "RETROSPECTIVE")}>
+              <Brain className="h-3.5 w-3.5" />Review in Runs
+            </Link>
+            {showLogs && (
+              <Link className={runLinkClass} to={runPath(node.runId, "LOGS")}>
+                <Terminal className="h-3.5 w-3.5" />View Logs
+              </Link>
+            )}
+          </>
+        ) : (
+          node.links.evidence && (
+            <a className={runLinkClass} href={node.links.evidence} target="_blank" rel="noreferrer">
+              <ShieldCheck className="h-3.5 w-3.5" />Evidence
+            </a>
+          )
         )}
       </div>
       <p className="mt-3 text-xs text-slate-500">
