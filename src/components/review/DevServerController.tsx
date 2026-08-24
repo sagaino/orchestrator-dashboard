@@ -386,6 +386,21 @@ export const DevServerController: React.FC<DevServerControllerProps> = ({
           </div>
         </div>
 
+        {status?.lastFailure && !isRunning && (
+          <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-200">
+            <p className="font-semibold">Startup dev server gagal: {status.lastFailure.category}</p>
+            <p className="mt-1 text-rose-200/80">
+              {status.lastFailure.category === "MISSING_DEPENDENCIES"
+                ? "Periksa dependency dan jalankan instalasi dependency di workspace task."
+                : status.lastFailure.category === "PORT_CONFLICT"
+                  ? "Hentikan proses yang memakai port tersebut atau coba Start Dev Server lagi."
+                  : status.lastFailure.category === "WORKSPACE_NOT_FOUND"
+                    ? "Workspace task sudah tidak tersedia; buka ulang run yang masih memiliki isolated workspace."
+                    : "Periksa console log, perbaiki error aplikasi atau environment, lalu jalankan ulang."}
+            </p>
+          </div>
+        )}
+
         {/* Active Controls & Toolbar */}
         {isRunning && status?.url && (
           <div className="space-y-3">

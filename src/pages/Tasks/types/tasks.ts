@@ -39,6 +39,7 @@ export interface TaskIntakeFormProps {
   isUploadingAsset: boolean
   onUploadFile: (file: File, type: "MOCKUP" | "PROJECT_ASSET") => Promise<void>
   statusMessage: TaskStatusMessage | null
+  onRetryPlan?: () => Promise<void>
   submitting: boolean
   onSubmit: (e: FormEvent) => Promise<void>
 }
@@ -122,6 +123,7 @@ export interface UseTasksReturn {
   setClarificationAnswer: Dispatch<SetStateAction<string>>
   handleCloseClarification: () => void
   handleSubmitClarification: (e: FormEvent) => Promise<void>
+  handleRetryPlan: () => Promise<void>
   pendingPrompt?: string
   objectiveResult: ObjectiveIntakeResult | null
   planReviewOpen: boolean

@@ -1,5 +1,15 @@
 import axios from "@/lib/axios"
 
+function stableRequestHash(value: unknown): string {
+  const input = JSON.stringify(value) ?? ""
+  let hash = 2166136261
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0")
+}
+
 export interface DaemonStatus {
   service: string
   running: boolean
@@ -438,6 +448,19 @@ export interface VisualEvidence {
   createdAt: string
 }
 
+export interface VisualCaptureReport {
+  schemaVersion: number
+  mode: string
+  captureId: string
+  runId: string
+  route: string
+  baseUrl: string
+  status: string
+  comparisonStatus: VisualEvidenceStatus
+  viewports: Array<{ name: string; status: string; evidenceId: string; comparisonStatus: VisualEvidenceStatus }>
+  completedAt: string
+}
+
 export interface VisualRevisionRecord {
   schemaVersion: number
   mode: "visual-revision"
@@ -833,6 +856,12 @@ export interface DevServerStatus {
   status: "STARTING" | "RUNNING" | "STOPPED"
   startedAt?: string
   logTail: string[]
+  lastFailure?: {
+    category: string
+    exitCode: number | null
+    signal: string | null
+    logTail?: string
+  } | null
 }
 
 export interface RtkAnalytics {
@@ -1026,6 +1055,7 @@ export interface ObjectiveIntakeResult {
   clarificationNeeded?: boolean
   clarificationQuestion?: string | null
   alreadyPlanned?: boolean
+  alreadyExisting?: boolean
 }
 
 export interface ObjectiveMaterializationResult {
@@ -1489,19 +1519,18 @@ export const OrchestratorApi = {
     }
     attachments?: AttachedAsset[]
   }) {
-    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
     const res = await axios.post<{ success: boolean; data: ObjectiveIntakeResult }>("/api/objectives", payload, {
-      headers: { "Idempotency-Key": `dashboard-objective-${randomPart}` },
+      headers: { "Idempotency-Key": `dashboard-objective-${stableRequestHash(payload)}` },
     })
     return res.data.data
   },
 
   async generateObjectivePlan(objectiveId: string, clarification?: string | null) {
-    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const body = clarification ? { clarification } : {}
     const res = await axios.post<{ success: boolean; data: ObjectiveIntakeResult }>(
       `/api/objectives/${encodeURIComponent(objectiveId)}/generate-plan`,
-      clarification ? { clarification } : {},
-      { headers: { "Idempotency-Key": `dashboard-plan-generation-${randomPart}` } },
+      body,
+      { headers: { "Idempotency-Key": `dashboard-plan-generation-${stableRequestHash({ objectiveId, ...body })}` } },
     )
     return res.data.data
   },
@@ -1709,6 +1738,14 @@ export const OrchestratorApi = {
 
   async getRunVisualEvidence(runId: string) {
     const res = await axios.get<{ success: boolean; data: VisualEvidence[] }>(`/api/runs/${runId}/visual-evidence`)
+    return res.data.data
+  },
+
+  async captureRunVisualEvidence(runId: string, payload: { baseUrl: string; route?: string }) {
+    const res = await axios.post<{ success: boolean; data: VisualCaptureReport }>(
+      `/api/runs/${encodeURIComponent(runId)}/visual-evidence/capture`,
+      payload,
+    )
     return res.data.data
   },
 
