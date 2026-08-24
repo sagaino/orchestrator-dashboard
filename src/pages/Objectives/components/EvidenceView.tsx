@@ -8,6 +8,7 @@ import {
   Layers3,
   ShieldCheck,
   Target,
+  TestTube2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -46,6 +47,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
     visualRepairPending,
     createDeliveryPending,
     acceptDeliveryPending,
+    integrationPending,
     handlePreview,
     handleAccept,
     handleAggregatePreview,
@@ -53,10 +55,26 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
     handleVisualRepair,
     handleDeliveryRun,
     handleDeliveryAccept,
+    handleIntegration,
   } = useEvidenceView(evidence)
 
   const objective = evidence.objective
-
+  const integrationState = String(
+    (evidence.orchestration?.integration as { state?: string } | undefined)?.state
+      ?? evidence.integration?.status
+      ?? evidence.verification.integration.status
+      ?? "NOT_READY",
+  )
+  const allNodesDone = evidence.nodes.length > 0 && evidence.nodes.every((node) => node.state === "DONE")
+  const integrationRequired = evidence.plan?.integration.required === true || evidence.verification.integration.required === true
+  const integrationFinished = ["PASS", "PASSED", "DONE"].includes(integrationState)
+  const integrationRunning = ["RUNNING", "INTEGRATING"].includes(integrationState)
+  const canRunIntegration = integrationRequired && allNodesDone && !integrationFinished && !integrationRunning
+  const integrationLabel = integrationFinished
+    ? "Integration Verified"
+    : integrationState === "BLOCKED" || integrationState === "FAILED"
+      ? "Retry Integration Verification"
+      : "Run Integration Verification"
   return (
     <div className="w-full space-y-6">
       <Link to="/objectives" className="text-xs text-indigo-300 hover:text-indigo-200">
@@ -76,6 +94,19 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
           <StatusBadge state={objective.state} />
           <ObjectivePlanGate lifecycle={lifecycle} />
           <div className="flex flex-wrap gap-2 lg:justify-end">
+            {integrationRequired && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!canRunIntegration || integrationPending}
+                onClick={() => void handleIntegration()}
+                className="gap-2 border-violet-500/30 text-violet-200 hover:bg-violet-500/10"
+                title={!allNodesDone ? "Menunggu seluruh node selesai." : integrationRunning ? "Integration verification sedang berjalan." : undefined}
+              >
+                <TestTube2 className="h-4 w-4" />
+                {integrationPending ? "Running integration…" : integrationRunning ? "Integration running…" : integrationLabel}
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"

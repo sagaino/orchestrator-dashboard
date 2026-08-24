@@ -122,6 +122,7 @@ export interface UseEvidenceViewReturn {
   visualRepairPending: boolean
   createDeliveryPending: boolean
   acceptDeliveryPending: boolean
+  integrationPending: boolean
   handlePreview: (runId: string) => Promise<void>
   handleAccept: () => Promise<void>
   handleAggregatePreview: () => Promise<void>
@@ -129,6 +130,7 @@ export interface UseEvidenceViewReturn {
   handleVisualRepair: (nodeId: string, reason: string) => Promise<void>
   handleDeliveryRun: () => Promise<void>
   handleDeliveryAccept: () => Promise<void>
+  handleIntegration: () => Promise<void>
 }
 
 export interface UseObjectivePlanGateReturn {

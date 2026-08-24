@@ -1159,6 +1159,15 @@ export interface IntegrationEvidence {
   [key: string]: unknown
 }
 
+export interface StartIntegrationResult {
+  action: string
+  integration?: { state?: string; [key: string]: unknown } | null
+  orchestration?: Record<string, unknown> | null
+  evidence?: IntegrationEvidence | null
+  decision?: ObjectiveDecision | null
+  [key: string]: unknown
+}
+
 export interface ObjectiveGraphNode {
   id: string
   index: number
@@ -1524,6 +1533,16 @@ export const OrchestratorApi = {
 
   async getObjectiveEvidence(objectiveId: string) {
     const res = await axios.get<{ success: boolean; data: ObjectiveEvidence }>(`/api/objectives/${encodeURIComponent(objectiveId)}/evidence`)
+    return res.data.data
+  },
+
+  async startIntegration(objectiveId: string, orchestrationId?: string | null, integrationNodeId?: string | null) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const res = await axios.post<{ success: boolean; data: StartIntegrationResult }>(
+      `/api/objectives/${encodeURIComponent(objectiveId)}/integration`,
+      { orchestrationId: orchestrationId ?? undefined, integrationNodeId: integrationNodeId ?? undefined },
+      { headers: { "Idempotency-Key": `dashboard-integration-${objectiveId}-${randomPart}` } },
+    )
     return res.data.data
   },
 

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import {
   useAcceptObjective,
+  useStartIntegration,
   usePreviewRun,
   useAggregatePreview,
   useStopAggregatePreview,
@@ -18,6 +19,7 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
   const [aggregatePreview, setAggregatePreview] = useState<AggregatePreview | null>(null)
 
   const accept = useAcceptObjective()
+  const integration = useStartIntegration()
   const preview = usePreviewRun()
   const aggregate = useAggregatePreview()
   const stopAggregate = useStopAggregatePreview()
@@ -71,6 +73,20 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     })
   }
 
+  const handleIntegration = async () => {
+    try {
+      await integration.mutateAsync({
+        objectiveId: objective.objectiveId,
+        orchestrationId: typeof evidence.orchestration?.orchestrationId === "string" ? evidence.orchestration.orchestrationId : null,
+        integrationNodeId: evidence.nodes.find((node) => node.type === "INTEGRATION")?.nodeId ?? null,
+      })
+      setPreviewMessage(null)
+    } catch (error) {
+      const response = (error as { response?: { data?: { error?: { message?: string } } } })?.response
+      setPreviewMessage(response?.data?.error?.message ?? (error instanceof Error ? error.message : "Integration verification tidak dapat dimulai."))
+    }
+  }
+
   return {
     acceptOpen,
     setAcceptOpen,
@@ -84,6 +100,7 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     visualRepairPending: visualRepair.isPending,
     createDeliveryPending: createDelivery.isPending,
     acceptDeliveryPending: acceptDelivery.isPending,
+    integrationPending: integration.isPending,
     handlePreview,
     handleAccept,
     handleAggregatePreview,
@@ -91,5 +108,6 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     handleVisualRepair,
     handleDeliveryRun,
     handleDeliveryAccept,
+    handleIntegration,
   }
 }
