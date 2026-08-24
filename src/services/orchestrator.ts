@@ -1182,12 +1182,15 @@ export interface ObjectiveVisualEvidenceRef {
 export interface ObjectiveVisualEvidenceNode {
   nodeId: string
   projectId: string
+  type: string | null
+  role: string | null
+  visualEvidenceRequired: boolean
   runId: string | null
   nodeState: string
   runState: string | null
   verificationChecks: Array<Record<string, unknown>>
   evidenceRefs: ObjectiveVisualEvidenceRef[]
-  captureRefs: Array<{ captureId: string; href: string; route: string; status: string; comparisonStatus: string; viewportNames: string[]; completedAt: string }>
+  captureRefs: Array<{ captureId: string; href: string; route: string; status: string; comparisonStatus: string; viewportNames: string[]; evidenceIds?: string[]; completedAt: string }>
   revisions: Array<{ revisionId: string; href: string; iteration: number; status: string; beforeEvidenceIds: string[]; afterEvidenceIds: string[]; reason: string }>
   certification: { certificationId: string; href: string; status: string; blockers: string[] } | null
   requestChanges: { available: boolean; href: string; method: "POST"; reasonRequired: boolean }
@@ -1198,7 +1201,7 @@ export interface ObjectiveVisualEvidence {
   mode: "objective-visual-evidence"
   objectiveId: string | null
   nodes: ObjectiveVisualEvidenceNode[]
-  summary: { nodeCount: number; projectCount: number; evidenceCount: number; captureCount: number; revisionCount: number; verificationCheckCount: number; certifiedNodeCount: number; routes: string[]; viewports: string[] }
+  summary: { nodeCount: number; projectCount: number; evidenceCount: number; captureCount: number; latestEvidenceCount?: number; latestCaptureCount?: number; historicalEvidenceCount?: number; historicalCaptureCount?: number; latestCaptureAt?: string | null; revisionCount: number; verificationCheckCount: number; certifiedNodeCount: number; visualRequiredNodeCount?: number; nonVisualNodeCount?: number; routes: string[]; viewports: string[] }
   ownership: string
 }
 
