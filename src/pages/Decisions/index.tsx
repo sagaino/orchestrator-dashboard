@@ -25,14 +25,15 @@ export const DecisionsPage: React.FC = () => {
     handleConfirmResolution,
   } = useDecisions()
 
-  const finalAcceptOnly = operationsReadiness?.signals.runtimeConfig?.automation?.approvalMode === "FINAL_ACCEPT_ONLY"
+  const approvalMode = operationsReadiness?.signals.runtimeConfig?.automation?.approvalMode
+  const autopilotActive = approvalMode === "PLAN_REVIEW_THEN_AUTOPILOT" || approvalMode === "FINAL_ACCEPT_ONLY"
 
   return (
       <div className="w-full space-y-6 pb-12">
       <DecisionHeader isFetching={isFetching} onRefresh={() => { void refetch() }} />
-      {finalAcceptOnly && (
+      {autopilotActive && (
         <section className="rounded-xl border border-indigo-500/30 bg-indigo-950/20 px-5 py-4 text-sm text-indigo-100">
-          <p className="font-semibold">Autopilot aktif</p>
+          <p className="font-semibold">Autopilot aktif ({approvalMode})</p>
           <p className="mt-1 text-indigo-200/80">
             Retry, recovery, preview, dan certification rutin diproses otomatis. Halaman ini hanya menampilkan pengecualian yang
             memang membutuhkan keputusan operator, misalnya perubahan scope, permission, atau risiko yang tidak aman untuk dipaksa.
