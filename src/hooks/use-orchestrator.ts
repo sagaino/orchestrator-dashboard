@@ -636,6 +636,21 @@ export function useAcceptObjective() {
   })
 }
 
+export function useStartIntegration() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ objectiveId, orchestrationId, integrationNodeId }: { objectiveId: string; orchestrationId?: string | null; integrationNodeId?: string | null }) =>
+      OrchestratorApi.startIntegration(objectiveId, orchestrationId, integrationNodeId),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectiveEvidence(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.objectiveGraph(variables.objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+      queryClient.invalidateQueries({ queryKey: queryKeys.runs })
+    },
+  })
+}
+
 export function useCreateDeliveryCertification() {
   const queryClient = useQueryClient()
   return useMutation({
