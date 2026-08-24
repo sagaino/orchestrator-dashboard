@@ -57,11 +57,21 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
         <div className="flex flex-wrap items-center gap-3">
           <div className="text-right text-[11px] text-slate-400">
             <div>
-              {report.summary.evidenceCount} visual checks · {report.summary.captureCount} captures
+              {report.summary.latestEvidenceCount ?? report.summary.evidenceCount} latest visual checks · {report.summary.latestCaptureCount ?? report.summary.captureCount} latest captures
             </div>
             <div>
               {report.summary.projectCount} project · {report.summary.viewports.join(", ") || "No viewport"}
             </div>
+            {(report.summary.nonVisualNodeCount ?? 0) > 0 && (
+              <div className="text-slate-500">
+                {report.summary.nonVisualNodeCount} API/verification node tanpa capture visual
+              </div>
+            )}
+            {(report.summary.historicalCaptureCount ?? report.summary.captureCount) > (report.summary.latestCaptureCount ?? report.summary.captureCount) && (
+              <div className="text-slate-500">
+                Audit history: {report.summary.historicalEvidenceCount ?? report.summary.evidenceCount} checks · {report.summary.historicalCaptureCount ?? report.summary.captureCount} captures
+              </div>
+            )}
           </div>
           <Button
             type="button"
@@ -84,9 +94,12 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
                 <div>
                   <p className="font-mono text-xs text-violet-200">{node.nodeId} · {node.projectId}</p>
                   <p className="mt-1 text-[11px] text-slate-500">Run: {node.runId ?? "—"} · State: {node.runState ?? "NO_RUN"}</p>
+                  {node.visualEvidenceRequired === false && (
+                    <p className="mt-1 text-[11px] text-cyan-300">API/verification evidence · visual capture tidak diperlukan</p>
+                  )}
                 </div>
                 <div className="flex flex-wrap justify-end gap-2">
-                  {!readOnly && preview?.cleanup.status === "ACTIVE" && preview.status !== "UNAVAILABLE" && node.runId && (() => {
+                  {node.visualEvidenceRequired !== false && !readOnly && preview?.cleanup.status === "ACTIVE" && preview.status !== "UNAVAILABLE" && node.runId && (() => {
                     const projectPreview = preview.previews.find((item) => item.projectId === node.projectId && item.url)
                     if (!projectPreview) return null
                     return (
@@ -133,7 +146,9 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
               )}
               {node.evidenceRefs.length === 0 ? (
                 <p className="mt-3 text-xs text-slate-500">
-                  Belum ada visual capture untuk node ini; status visual tetap UNKNOWN.
+                  {node.visualEvidenceRequired !== false
+                    ? "Belum ada visual capture untuk node ini; status visual tetap UNKNOWN."
+                    : "Tidak ada screenshot untuk node ini. Gunakan verification/API evidence di atas sebagai bukti eksekusi."}
                 </p>
               ) : (
                 <div className="mt-3 grid gap-2 lg:grid-cols-2">
