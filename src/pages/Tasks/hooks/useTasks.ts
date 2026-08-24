@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useProjects, useDaemonStatus, useJobs, useUploadAsset, useDeleteAsset, useCreateObjective, useGenerateObjectivePlan, useApproveObjectivePlan, useMaterializeObjectivePlan, useAssignObjectivePlanSkills, useRequestObjectivePlanChanges, useCancelObjective, useObjective, useProjectRelationships, useSkillCatalog } from "@/hooks/use-orchestrator"
 import { crossProjectEnabled } from "@/lib/feature-flags"
@@ -74,6 +74,8 @@ export const useTasks = (): UseTasksReturn => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const reviewObjectiveId = searchParams.get("objectiveId")
+  const intakeProjectId = searchParams.get("projectId")
+  const intakePrompt = searchParams.get("prompt")
   const [storedPendingObjective] = useState(readPendingObjectiveDraft)
   const { data: projects = [] } = useProjects()
   const [targetMode, setTargetMode] = useState<ObjectiveMode>("EXISTING_PROJECT")
@@ -135,6 +137,25 @@ export const useTasks = (): UseTasksReturn => {
   const [clarificationAnswer, setClarificationAnswer] = useState("")
   const [pendingPrompt, setPendingPrompt] = useState(storedPendingObjective?.request || "")
   const [pendingObjectiveId, setPendingObjectiveId] = useState<string | null>(storedPendingObjective?.objectiveId || null)
+  const objectiveAttemptRef = useRef<{ fingerprint: string; key: string } | null>(null)
+
+  const objectiveIdempotencyKey = (payload: Record<string, unknown>) => {
+    const fingerprint = JSON.stringify(payload)
+    if (!objectiveAttemptRef.current || objectiveAttemptRef.current.fingerprint !== fingerprint) {
+      const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+      objectiveAttemptRef.current = { fingerprint, key: `attempt-${randomPart}` }
+    }
+    return objectiveAttemptRef.current.key
+  }
+
+  const clearObjectiveAttempt = () => {
+    objectiveAttemptRef.current = null
+  }
+
+  useEffect(() => {
+    if (intakeProjectId) setSelectedProject(intakeProjectId)
+    if (intakePrompt) setPrompt(intakePrompt)
+  }, [intakeProjectId, intakePrompt])
 
   useEffect(() => {
     if (reviewObjectiveId || !storedPendingObjective || !objectiveDetail) return
@@ -237,7 +258,9 @@ export const useTasks = (): UseTasksReturn => {
             targetDirectory: trimmedTargetDirectory,
             blueprint: freshBlueprint,
           },
+          idempotencyKey: objectiveIdempotencyKey({ mode: "FRESH_PROJECT", request: trimmedPrompt, projectIds: [trimmedProjectId], freshProject: { projectId: trimmedProjectId, targetDirectory: trimmedTargetDirectory, blueprint: freshBlueprint } }),
         })
+        clearObjectiveAttempt()
         setObjectiveResult(result)
         if (result.plan) {
           setPlanReviewObjective(result.objective)
@@ -282,7 +305,9 @@ export const useTasks = (): UseTasksReturn => {
           mode: "CROSS_PROJECT_INCIDENT",
           request: trimmedPrompt,
           projectIds: [selectedProject, ...safeLinkedProjectIds],
+          idempotencyKey: objectiveIdempotencyKey({ mode: "CROSS_PROJECT_INCIDENT", request: trimmedPrompt, projectIds: [selectedProject, ...safeLinkedProjectIds] }),
         })
+        clearObjectiveAttempt()
         setObjectiveResult(objective)
         setPendingObjectiveId(objective.objective.objectiveId)
         setPendingPrompt(trimmedPrompt)
@@ -327,11 +352,13 @@ export const useTasks = (): UseTasksReturn => {
         ? pendingObjectiveId
         : null
       const objective = retryObjectiveId && objectiveResult ? objectiveResult : await createObjective({
-          mode: "EXISTING_PROJECT",
-          request: trimmedPrompt,
-          projectIds: [selectedProject],
-          attachments: attachedAssets,
-        })
+        mode: "EXISTING_PROJECT",
+        request: trimmedPrompt,
+        projectIds: [selectedProject],
+        attachments: attachedAssets,
+        idempotencyKey: objectiveIdempotencyKey({ mode: "EXISTING_PROJECT", request: trimmedPrompt, projectIds: [selectedProject], attachments: attachedAssets }),
+      })
+      if (!retryObjectiveId) clearObjectiveAttempt()
       setObjectiveResult(objective)
       setPendingObjectiveId(objective.objective.objectiveId)
       setPendingPrompt(trimmedPrompt)
@@ -366,6 +393,7 @@ export const useTasks = (): UseTasksReturn => {
       setPendingPrompt("")
       setPendingObjectiveId(null)
       clearPendingObjectiveDraft()
+      clearObjectiveAttempt()
       toast.add({
         title: "Plan Objective Siap Direview",
         description: successText,
@@ -424,6 +452,7 @@ export const useTasks = (): UseTasksReturn => {
       setPendingPrompt("")
       setPendingObjectiveId(null)
       clearPendingObjectiveDraft()
+      clearObjectiveAttempt()
       setPlanReviewObjective(res.objective)
       setPlanReview(res.plan)
       setPlanReviewDecisions(res.decisions ?? [])
@@ -472,6 +501,7 @@ export const useTasks = (): UseTasksReturn => {
       setPendingPrompt("")
       setPendingObjectiveId(null)
       clearPendingObjectiveDraft()
+      clearObjectiveAttempt()
       setStatusMessage({ type: "success", text: `Objective ${res.objective.objectiveId} dan ${res.plan.planId} siap untuk review.` })
       toast.add({ title: "Plan Objective Siap Direview", description: "Retry berhasil melanjutkan objective yang sama.", type: "success" })
     } catch (err: unknown) {
@@ -548,6 +578,7 @@ export const useTasks = (): UseTasksReturn => {
       setPendingPrompt("")
       setPendingObjectiveId(null)
       clearPendingObjectiveDraft()
+      clearObjectiveAttempt()
       setStatusMessage({ type: "success", text: `Objective ${result.objective.objectiveId} dibatalkan. Tidak ada task atau run yang dijalankan.` })
       toast.add({ title: "Objective Dibatalkan", description: "Plan aktif tidak lagi dapat dieksekusi.", type: "success" })
     } catch (err: unknown) {

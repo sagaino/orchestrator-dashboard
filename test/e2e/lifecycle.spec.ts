@@ -47,6 +47,22 @@ test("Existing Project intake creates an objective plan before explicit executio
   expect(mutationPaths).not.toContain("/api/tasks/request")
 })
 
+test("Overview routes new work to the canonical Objective intake", async ({ page }) => {
+  const legacyRequests: string[] = []
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname === "/api/tasks/request") legacyRequests.push(request.url())
+  })
+
+  await page.goto("/")
+  await page.getByRole("combobox").selectOption("e2e-project")
+  await page.getByRole("textbox", { name: "Natural Language Prompt" }).fill("Open the canonical objective intake")
+  await page.getByRole("button", { name: "Buka Task Intake" }).click()
+
+  await expect(page).toHaveURL(/\/tasks\?projectId=e2e-project&prompt=/)
+  await expect(page.getByRole("textbox", { name: "Deskripsikan fitur, refactor, atau instruksi slicing UI sesuai desain..." })).toHaveValue("Open the canonical objective intake")
+  expect(legacyRequests).toEqual([])
+})
+
 test("review evidence can be accepted through explicit confirmation", async ({ page }) => {
   await page.goto("/runs")
   await page.getByPlaceholder("Cari Run ID, Task, atau Project...").fill("E2E-ACCEPT")
@@ -98,4 +114,15 @@ test("verification failure and restart reconciliation remain explicit", async ({
   await expect(page.getByText("MANUAL_RECOVERY_REQUIRED", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("RESTART_INTERRUPTION_FAILED_SAFE", { exact: true })).toBeVisible()
   await expect(page.getByRole("status", { name: "Authoritative next action" })).toContainText("hasilnya tidak pasti")
+})
+
+test("orchestration-managed failures send retry review to the Objective", async ({ page }) => {
+  await page.goto("/runs")
+  await page.getByPlaceholder("Cari Run ID, Task, atau Project...").fill("E2E-ORCH-FAIL")
+  await page.getByRole("button", { name: /E2E-ORCH-FAIL.*FAILED/ }).click()
+
+  await expect(page.getByRole("link", { name: "Request retry via Objective" })).toHaveAttribute("href", "/objectives/e2e-objective-dashboard")
+  await expect(page.getByRole("button", { name: "Retry Task" })).toHaveCount(0)
+  await page.getByRole("link", { name: "Request retry via Objective" }).click()
+  await expect(page).toHaveURL(/\/objectives\/e2e-objective-dashboard$/)
 })

@@ -2,7 +2,7 @@ import type { Page, Route } from "@playwright/test"
 
 const now = "2026-08-22T08:00:00.000Z"
 
-const run = (taskId: string, state: string) => ({
+const run = (taskId: string, state: string, orchestration: { objectiveId: string } | null = null) => ({
   schemaVersion: 1,
   runId: `${taskId.toLowerCase()}-fixture-run`,
   state,
@@ -16,11 +16,14 @@ const run = (taskId: string, state: string) => ({
     status: state === "FAILED" ? "FAILED" : "REVIEW",
     allowedPaths: ["src/fixture.ts"],
     verification: ["typecheck", "build"],
+    orchestrationManaged: Boolean(orchestration),
+    objectiveId: orchestration?.objectiveId ?? null,
   },
   execution: {
     completedAt: now,
     scopeAudit: { passed: true, modifiedFiles: ["src/fixture.ts"], outOfScopeFiles: [], deniedFilesBlocked: [] },
     verification: { allPassed: state !== "FAILED", results: [] },
+    orchestration: orchestration ? { objectiveId: orchestration.objectiveId } : null,
   },
   telemetry: { model: "fixture-model", durationMs: 1000, tokens: { totalTokens: 100 } },
   history: [{ event: "RUN_REVIEW", state, at: now, message: "Deterministic browser fixture." }],
@@ -106,6 +109,7 @@ export async function installLifecycleFixtures(page: Page) {
     run("E2E-REJECT", "RETROSPECTIVE"),
     run("E2E-VERIFY-FAIL", "FAILED"),
     run("E2E-RESTART", "FAILED"),
+    run("E2E-ORCH-FAIL", "FAILED", { objectiveId: "e2e-objective-dashboard" }),
   ]
   const jobs: Array<Record<string, unknown>> = []
   let provenancePlanId: string | null = null
