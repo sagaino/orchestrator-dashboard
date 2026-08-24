@@ -63,6 +63,7 @@ export interface ObjectiveVisualEvidencePanelProps {
   repairing: boolean
   capturingRunId: string | null
   readOnly?: boolean
+  defaultOpen?: boolean
 }
 
 export interface DeliveryCertificationPanelProps {
