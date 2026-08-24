@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { useDecisionInbox, useResolveDecision } from "@/hooks/use-orchestrator"
+import { toast } from "@/components/ui/toast"
 import type { DecisionInboxItem } from "@/services/orchestrator"
 import type { PendingDecision, UseDecisionsReturn } from "../types"
 
@@ -29,10 +30,24 @@ export const useDecisions = (): UseDecisionsReturn => {
     setNotice(null)
     try {
       const result = await resolve.mutateAsync({ decisionId: pending.decision.decisionId, action: pending.action })
-      setNotice(result.alreadyResolved ? "Decision sudah diselesaikan sebelumnya; tampilan disegarkan tanpa perubahan kedua." : `Decision ${pending.decision.decisionId} diselesaikan dengan action ${pending.action}.`)
+      const message = result.alreadyResolved
+        ? "Decision sudah diselesaikan sebelumnya; tampilan disegarkan."
+        : `Decision ${pending.decision.decisionId} berhasil diselesaikan dengan action ${pending.action}.`
+      setNotice(message)
+      toast.add({
+        title: "Decision Diselesaikan",
+        description: message,
+        type: "success",
+      })
       setPending(null)
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Decision gagal diselesaikan.")
+      const msg = error instanceof Error ? error.message : "Decision gagal diselesaikan."
+      setNotice(msg)
+      toast.add({
+        title: "Gagal Menyelesaikan Decision",
+        description: msg,
+        type: "error",
+      })
     }
   }
 
