@@ -20,6 +20,11 @@ export const useObjectivePlanGate = (lifecycle: ObjectiveLifecycleDetail): UseOb
       const approved = canApprove
         ? await approve.mutateAsync({ objectiveId: lifecycle.objectiveId, planFingerprint: plan.planFingerprint })
         : { objective: lifecycle, plan, planFingerprint: plan.planFingerprint }
+      if ("automation" in approved && approved.automation?.started) {
+        setMessage(`${approved.tasks?.length ?? 0} task berhasil dibuat dan orchestration otomatis dimulai.`)
+        setOpen(false)
+        return
+      }
       const fingerprint = approved.planFingerprint ?? approved.plan.planFingerprint
       if (!fingerprint) throw new Error("Plan fingerprint tidak tersedia untuk materialization.")
       const result = await materialize.mutateAsync({

@@ -366,8 +366,8 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
         {targetMode === "EXISTING_PROJECT" && <div className="flex items-center justify-between p-3.5 rounded-lg bg-slate-800/40 border border-slate-700/50">
           <div className="flex items-center gap-3">
             <div className="text-xs text-slate-300">
-              <span className="font-medium block text-slate-200">Run setelah approval plan</span>
-              Objective plan selalu ditampilkan dahulu; task baru dibuat setelah Approve &amp; Run
+              <span className="font-medium block text-slate-200">Orchestrator autopilot</span>
+              Plan, task, recovery, dan certification dijalankan otomatis; Anda cukup meninjau evidence lalu Final Acceptance.
             </div>
           </div>
         </div>}

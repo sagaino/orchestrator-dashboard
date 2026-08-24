@@ -10,6 +10,7 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
   onCapture,
   repairing,
   capturingRunId,
+  readOnly = false,
 }) => {
   const [repairNodeId, setRepairNodeId] = useState<string | null>(null)
   const [reason, setReason] = useState("")
@@ -69,7 +70,7 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
                 <p className="mt-1 text-[11px] text-slate-500">Run: {node.runId ?? "—"} · State: {node.runState ?? "NO_RUN"}</p>
               </div>
               <div className="flex flex-wrap justify-end gap-2">
-                {preview?.cleanup.status === "ACTIVE" && preview.status !== "UNAVAILABLE" && node.runId && (() => {
+                {!readOnly && preview?.cleanup.status === "ACTIVE" && preview.status !== "UNAVAILABLE" && node.runId && (() => {
                   const projectPreview = preview.previews.find((item) => item.projectId === node.projectId && item.url)
                   if (!projectPreview) return null
                   return (
@@ -85,7 +86,7 @@ export const ObjectiveVisualEvidencePanel: React.FC<ObjectiveVisualEvidencePanel
                     </Button>
                   )
                 })()}
-                {node.requestChanges.available && (
+                {!readOnly && node.requestChanges.available && (
                   <Button
                     type="button"
                     variant="outline"

@@ -30,7 +30,7 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
     <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-          Human Review Actions
+          {orchestrationManaged ? "Orchestrator Automation" : "Human Review Actions"}
         </span>
         <span className="text-[11px] text-slate-400 font-mono">allow_self_accept: false</span>
       </div>
@@ -46,8 +46,8 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
           <span>Preview in VS Code</span>
         </button>
 
-        {/* Start/Approve if PENDING_APPROVAL or APPROVED */}
-        {(selectedRun.state === "PENDING_APPROVAL" || selectedRun.state === "APPROVED") && (
+        {/* Legacy start/approval remains available only for legacy runs. */}
+        {!orchestrationManaged && (selectedRun.state === "PENDING_APPROVAL" || selectedRun.state === "APPROVED") && (
           <button
             onClick={() => onStart(selectedRun.runId)}
             disabled={actionLoading}
@@ -59,7 +59,7 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
         )}
 
         {/* Review Actions if state == REVIEW or RETROSPECTIVE */}
-        {(selectedRun.state === "REVIEW" || selectedRun.state === "RETROSPECTIVE") && (
+        {!orchestrationManaged && (selectedRun.state === "REVIEW" || selectedRun.state === "RETROSPECTIVE") && (
           <>
             <button
               onClick={onRequestChanges}
@@ -90,17 +90,32 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
           </>
         )}
 
+        {orchestrationManaged && (selectedRun.state === "REVIEW" || selectedRun.state === "RETROSPECTIVE") && (
+          <div className="basis-full flex flex-wrap items-center gap-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2.5 text-xs text-indigo-100">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 text-indigo-300" />
+            <span>Review retrospective dan knowledge sedang diselesaikan otomatis oleh orchestrator.</span>
+            {objectiveId && (
+              <Link
+                to={`/objectives/${encodeURIComponent(objectiveId)}`}
+                className="font-semibold text-indigo-200 underline decoration-indigo-400/60 underline-offset-2 hover:text-white"
+              >
+                Lihat Objective
+              </Link>
+            )}
+          </div>
+        )}
+
         {/* Failed actions */}
         {selectedRun.state === "FAILED" && (
           <>
-            <button
+            {!orchestrationManaged && <button
               onClick={() => onRecover(selectedRun.runId)}
               disabled={actionLoading}
               className="px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               <Wrench className="h-3.5 w-3.5" />
               <span>Recover verification</span>
-            </button>
+            </button>}
 
             {orchestrationManaged && objectiveId ? (
               <Link
@@ -108,7 +123,7 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
                 className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 <ArrowRight className="h-3.5 w-3.5" />
-                <span>Request retry via Objective</span>
+                <span>Open Objective evidence</span>
               </Link>
             ) : !orchestrationManaged && taskFailed ? (
               <div className="flex flex-wrap items-center gap-2">
@@ -119,7 +134,7 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
                   <ArrowRight className="h-3.5 w-3.5" />
                   <span>Buat Objective pengganti</span>
                 </Link>
-                <span className="max-w-sm text-[11px] leading-relaxed text-slate-400">Task ini berasal dari flow lama. Task baru diproses melalui Objective agar dependency dan audit tetap konsisten.</span>
+                <span className="max-w-sm text-[11px] leading-relaxed text-slate-400">Task ini berasal dari flow lama. Buat Objective baru untuk menjalankan pekerjaan melalui flow autopilot.</span>
               </div>
             ) : (
               <p className="max-w-sm text-[11px] leading-relaxed text-slate-400">

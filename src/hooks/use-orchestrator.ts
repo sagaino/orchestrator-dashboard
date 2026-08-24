@@ -587,6 +587,12 @@ export function useApproveObjectivePlan() {
     onSuccess: (result, variables) => {
       queryClient.setQueryData(queryKeys.objective(variables.objectiveId), (current: ObjectiveLifecycleDetail | undefined) => current ? { ...current, ...result.objective, plan: result.plan } : current)
       queryClient.invalidateQueries({ queryKey: queryKeys.objective(variables.objectiveId) })
+      if (result.automation?.started) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.objectives })
+        queryClient.invalidateQueries({ queryKey: queryKeys.jobs })
+        queryClient.invalidateQueries({ queryKey: queryKeys.runs })
+        queryClient.invalidateQueries({ queryKey: queryKeys.daemon })
+      }
     },
   })
 }
@@ -645,8 +651,12 @@ export function useAcceptObjective() {
   return useMutation({
     mutationFn: (objectiveId: string) => OrchestratorApi.acceptObjective(objectiveId),
     onSuccess: (result, objectiveId) => {
+      if (result.deliveryCertification) {
+        queryClient.setQueryData(queryKeys.deliveryCertification(objectiveId), { latest: result.deliveryCertification, history: [result.deliveryCertification] })
+      }
       queryClient.invalidateQueries({ queryKey: queryKeys.objective(objectiveId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.objectiveEvidence(objectiveId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.deliveryCertification(objectiveId) })
     },
   })
 }

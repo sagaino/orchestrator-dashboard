@@ -8,6 +8,7 @@ export const AggregatePreviewPanel: React.FC<AggregatePreviewPanelProps> = ({
   preview,
   onStop,
   stopping,
+  readOnly = false,
 }) => {
   if (!preview) return null
 
@@ -24,7 +25,7 @@ export const AggregatePreviewPanel: React.FC<AggregatePreviewPanelProps> = ({
             Loopback-only URLs untuk project runnable. Preview unavailable tidak dihitung sebagai verification failure.
           </p>
         </div>
-        {preview.cleanup.status === "ACTIVE" && (
+        {preview.cleanup.status === "ACTIVE" && !readOnly && (
           <Button
             type="button"
             variant="outline"
