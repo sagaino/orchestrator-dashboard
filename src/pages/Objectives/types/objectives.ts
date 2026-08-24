@@ -74,6 +74,7 @@ export interface DeliveryCertificationPanelProps {
   running: boolean
   accepting: boolean
   automatic?: boolean
+  defaultOpen?: boolean
 }
 
 export interface EvidenceViewProps {
