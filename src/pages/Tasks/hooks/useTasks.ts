@@ -152,6 +152,12 @@ export const useTasks = (): UseTasksReturn => {
 
   useEffect(() => {
     if (!objectiveDetail?.plan) return
+    if (objectiveDetail.plan.state !== "PENDING_APPROVAL" && objectiveDetail.state !== "PLAN_REVIEW") {
+      setPlanReviewOpen(false)
+      clearPendingObjectiveDraft()
+      setPendingObjectiveId(null)
+      return
+    }
     setPlanReviewObjective(objectiveDetail)
     setPlanReview(objectiveDetail.plan)
     setPlanReviewDecisions(objectiveDetail.decisions ?? [])
@@ -583,9 +589,14 @@ export const useTasks = (): UseTasksReturn => {
       const approved = planReview.state === "APPROVED"
         ? { objective: planReviewObjective, plan: planReview, planFingerprint: planReview.planFingerprint }
         : await approveObjectivePlan({ objectiveId: planReviewObjective.objectiveId, planFingerprint: planReview.planFingerprint })
+      setPlanReviewOpen(false)
+      clearPendingObjectiveDraft()
+      setPendingObjectiveId(null)
+      setPendingPrompt("")
+      clearObjectiveAttempt()
+
       if ("automation" in approved && approved.automation?.started) {
         const taskCount = approved.tasks?.length ?? 0
-        setPlanReviewOpen(false)
         setStatusMessage({ type: "success", text: `${taskCount} task dari ${approved.plan.planId} dibuat dan orchestration ${approved.orchestration?.orchestrationId ?? "dimulai"}.` })
         refetchDaemon?.()
         toast.add({ title: "Approval Diterima", description: "Orchestrator melanjutkan materialisasi dan eksekusi otomatis.", type: "success" })
@@ -594,7 +605,6 @@ export const useTasks = (): UseTasksReturn => {
       }
       if (!approved.planFingerprint) throw new Error("Plan fingerprint tidak tersedia untuk materialization.")
       const materialized = await materializeObjectivePlan({ objectiveId: approved.objective.objectiveId, planId: approved.plan.planId, planFingerprint: approved.planFingerprint })
-      setPlanReviewOpen(false)
       setStatusMessage({ type: "success", text: `${materialized.tasks.length} task dari ${approved.plan.planId} dibuat dan orchestration ${materialized.orchestration.orchestrationId} dimulai.` })
       refetchDaemon?.()
       toast.add({ title: "Objective Mulai Dijalankan", description: `${materialized.tasks.length} task berhasil dimaterialisasi.`, type: "success" })
