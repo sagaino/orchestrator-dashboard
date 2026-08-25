@@ -113,13 +113,21 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
             </button>}
 
             {orchestrationManaged && objectiveId ? (
-              <Link
-                to={`/objectives/${encodeURIComponent(objectiveId)}`}
-                className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-              >
-                <ArrowRight className="h-3.5 w-3.5" />
-                <span>Open Objective evidence</span>
-              </Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  to={`/objectives/${encodeURIComponent(objectiveId)}`}
+                  className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white flex items-center gap-1.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  <ArrowRight className="h-3.5 w-3.5" />
+                  <span>Buka Objective & Restart Subtask</span>
+                </Link>
+                <Link
+                  to="/decisions"
+                  className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 flex items-center gap-1.5 transition-colors"
+                >
+                  <span>Decision Inbox</span>
+                </Link>
+              </div>
             ) : !orchestrationManaged && taskFailed ? (
               <div className="flex flex-wrap items-center gap-2">
                 <Link
@@ -133,7 +141,7 @@ export const RunActionToolbar: React.FC<RunActionToolbarProps> = ({
               </div>
             ) : (
               <p className="max-w-sm text-[11px] leading-relaxed text-slate-400">
-                Retry node dilakukan dari Objective melalui Decision Inbox agar dependency, batas worker, dan audit tetap konsisten.
+                Retry node dapat dilakukan langsung dari halaman Objective atau melalui Decision Inbox.
               </p>
             )}
           </>

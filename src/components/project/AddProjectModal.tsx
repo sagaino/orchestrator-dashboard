@@ -163,7 +163,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white font-mono text-xs placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all disabled:opacity-50"
                 />
                 <p className="text-[11px] text-slate-500">
-                  Path absolut ke direktori Git repository yang berisi <code className="text-indigo-400">package.json</code>.
+                  Path absolut ke direktori Git repository (Node.js, Go, Java, Python, Rust, PHP, dll.).
                 </p>
               </div>
 

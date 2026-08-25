@@ -424,18 +424,18 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
       <AlertDialog open={Boolean(retryNode)} onOpenChange={(open) => { if (!open && !retryNodePending) { setRetryNode(null); setRetryReason("") } }}>
         <AlertDialogContent className="max-w-lg border border-slate-800 bg-slate-900 text-slate-100">
           <AlertDialogHeader className="space-y-3">
-            <AlertDialogTitle className="text-white">Request node retry</AlertDialogTitle>
+            <AlertDialogTitle className="text-white">Restart Subtask Node</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-300 text-sm leading-relaxed">
-              Buat human decision untuk node <span className="font-mono text-indigo-300">{retryNode?.nodeId}</span>. Task belum langsung dijalankan; setelah decision dibuat, pilih <span className="font-semibold text-emerald-300">RETRY</span> dari Decision Inbox.
+              Jalankan ulang subtask <span className="font-mono text-indigo-300">{retryNode?.nodeId}</span>. Sistem akan me-reset antrean, membuat isolated worktree baru, dan menjalankan coding agent kembali.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
-            <label htmlFor="node-retry-reason" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Alasan review</label>
+            <label htmlFor="node-retry-reason" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Catatan / Alasan Retry (Opsional)</label>
             <Textarea
               id="node-retry-reason"
               value={retryReason}
               onChange={(event) => setRetryReason(event.target.value)}
-              placeholder="Contoh: Scope matcher sudah diperbaiki dan worktree sudah direview."
+              placeholder="Contoh: Retry setelah perbaikan cache environment atau review perubahan."
               className="min-h-24 border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500"
               disabled={retryNodePending}
             />
@@ -456,7 +456,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
               }}
               className="bg-indigo-600 text-white hover:bg-indigo-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50"
             >
-              {retryNodePending ? "Membuat decision…" : "Buat retry decision"}
+              {retryNodePending ? "Memproses restart…" : "Restart Subtask Sekarang"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

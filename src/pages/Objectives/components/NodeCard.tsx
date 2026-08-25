@@ -164,7 +164,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node, onRequestRetry, retryi
             onClick={() => onRequestRetry(node)}
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            {retrying ? "Membuat decision…" : "Request Retry Decision"}
+            {retrying ? "Memproses…" : "Restart Subtask"}
           </Button>
         </div>
       )}
