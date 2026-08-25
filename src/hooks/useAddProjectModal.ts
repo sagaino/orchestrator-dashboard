@@ -103,8 +103,9 @@ export function useAddProjectModal({
 
       handleClose()
     } catch (err: any) {
+      const errorObj = err?.response?.data?.error
       const msg =
-        err?.response?.data?.error ||
+        (typeof errorObj === "string" ? errorObj : errorObj?.message) ||
         err?.response?.data?.message ||
         err?.message ||
         "Gagal melakukan onboarding existing project."
@@ -154,8 +155,9 @@ export function useAddProjectModal({
 
       handleClose()
     } catch (err: any) {
+      const errorObj = err?.response?.data?.error
       const msg =
-        err?.response?.data?.error ||
+        (typeof errorObj === "string" ? errorObj : errorObj?.message) ||
         err?.response?.data?.message ||
         err?.message ||
         "Gagal membuat dan mendaftarkan project baru."

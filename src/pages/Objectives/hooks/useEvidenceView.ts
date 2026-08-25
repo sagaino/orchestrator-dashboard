@@ -11,6 +11,7 @@ import {
   useCreateDeliveryCertification,
   useAcceptDeliveryCertification,
   useRequestObjectiveNodeRetry,
+  useResolveDecision,
 } from "@/hooks/use-orchestrator"
 import { toast } from "@/components/ui/toast"
 import type { AggregatePreview, ObjectiveEvidence, ObjectiveEvidenceNode, UseEvidenceViewReturn } from "../types"
@@ -28,6 +29,7 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
   const preview = usePreviewRun()
   const aggregate = useAggregatePreview()
   const stopAggregate = useStopAggregatePreview()
+  const resolveDecision = useResolveDecision()
   const visualRepair = useRequestObjectiveVisualChanges()
   const visualCapture = useCaptureVisualEvidence()
   const delivery = useDeliveryCertification(objective.objectiveId)
@@ -185,23 +187,29 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     if (!retryNode) return
     const reason = retryReason.trim() || "Retry setelah human review atas kegagalan node orchestration."
     try {
-      await nodeRetry.mutateAsync({
+      const result = await nodeRetry.mutateAsync({
         objectiveId: objective.objectiveId,
         orchestrationId: typeof evidence.orchestration?.orchestrationId === "string" ? evidence.orchestration.orchestrationId : null,
         nodeId: retryNode.nodeId,
         reason,
       })
+      if (result?.decision?.decisionId) {
+        await resolveDecision.mutateAsync({
+          decisionId: result.decision.decisionId,
+          action: "RETRY",
+        })
+      }
       setRetryNode(null)
       setRetryReason("")
-      setPreviewMessage(`Retry decision untuk ${retryNode.nodeId} dibuat. Buka Decision Inbox untuk memilih RETRY.`)
+      setPreviewMessage(`Subtask ${retryNode.nodeId} berhasil di-restart dan sedang berjalan ulang.`)
       toast.add({
-        title: "Retry Decision Dibuat",
-        description: `Decision untuk node ${retryNode.nodeId} telah dikirim ke Decision Inbox.`,
+        title: "Subtask Sedang Berjalan Ulang",
+        description: `Subtask ${retryNode.nodeId} telah di-unblock dan mulai dieksekusi ulang.`,
         type: "success",
       })
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Gagal membuat retry decision."
-      toast.add({ title: "Gagal Request Retry", description: msg, type: "error" })
+      const msg = error instanceof Error ? error.message : "Gagal me-restart subtask."
+      toast.add({ title: "Gagal Restart Subtask", description: msg, type: "error" })
     }
   }
 
