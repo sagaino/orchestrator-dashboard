@@ -22,6 +22,8 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
   const [autoCommit, setAutoCommit] = useState(false)
   const [commitMessage, setCommitMessage] = useState("")
 
+  const requiresChanges = run?.task?.requiresChanges !== false
+
   useEffect(() => {
     if (run) {
       const defaultMsg = `feat(${run.task?.id || "TASK"}): ${run.task?.title || "completed task"}`
@@ -31,11 +33,11 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
   }, [run, isOpen])
 
   const handleConfirmSubmit = async () => {
-    if (actionLoading || (autoCommit && !commitMessage.trim())) return
+    if (actionLoading || (requiresChanges && autoCommit && !commitMessage.trim())) return
     try {
       await onConfirm({
-        autoCommit,
-        commitMessage: autoCommit ? commitMessage.trim() : undefined,
+        autoCommit: requiresChanges ? autoCommit : false,
+        commitMessage: (requiresChanges && autoCommit) ? commitMessage.trim() : undefined,
       })
     } catch {
       // Error handling is handled in the onConfirm caller
@@ -62,11 +64,16 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
           </AlertDialogDescription>
           <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-400" />
-            <span>Perubahan kode akan diaplikasikan ke branch utama project dan pengetahuan yang relevan disinkronkan ke Wiki secara permanen.</span>
+            <span>
+              {requiresChanges
+                ? "Perubahan kode akan diaplikasikan ke branch utama project dan pengetahuan yang relevan disinkronkan ke Wiki secara permanen."
+                : "Hasil audit/verifikasi akan dicatat dan status task diperbarui menjadi DONE tanpa mengubah file repository."}
+            </span>
           </div>
 
-          {/* Optional Auto Git Commit Controls */}
-          <div className="w-full p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5">
+          {/* Optional Auto Git Commit Controls - Only shown when task requires changes */}
+          {requiresChanges ? (
+            <div className="w-full p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5">
               <label className="flex items-center gap-2 text-xs font-semibold text-slate-200 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -95,7 +102,13 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
                   />
                 </div>
               )}
-          </div>
+            </div>
+          ) : (
+            <div className="w-full p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-cyan-400 shrink-0" />
+              <span>Task ini adalah <strong>Read-Only / Verifikasi</strong> (tidak ada perubahan file Git yang perlu di-commit).</span>
+            </div>
+          )}
         </AlertDialogHeader>
 
         <AlertDialogFooter className="border-slate-800 bg-slate-900/50 mt-2">
@@ -107,11 +120,11 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
             Batal
           </AlertDialogCancel>
           <AlertDialogAction
-            disabled={actionLoading || (autoCommit && !commitMessage.trim())}
+            disabled={actionLoading || (requiresChanges && autoCommit && !commitMessage.trim())}
             onClick={handleConfirmSubmit}
             className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer disabled:opacity-50"
           >
-            {actionLoading ? "Menyetujui..." : autoCommit ? "Setujui & Commit" : "Setujui Saja"}
+            {actionLoading ? "Menyetujui..." : requiresChanges && autoCommit ? "Setujui & Commit" : "Setujui"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
