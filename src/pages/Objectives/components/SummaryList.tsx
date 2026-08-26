@@ -1,6 +1,6 @@
 import React from "react"
 import { Link } from "react-router-dom"
-import { AlertTriangle, CheckCircle2, Filter, XCircle } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Filter, HelpCircle, XCircle } from "lucide-react"
 import { useCancelObjective } from "@/hooks/use-orchestrator"
 import {
   AlertDialog,
@@ -121,11 +121,20 @@ export const SummaryList: React.FC<SummaryListProps> = ({ items }) => {
                   </span>
                 ))}
                 <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-                  {item.state === "PLANNING" && (
+                  {item.state === "NEEDS_CLARIFICATION" && (
+                    <Link
+                      to={`/objectives/${encodeURIComponent(item.objectiveId)}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/20 px-3 py-2 text-xs font-semibold text-amber-300 transition-colors hover:bg-amber-500/30 shadow-sm"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      Jawab Klarifikasi →
+                    </Link>
+                  )}
+                  {["PLANNING", "NEEDS_CLARIFICATION", "PLAN_REVIEW"].includes(item.state) && (
                     <button
                       type="button"
                       onClick={() => setCancelObjectiveId(item.objectiveId)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300 transition-colors hover:bg-rose-500/20"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300 transition-colors hover:bg-rose-500/20 cursor-pointer"
                     >
                       <XCircle className="h-3.5 w-3.5" />
                       Batalkan objective
