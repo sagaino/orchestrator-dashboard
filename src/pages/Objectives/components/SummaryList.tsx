@@ -1,17 +1,8 @@
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { Link } from "react-router-dom"
-import { AlertTriangle, CheckCircle2, Filter, HelpCircle, Loader2, Send, XCircle } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Filter, HelpCircle, XCircle } from "lucide-react"
 import { useCancelObjective, useGenerateObjectivePlan, useObjective } from "@/hooks/use-orchestrator"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { ClarificationModal } from "@/pages/Tasks/components/ClarificationModal"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,129 +17,6 @@ import { StatusBadge } from "./StatusBadge"
 import { requestSections } from "./ObjectiveRequestHeading"
 import type { SummaryListProps } from "../types"
 
-function ClarificationModal({
-  objectiveId,
-  open,
-  onClose,
-}: {
-  objectiveId: string | null
-  open: boolean
-  onClose: () => void
-}) {
-  const { data: detail, isLoading } = useObjective(objectiveId ?? "")
-  const [answer, setAnswer] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const { mutateAsync: generatePlan, isPending } = useGenerateObjectivePlan()
-
-  useEffect(() => {
-    if (open) {
-      setAnswer("")
-      setError(null)
-    }
-  }, [open, objectiveId])
-
-  const question = detail?.planning?.clarificationQuestion || "AI Planner memerlukan informasi tambahan untuk menyusun rencana dekomposisi yang aman."
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!objectiveId || !answer.trim()) return
-    try {
-      setError(null)
-      await generatePlan({ objectiveId, clarification: answer.trim() })
-      onClose()
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Gagal mengirim jawaban klarifikasi.")
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(next) => !isPending && !next && onClose()}>
-      <DialogContent className="max-w-2xl border-slate-800 bg-slate-900 text-slate-100 p-0 overflow-hidden shadow-2xl rounded-2xl">
-        <DialogHeader className="border-b border-slate-800 bg-slate-950/60 p-6 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/20 text-amber-300">
-              <HelpCircle className="h-5 w-5" />
-            </div>
-            <div>
-              <DialogTitle className="text-lg font-bold text-white">Klarifikasi Diperlukan oleh AI</DialogTitle>
-              <DialogDescription className="text-xs text-slate-400 mt-0.5 font-mono">
-                {detail?.objectiveId || objectiveId}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8 text-slate-400 gap-2">
-              <Loader2 className="h-5 w-5 animate-spin text-amber-400" />
-              <span className="text-xs">Memuat pertanyaan klarifikasi...</span>
-            </div>
-          ) : (
-            <>
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Pertanyaan AI:</label>
-                <div className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm font-medium text-amber-100 leading-relaxed">
-                  {question}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Jawaban Anda:</label>
-                <Textarea
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="Ketik jawaban Anda di sini (misal: 'Gunakan project be-golang-app saja' atau 'Tambahkan project be-golang-app ke scope')..."
-                  className="mt-2 min-h-[100px] border-slate-700 bg-slate-950 text-sm text-slate-100 placeholder:text-slate-500"
-                  disabled={isPending}
-                  autoFocus
-                />
-              </div>
-
-              {error && (
-                <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
-                  {error}
-                </p>
-              )}
-            </>
-          )}
-
-          <DialogFooter className="pt-3 flex items-center justify-between gap-2 border-t border-slate-800">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={isPending}
-              onClick={onClose}
-              className="border-slate-700 bg-slate-800 text-xs text-slate-300 hover:bg-slate-700"
-            >
-              Tutup
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={isPending || isLoading || !answer.trim()}
-              className="gap-2 bg-amber-600 font-medium text-white hover:bg-amber-500 cursor-pointer"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Menyusun Ulang Plan...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  Kirim Jawaban & Rencanakan Ulang
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
 export const SummaryList: React.FC<SummaryListProps> = ({ items }) => {
   const [filter, setFilter] = useState<"ACTIVE" | "ALL" | "DONE" | "CANCELLED">(() => {
     const hasActive = items.some((item) => item.state !== "CANCELLED" && item.state !== "DONE")
@@ -160,12 +28,19 @@ export const SummaryList: React.FC<SummaryListProps> = ({ items }) => {
     if (filter === "CANCELLED") return item.state === "CANCELLED"
     return item.state !== "CANCELLED" && item.state !== "DONE"
   })
+
   const [cancelObjectiveId, setCancelObjectiveId] = useState<string | null>(null)
-  const [clarifyObjectiveId, setClarifyObjectiveId] = useState<string | null>(null)
   const [cancelError, setCancelError] = useState<string | null>(null)
   const { mutateAsync: cancelObjective, isPending: cancelling } = useCancelObjective()
 
+  const [clarifyObjectiveId, setClarifyObjectiveId] = useState<string | null>(null)
+  const [clarificationAnswer, setClarificationAnswer] = useState("")
+  const { mutateAsync: generatePlan, isPending: submittingClarification } = useGenerateObjectivePlan()
+  const { data: clarifyDetail } = useObjective(clarifyObjectiveId ?? "")
+
   const selectedObjective = items.find((item) => item.objectiveId === cancelObjectiveId)
+  const selectedClarifyItem = items.find((item) => item.objectiveId === clarifyObjectiveId)
+
   const confirmCancel = async () => {
     if (!cancelObjectiveId) return
     try {
@@ -175,6 +50,21 @@ export const SummaryList: React.FC<SummaryListProps> = ({ items }) => {
       setCancelObjectiveId(null)
     } catch (error) {
       setCancelError(error instanceof Error ? error.message : "Objective tidak dapat dibatalkan.")
+    }
+  }
+
+  const handleClarificationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!clarifyObjectiveId || !clarificationAnswer.trim()) return
+    try {
+      await generatePlan({
+        objectiveId: clarifyObjectiveId,
+        clarification: clarificationAnswer.trim(),
+      })
+      setClarifyObjectiveId(null)
+      setClarificationAnswer("")
+    } catch {
+      // error handled by mutation
     }
   }
 
@@ -303,11 +193,19 @@ export const SummaryList: React.FC<SummaryListProps> = ({ items }) => {
         })
       )}
 
-      {/* Modal Dialog Pop-up Klarifikasi Langsung */}
+      {/* Reusable Standard Clarification Modal Component */}
       <ClarificationModal
-        objectiveId={clarifyObjectiveId}
-        open={Boolean(clarifyObjectiveId)}
-        onClose={() => setClarifyObjectiveId(null)}
+        isOpen={Boolean(clarifyObjectiveId)}
+        question={clarifyDetail?.planning?.clarificationQuestion || ""}
+        answer={clarificationAnswer}
+        onAnswerChange={setClarificationAnswer}
+        submitting={submittingClarification}
+        onClose={() => {
+          setClarifyObjectiveId(null)
+          setClarificationAnswer("")
+        }}
+        onSubmit={handleClarificationSubmit}
+        originalPrompt={clarifyDetail?.request || selectedClarifyItem?.request}
       />
 
       {/* Modal Dialog Pembatalan Objective */}
