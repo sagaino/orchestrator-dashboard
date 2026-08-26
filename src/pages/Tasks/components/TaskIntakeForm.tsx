@@ -195,7 +195,8 @@ export const TaskIntakeForm: React.FC<TaskIntakeFormProps> = ({
                 onChange={(e) => onFreshBlueprintChange(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
               >
-                <option value="frontend-vite">frontend-vite</option>
+                <option value="frontend-vite">frontend-vite (React + Vite + Shadcn)</option>
+                <option value="backend-golang">backend-golang (Go Clean Architecture)</option>
               </select>
             </div>
             <div className="sm:col-span-2">

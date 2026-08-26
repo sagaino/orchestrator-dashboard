@@ -44,6 +44,8 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
     setNewProjectId,
     newTargetDir,
     setNewTargetDir,
+    newBlueprint,
+    setNewBlueprint,
     archivedProjects,
     isLoadingArchived,
     errorMessage,
@@ -231,25 +233,48 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
-                  <span>Architecture Blueprint</span>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-300">
+                  Architecture Blueprint
                 </label>
-                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <Layers className="h-4 w-4 text-indigo-400" />
-                    <div>
-                      <div className="text-xs font-semibold text-white">
-                        Vite + React + TypeScript + Shadcn UI
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        Blueprint deterministik versi 2 dengan standard verification baseline.
-                      </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => setNewBlueprint("frontend-vite")}
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                      newBlueprint === "frontend-vite"
+                        ? "bg-indigo-500/10 border-indigo-500 text-white shadow-sm shadow-indigo-500/20"
+                        : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Layers className={`h-4 w-4 ${newBlueprint === "frontend-vite" ? "text-indigo-400" : "text-slate-500"}`} />
+                      <span className="text-xs font-semibold text-white">Frontend (Vite + React)</span>
                     </div>
-                  </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
-                    Default
-                  </span>
+                    <p className="text-[10px] text-slate-400 leading-relaxed">
+                      Vite + React + TypeScript + Shadcn UI dengan standard verification baseline.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => setNewBlueprint("backend-golang")}
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                      newBlueprint === "backend-golang"
+                        ? "bg-indigo-500/10 border-indigo-500 text-white shadow-sm shadow-indigo-500/20"
+                        : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Layers className={`h-4 w-4 ${newBlueprint === "backend-golang" ? "text-indigo-400" : "text-slate-500"}`} />
+                      <span className="text-xs font-semibold text-white">Backend (Golang)</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-relaxed">
+                      Go 1.22+ Modular Clean Architecture (Domain, Usecase, Controller, DB, i18n).
+                    </p>
+                  </button>
                 </div>
               </div>
             </form>
