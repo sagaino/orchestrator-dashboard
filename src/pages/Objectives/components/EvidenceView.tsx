@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Target,
   TestTube2,
+  XCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -57,6 +58,10 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
     retryReason,
     setRetryReason,
     retryNodePending,
+    cancelOpen,
+    setCancelOpen,
+    cancellingObjective,
+    handleCancelObjective,
     handleAccept,
     handleAggregatePreview,
     handleStopAggregatePreview,
@@ -72,6 +77,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
   const objective = evidence.objective
   const finalAcceptOnly = evidence.automation?.finalAcceptOnly === true
   const autopilotEnabled = evidence.automation?.autopilot === true || finalAcceptOnly
+  const canCancelObjective = !["DONE", "CANCELLED"].includes(objective.state)
   const integrationState = String(
     (evidence.orchestration?.integration as { state?: string } | undefined)?.state
       ?? evidence.integration?.status
@@ -108,6 +114,18 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
           <StatusBadge state={objective.state} />
           <ObjectivePlanGate lifecycle={lifecycle} />
           <div className="flex flex-wrap gap-2 lg:justify-end">
+            {canCancelObjective && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={cancellingObjective}
+                onClick={() => setCancelOpen(true)}
+                className="gap-2 border-rose-500/30 text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
+              >
+                <XCircle className="h-4 w-4" />
+                Batalkan Objective
+              </Button>
+            )}
             {!autopilotEnabled && integrationRequired && (
               <Button
                 type="button"
@@ -457,6 +475,36 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
               className="bg-indigo-600 text-white hover:bg-indigo-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50"
             >
               {retryNodePending ? "Memproses restart…" : "Restart Subtask Sekarang"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={cancelOpen} onOpenChange={(open) => { if (!open && !cancellingObjective) setCancelOpen(false) }}>
+        <AlertDialogContent className="max-w-lg border border-slate-800 bg-slate-900 text-slate-100">
+          <AlertDialogHeader className="space-y-3">
+            <AlertDialogTitle className="text-white">Batalkan Objective?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-300 text-sm leading-relaxed">
+              Apakah Anda yakin ingin membatalkan objective <span className="font-mono text-indigo-300">{objective.objectiveId}</span>? Seluruh antrean subtask yang belum selesai akan dibatalkan secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="border-slate-800 bg-slate-900/50 mt-2">
+            <AlertDialogCancel
+              disabled={cancellingObjective}
+              onClick={() => setCancelOpen(false)}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
+              Kembali
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={cancellingObjective}
+              onClick={(event) => {
+                event.preventDefault()
+                void handleCancelObjective()
+              }}
+              className="bg-rose-600 text-white hover:bg-rose-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50"
+            >
+              {cancellingObjective ? "Membatalkan…" : "Ya, Batalkan Objective"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

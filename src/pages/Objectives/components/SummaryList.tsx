@@ -170,7 +170,7 @@ export const SummaryList: React.FC<SummaryListProps> = ({ items }) => {
                       Jawab Klarifikasi
                     </button>
                   )}
-                  {["PLANNING", "NEEDS_CLARIFICATION", "PLAN_REVIEW"].includes(item.state) && (
+                  {!["DONE", "CANCELLED"].includes(item.state) && (
                     <button
                       type="button"
                       onClick={() => setCancelObjectiveId(item.objectiveId)}
