@@ -138,6 +138,10 @@ export interface UseEvidenceViewReturn {
   retryReason: string
   setRetryReason: (reason: string) => void
   retryNodePending: boolean
+  cancelOpen: boolean
+  setCancelOpen: (open: boolean) => void
+  cancellingObjective: boolean
+  handleCancelObjective: () => Promise<void>
   handlePreview: (runId: string) => Promise<void>
   handleAccept: () => Promise<void>
   handleAggregatePreview: () => Promise<void>

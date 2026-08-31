@@ -12,6 +12,7 @@ import {
   useAcceptDeliveryCertification,
   useRequestObjectiveNodeRetry,
   useResolveDecision,
+  useCancelObjective,
 } from "@/hooks/use-orchestrator"
 import { toast } from "@/components/ui/toast"
 import type { AggregatePreview, ObjectiveEvidence, ObjectiveEvidenceNode, UseEvidenceViewReturn } from "../types"
@@ -19,12 +20,14 @@ import type { AggregatePreview, ObjectiveEvidence, ObjectiveEvidenceNode, UseEvi
 export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewReturn => {
   const objective = evidence.objective
   const [acceptOpen, setAcceptOpen] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
   const [previewMessage, setPreviewMessage] = useState<string | null>(null)
   const [aggregatePreview, setAggregatePreview] = useState<AggregatePreview | null>(null)
   const [retryNode, setRetryNode] = useState<ObjectiveEvidenceNode | null>(null)
   const [retryReason, setRetryReason] = useState("")
 
   const accept = useAcceptObjective()
+  const cancel = useCancelObjective()
   const integration = useStartIntegration()
   const preview = usePreviewRun()
   const aggregate = useAggregatePreview()
@@ -213,9 +216,27 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     }
   }
 
+  const handleCancelObjective = async () => {
+    try {
+      await cancel.mutateAsync(objective.objectiveId)
+      setCancelOpen(false)
+      toast.add({
+        title: "Objective Dibatalkan",
+        description: `Objective ${objective.objectiveId} berhasil dibatalkan.`,
+        type: "info",
+      })
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Gagal membatalkan objective."
+      toast.add({ title: "Gagal Cancel Objective", description: msg, type: "error" })
+    }
+  }
+
   return {
     acceptOpen,
     setAcceptOpen,
+    cancelOpen,
+    setCancelOpen,
+    cancellingObjective: cancel.isPending,
     previewMessage,
     aggregatePreview,
     delivery: delivery.data?.latest ?? null,
@@ -234,6 +255,7 @@ export const useEvidenceView = (evidence: ObjectiveEvidence): UseEvidenceViewRet
     retryReason,
     setRetryReason,
     retryNodePending: nodeRetry.isPending,
+    handleCancelObjective,
     handlePreview,
     handleAccept,
     handleAggregatePreview,
