@@ -327,7 +327,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
               <NodeCard
                 key={node.nodeId}
                 node={node}
-                onRequestRetry={autopilotEnabled ? undefined : setRetryNode}
+                onRequestRetry={setRetryNode}
                 retrying={retryNodePending}
               />
             ))}
