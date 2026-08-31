@@ -15,7 +15,7 @@ test("Objective evidence keeps final acceptance separate from evidence review", 
   await expect(page.getByRole("heading", { name: "Objective graph" })).toBeVisible()
   await expect(page.getByText("Dependency edges", { exact: true })).toBeVisible()
   await expect(page.getByText("N01 · DIAGNOSTIC").first()).toBeVisible()
-  await expect(page.getByRole("link", { name: "Diff" })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Diff", exact: true })).toBeVisible()
 
   await page.getByRole("button", { name: "Aggregate preview" }).click()
   await expect(page.getByText("Aggregate project preview")).toBeVisible()
@@ -25,6 +25,7 @@ test("Objective evidence keeps final acceptance separate from evidence review", 
   await expect(page.getByRole("button", { name: "Stop preview" })).toHaveCount(0)
 
   await expect(page.getByRole("heading", { name: "Objective visual & E2E evidence" })).toBeVisible()
+  await page.getByRole("button", { name: /Objective visual & E2E evidence/ }).click()
   await expect(page.getByText("/dashboard", { exact: true })).toBeVisible()
   await expect(page.getByText("desktop · 1440×900", { exact: true })).toBeVisible()
   await page.getByRole("button", { name: "Request changes" }).click()
@@ -35,7 +36,7 @@ test("Objective evidence keeps final acceptance separate from evidence review", 
   const graphNode = page.getByRole("button", { name: /N01.*DIAGNOSTIC/ })
   await graphNode.focus()
   await graphNode.press("Enter")
-  await expect(page.getByText("Selected node", { exact: true })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Selected Node Detail" })).toBeVisible()
   await expect(page.getByText("Inspect fixture", { exact: true }).last()).toBeVisible()
   await page.reload()
   await expect(page.getByRole("heading", { name: "Objective graph" })).toBeVisible()
@@ -47,7 +48,7 @@ test("Objective evidence keeps final acceptance separate from evidence review", 
   await expect(page.getByText("ACCEPTED", { exact: true })).toBeVisible()
 
   await expect(page.getByRole("heading", { name: "Delivery certification" })).toBeVisible()
-  await page.getByRole("button", { name: "Run delivery certification" }).click()
+  await page.getByRole("button", { name: "Run delivery certification", exact: true }).click()
   await expect(page.getByText("HUMAN GATE REQUIRED", { exact: true })).toBeVisible()
   await expect(page.getByText("8 / 8 PASS", { exact: true })).toBeVisible()
   await page.getByRole("button", { name: "Accept delivery certification" }).click()

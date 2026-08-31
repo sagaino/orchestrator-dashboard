@@ -121,8 +121,8 @@ test("orchestration-managed failures send retry review to the Objective", async 
   await page.getByPlaceholder("Cari Run ID, Task, atau Project...").fill("E2E-ORCH-FAIL")
   await page.getByRole("button", { name: /E2E-ORCH-FAIL.*FAILED/ }).click()
 
-  await expect(page.getByRole("link", { name: "Request retry via Objective" })).toHaveAttribute("href", "/objectives/e2e-objective-dashboard")
+  await expect(page.getByRole("link", { name: "Buka Objective & Restart Subtask" })).toHaveAttribute("href", "/objectives/e2e-objective-dashboard")
   await expect(page.getByRole("button", { name: "Retry Task" })).toHaveCount(0)
-  await page.getByRole("link", { name: "Request retry via Objective" }).click()
+  await page.getByRole("link", { name: "Buka Objective & Restart Subtask" }).click()
   await expect(page).toHaveURL(/\/objectives\/e2e-objective-dashboard$/)
 })

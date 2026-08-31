@@ -60,30 +60,26 @@ export const DeliveryCertificationPanel: React.FC<DeliveryCertificationPanelProp
 
   return (
     <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5">
-      <div
-        role="button"
-        tabIndex={0}
-        aria-expanded={isOpen}
-        aria-controls="delivery-certification-content"
-        onClick={() => setIsOpen((prev) => !prev)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault()
-            setIsOpen((prev) => !prev)
-          }
-        }}
-        className="flex flex-wrap items-start justify-between gap-3 cursor-pointer select-none rounded-lg p-1 -m-1 transition-colors hover:bg-emerald-500/10 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-      >
-        <div className="min-w-0 flex-1">
+      <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg p-1 -m-1">
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          aria-controls="delivery-certification-content"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="min-w-0 flex-1 cursor-pointer select-none rounded-lg text-left outline-none transition-colors hover:bg-emerald-500/10 focus-visible:ring-2 focus-visible:ring-emerald-400"
+        >
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-emerald-300 shrink-0" />
             <h2 className="text-sm font-semibold text-white">Delivery certification</h2>
             {certification && <StatusBadge state={certification.status} />}
+            <span className="ml-auto flex items-center text-emerald-300">
+              {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </span>
           </div>
           <p className="mt-2 max-w-2xl text-xs text-slate-400">
             Satu bundle durable yang memeriksa plan, execution, integration, preview, visual/E2E evidence, human acceptance, cleanup, dan knowledge capture.
           </p>
-        </div>
+        </button>
         <div className="flex flex-wrap items-center gap-3">
           {certification && (
             <div className="text-right text-[11px] text-slate-400">
@@ -104,11 +100,7 @@ export const DeliveryCertificationPanel: React.FC<DeliveryCertificationPanelProp
               )}
             </div>
           )}
-          <div
-            className="flex flex-wrap items-center gap-2"
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
+          <div className="flex flex-wrap items-center gap-2">
             {automatic && (
               <span className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
                 Dijalankan otomatis oleh orchestrator
@@ -137,9 +129,6 @@ export const DeliveryCertificationPanel: React.FC<DeliveryCertificationPanelProp
                 Accept delivery certification
               </Button>
             )}
-          </div>
-          <div className="flex items-center text-emerald-300">
-            {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
         </div>
       </div>

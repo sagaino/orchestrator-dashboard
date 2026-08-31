@@ -190,15 +190,6 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({ evidence, lifecycle 
               <span>Seluruh deliverable dan verifikasi telah diverifikasi. Klik tombol Final Acceptance untuk menyelesaikan objective dan menerapkan perubahan ke codebase utama & Wiki.</span>
             </div>
           </div>
-          <Button
-            type="button"
-            onClick={() => setAcceptOpen(true)}
-            size="sm"
-            className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs gap-1.5 shadow-sm shrink-0"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            <span>Final Acceptance</span>
-          </Button>
         </div>
       )}
 
