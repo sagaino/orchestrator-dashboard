@@ -363,9 +363,13 @@ export async function installLifecycleFixtures(page: Page) {
       checkedAt: now,
       status: "DEGRADED",
       admission: { allowed: true, blockers: [] },
-      checks: [{ id: "backup", status: "PASS", severity: "INFO", message: "Backup verified.", action: "Tidak ada tindakan.", runbook: "fixture" }, { id: "backup-schedule", status: "WARN", severity: "WARNING", message: "Backup schedule belum dipasang; freshness masih bergantung pada backup manual.", action: "Review schedule artifact.", runbook: "fixture" }],
+      checks: [{ id: "backup", status: "PASS", severity: "INFO", message: "Backup verified.", action: "Tidak ada tindakan.", runbook: "fixture" }, { id: "backup-schedule", status: "WARN", severity: "WARNING", message: "Backup schedule belum dipasang; freshness masih bergantung pada backup manual.", action: "Review schedule artifact.", runbook: "fixture" }, { id: "runtime-profile", status: "PASS", severity: "INFO", message: "Profil runtime sesuai dengan kontrak.", action: "Tidak ada tindakan.", runbook: "fixture" }],
       alerts: [{ alertId: "OPS_BACKUP_SCHEDULE", severity: "WARNING", dedupeKey: "backup-schedule:WARN", acknowledgement: "fixture", runbook: "fixture", runbookSteps: ["Review schedule artifact."], message: "Backup schedule belum dipasang; freshness masih bergantung pada backup manual.", ownerRole: "recovery-operator", acknowledgementState: "UNACKNOWLEDGED", resolutionEvidenceRequired: true }],
-      signals: { backupSchedule: { configured: false, launchctlActivated: false, intervalHours: null } },
+      signals: {
+        backupSchedule: { configured: false, launchctlActivated: false, intervalHours: null },
+        runtimeConfig: { schemaVersion: 1, profile: "LOCAL_SAFE", flags: { objectives: false, objectiveScheduler: false, parallelObjectives: false, sameProjectParallel: false, crossProject: false, skills: false, skillAutoRouting: false, telegram: false }, capacity: { maxParallelJobs: 2 }, automation: { approvalMode: "MANUAL", automaticPlanApproval: false, automaticMaterialization: false, automaticDeliveryCertification: false, automaticRecoveryAttempts: 2 } },
+        runtimeProfileAlignment: { profile: "LOCAL_SAFE", contractFound: true, aligned: true, severity: "INFO", mismatches: [], overrides: [] },
+      },
     })
     if (pathname === "/api/operations/retention/trash") return json(route, [])
     if (pathname === "/api/operations/backups/status") return json(route, {

@@ -124,7 +124,7 @@ export const AcceptRunModal: React.FC<AcceptRunModalProps> = ({
             onClick={handleConfirmSubmit}
             className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer disabled:opacity-50"
           >
-            {actionLoading ? "Menyetujui..." : requiresChanges && autoCommit ? "Setujui & Commit" : "Setujui"}
+            {actionLoading ? "Menyetujui..." : requiresChanges && autoCommit ? "Setujui & Commit" : "Setujui Saja"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

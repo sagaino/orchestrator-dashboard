@@ -134,6 +134,12 @@ export const useTasks = (): UseTasksReturn => {
   const [planReviewObjective, setPlanReviewObjective] = useState<ObjectiveRecord | null>(null)
   const [planReview, setPlanReview] = useState<ObjectivePlanReview | null>(null)
   const [planReviewDecisions, setPlanReviewDecisions] = useState<ObjectiveDecision[]>([])
+  const [clarificationOpen, setClarificationOpen] = useState(false)
+  const [clarificationQuestion, setClarificationQuestion] = useState("")
+  const [clarificationAnswer, setClarificationAnswer] = useState("")
+  const [pendingPrompt, setPendingPrompt] = useState(storedPendingObjective?.request || "")
+  const [pendingObjectiveId, setPendingObjectiveId] = useState<string | null>(storedPendingObjective?.objectiveId || null)
+  const objectiveAttemptRef = useRef<{ fingerprint: string; key: string } | null>(null)
 
   useEffect(() => {
     if (projects.length > 0 && !projects.some((project) => project.id === selectedProject)) {
@@ -163,14 +169,6 @@ export const useTasks = (): UseTasksReturn => {
     setPlanReviewDecisions(objectiveDetail.decisions ?? [])
     setPlanReviewOpen(true)
   }, [objectiveDetail])
-
-  // Clarification state
-  const [clarificationOpen, setClarificationOpen] = useState(false)
-  const [clarificationQuestion, setClarificationQuestion] = useState("")
-  const [clarificationAnswer, setClarificationAnswer] = useState("")
-  const [pendingPrompt, setPendingPrompt] = useState(storedPendingObjective?.request || "")
-  const [pendingObjectiveId, setPendingObjectiveId] = useState<string | null>(storedPendingObjective?.objectiveId || null)
-  const objectiveAttemptRef = useRef<{ fingerprint: string; key: string } | null>(null)
 
   const objectiveIdempotencyKey = (payload: Record<string, unknown>) => {
     const fingerprint = JSON.stringify(payload)

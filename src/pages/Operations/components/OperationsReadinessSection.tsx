@@ -46,7 +46,20 @@ export const OperationsReadinessSection: React.FC<OperationsReadinessSectionProp
         : "bg-rose-500/15 text-rose-200 border-rose-500/30"
 
   const runtimeConfig = readiness.signals.runtimeConfig
+  const profileAlignment = readiness.signals.runtimeProfileAlignment
+  const profileCheck = readiness.checks.find((item) => item.id === "runtime-profile")
   const queue = readiness.signals.queue
+  const displayValue = (value: unknown) => typeof value === "string" ? value : JSON.stringify(value)
+  const alignmentLabel = profileAlignment?.aligned === true
+    ? "SESUAI"
+    : profileAlignment?.aligned === false
+      ? "TIDAK SESUAI"
+      : "BELUM TERSEDIA"
+  const alignmentClass = profileAlignment?.aligned === true
+    ? "border-emerald-500/30 text-emerald-200"
+    : profileAlignment?.aligned === false
+      ? "border-rose-500/40 text-rose-200"
+      : "border-slate-600 text-slate-300"
   const formatQueueAge = (ageMs: number | undefined) => {
     if (!Number.isFinite(ageMs) || !ageMs || ageMs < 1000) return "0 menit"
     return `${Math.floor(ageMs / 60_000)} menit`
@@ -69,13 +82,18 @@ export const OperationsReadinessSection: React.FC<OperationsReadinessSectionProp
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <section aria-labelledby="runtime-profile-title" className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+        <section aria-labelledby="runtime-profile-title" className={`rounded-xl border bg-slate-950/40 p-4 ${profileAlignment?.aligned === false ? "border-rose-500/40" : "border-slate-800"}`}>
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 id="runtime-profile-title" className="font-medium text-slate-100">Runtime profile</h3>
               <p className="mt-1 text-xs text-slate-500">Konfigurasi efektif yang sedang digunakan daemon.</p>
             </div>
-            <span className="rounded border border-indigo-500/30 px-2 py-0.5 text-xs text-indigo-200">{runtimeConfig?.profile ?? "UNKNOWN"}</span>
+            <div className="flex items-center gap-2">
+              <span className={`rounded border px-2 py-0.5 text-xs ${alignmentClass}`}>
+                {alignmentLabel}
+              </span>
+              <span className="rounded border border-indigo-500/30 px-2 py-0.5 text-xs text-indigo-200">{runtimeConfig?.profile ?? "UNKNOWN"}</span>
+            </div>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">
             <span>Objective scheduler: <strong className="text-slate-200">{runtimeConfig?.flags.objectiveScheduler ? "ON" : "OFF"}</strong></span>
@@ -85,6 +103,20 @@ export const OperationsReadinessSection: React.FC<OperationsReadinessSectionProp
             <span>Skills: <strong className="text-slate-200">{runtimeConfig?.flags.skills ? "ON" : "OFF"}</strong></span>
             <span>Max parallel jobs: <strong className="text-slate-200">{runtimeConfig?.capacity.maxParallelJobs ?? "-"}</strong></span>
           </div>
+          {profileAlignment?.overrides && profileAlignment.overrides.length > 0 && (
+            <p className="mt-3 text-xs text-cyan-200">{profileAlignment.overrides.length} opt-in eksplisit aktif dan masih berada dalam batas aman profil.</p>
+          )}
+          {profileAlignment?.mismatches && profileAlignment.mismatches.length > 0 && (
+            <div className="mt-3 rounded-lg border border-rose-500/30 bg-rose-950/20 p-3 text-xs text-rose-100">
+              <p className="font-medium">Konfigurasi yang perlu diperbaiki:</p>
+              <ul className="mt-2 space-y-1">
+                {profileAlignment.mismatches.map((item) => (
+                  <li key={item.field}><code>{item.field}</code>: saat ini {displayValue(item.actual)}, seharusnya {displayValue(item.expected)}</li>
+                ))}
+              </ul>
+              {profileCheck?.action && <p className="mt-2 text-rose-200">Tindakan aman: {profileCheck.action}</p>}
+            </div>
+          )}
         </section>
 
         <section aria-labelledby="worker-capacity-title" className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">

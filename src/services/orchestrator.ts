@@ -106,8 +106,27 @@ export interface OperationsReadiness {
   alerts: Array<OperationsAlert>
   signals: Record<string, unknown> & {
     runtimeConfig?: RuntimeConfigSnapshot
+    runtimeProfileAlignment?: RuntimeProfileAlignment
     queue?: QueueCapacitySnapshot
   }
+}
+
+export interface RuntimeProfileAlignmentItem {
+  field: string
+  expected?: unknown
+  baseline?: unknown
+  actual: unknown
+  severity?: "BLOCKER"
+  classification?: "EXPLICIT_OVERRIDE"
+}
+
+export interface RuntimeProfileAlignment {
+  profile: string
+  contractFound: boolean
+  aligned: boolean
+  severity: "INFO" | "BLOCKER"
+  mismatches: RuntimeProfileAlignmentItem[]
+  overrides: RuntimeProfileAlignmentItem[]
 }
 
 export interface RuntimeConfigSnapshot {

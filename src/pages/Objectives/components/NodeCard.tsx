@@ -1,5 +1,5 @@
 import React from "react"
-import { Brain, Eye, FileDiff, RotateCcw, ShieldCheck, Terminal, XCircle, ArrowRight, CheckCircle2, Sparkles } from "lucide-react"
+import { Brain, Eye, FileDiff, RotateCcw, ShieldCheck, Terminal, XCircle, ArrowRight, CheckCircle2 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "./StatusBadge"
