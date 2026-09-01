@@ -1,8 +1,16 @@
 import { expect, test } from "@playwright/test"
 import { installLifecycleFixtures } from "./fixtures"
+import { collectUnexpectedBrowserErrors } from "./browser-errors"
+
+let browserErrors: string[] = []
 
 test.beforeEach(async ({ page }) => {
+  browserErrors = collectUnexpectedBrowserErrors(page)
   await installLifecycleFixtures(page)
+})
+
+test.afterEach(async () => {
+  expect(browserErrors, "browser console and page errors").toEqual([])
 })
 
 test("Objective evidence keeps final acceptance separate from evidence review", async ({ page }) => {
@@ -16,6 +24,8 @@ test("Objective evidence keeps final acceptance separate from evidence review", 
   await expect(page.getByText("Dependency edges", { exact: true })).toBeVisible()
   await expect(page.getByText("N01 · DIAGNOSTIC").first()).toBeVisible()
   await expect(page.getByRole("link", { name: "Diff", exact: true })).toBeVisible()
+  await expect(page.getByTestId("verification-baseline-evidence")).toContainText("PASS_NO_REGRESSION")
+  await expect(page.getByTestId("verification-baseline-evidence")).toContainText("+0 new · −0 resolved · 1 unchanged")
 
   await page.getByRole("button", { name: "Aggregate preview" }).click()
   await expect(page.getByText("Aggregate project preview")).toBeVisible()

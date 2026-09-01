@@ -4,6 +4,7 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "./StatusBadge"
 import type { NodeCardProps } from "../types"
+import type { VerificationBaselineEvidence } from "@/services/orchestrator"
 
 const runPath = (runId: string, tab: "OVERVIEW" | "DIFF" | "LOGS" | "QA" | "RETROSPECTIVE") =>
   `/runs?runId=${encodeURIComponent(runId)}&tab=${tab}`
@@ -11,6 +12,10 @@ const runPath = (runId: string, tab: "OVERVIEW" | "DIFF" | "LOGS" | "QA" | "RETR
 const runLinkClass = "inline-flex items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors"
 
 export const NodeCard: React.FC<NodeCardProps> = ({ node, onRequestRetry, retrying }) => {
+  const baselineEvidence = node.verification.flatMap((check) => {
+    const candidate = check.baselineEvidence
+    return candidate && typeof candidate === "object" ? [candidate as VerificationBaselineEvidence] : []
+  })
   const showLogs = Boolean(
     node.runId &&
       (node.error || ["FAILED", "BLOCKED"].includes(String(node.state).toUpperCase())),
@@ -93,6 +98,22 @@ export const NodeCard: React.FC<NodeCardProps> = ({ node, onRequestRetry, retryi
         <p className="mt-3 text-xs text-slate-400 font-mono text-[11px] truncate">
           <span className="text-slate-500">Changes: </span>{node.changedPaths.join(", ")}
         </p>
+      )}
+
+      {baselineEvidence.length > 0 && (
+        <section className="mt-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3 text-[11px]" data-testid="verification-baseline-evidence">
+          <p className="font-semibold uppercase tracking-wider text-cyan-300">Baseline comparison</p>
+          <div className="mt-2 space-y-2">
+            {baselineEvidence.map((evidence, index) => (
+              <div key={`${evidence.script}-${index}`} className="grid gap-2 rounded-md bg-slate-950/50 p-2 sm:grid-cols-4">
+                <div><span className="text-slate-500">Check</span><p className="font-mono text-slate-200">{evidence.script}</p></div>
+                <div><span className="text-slate-500">Baseline</span><p className="font-mono text-slate-200">{evidence.baseline?.commit?.slice(0, 8) ?? "unavailable"}</p></div>
+                <div><span className="text-slate-500">Finding delta</span><p className="text-slate-200">+{evidence.delta?.new ?? 0} new · −{evidence.delta?.resolved ?? 0} resolved · {evidence.delta?.unchanged ?? 0} unchanged</p></div>
+                <div><span className="text-slate-500">Outcome</span><p className={evidence.status.startsWith("PASS") ? "text-emerald-300" : "text-rose-300"}>{evidence.status}</p></div>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {node.error && (

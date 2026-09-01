@@ -1,19 +1,12 @@
 import { expect, test } from "@playwright/test"
 import { installLifecycleFixtures } from "./fixtures"
+import { collectUnexpectedBrowserErrors } from "./browser-errors"
 
 let browserErrors: string[] = []
 
 test.beforeEach(async ({ page }) => {
   browserErrors = []
-  page.on("console", (message) => {
-    if (message.type() === "error" && !message.text().startsWith("Failed to load resource:")) {
-      browserErrors.push(message.text())
-    }
-  })
-  page.on("pageerror", (error) => browserErrors.push(error.message))
-  page.on("response", (response) => {
-    if (response.status() >= 400) browserErrors.push(`${response.status()} ${response.url()}`)
-  })
+  browserErrors = collectUnexpectedBrowserErrors(page)
   await installLifecycleFixtures(page)
 })
 

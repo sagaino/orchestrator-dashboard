@@ -1,8 +1,16 @@
 import { expect, test } from "@playwright/test"
 import { installLifecycleFixtures } from "./fixtures"
+import { collectUnexpectedBrowserErrors } from "./browser-errors"
+
+let browserErrors: string[] = []
 
 test.beforeEach(async ({ page }) => {
+  browserErrors = collectUnexpectedBrowserErrors(page)
   await installLifecycleFixtures(page)
+})
+
+test.afterEach(async () => {
+  expect(browserErrors, "browser console and page errors").toEqual([])
 })
 
 test("Plan Review exposes scope, graph edges, budget, and explicit approval", async ({ page }) => {
@@ -22,6 +30,9 @@ test("Plan Review exposes scope, graph edges, budget, and explicit approval", as
   await expect(dialog).toContainText("None (root node)")
   await expect(dialog).toContainText("Max nodes")
   await expect(dialog).toContainText("Project verification")
+  await expect(dialog.getByTestId("plan-governance-evidence")).toContainText("READY")
+  await expect(dialog.getByTestId("plan-governance-evidence")).toContainText("RESOLVED_WITH_WAIVERS")
+  await expect(dialog.getByTestId("plan-governance-evidence")).toContainText("Waived e2e-project: E2E")
 
   await dialog.getByLabel("Skill assignment N01").selectOption("diagnostic-review@1.0.0")
   await dialog.getByRole("button", { name: "Assign selected skills" }).click()
@@ -73,6 +84,7 @@ test("Objective Detail can reopen and approve a pending plan after refresh", asy
   await expect(dialog).toContainText("N01 · e2e-project")
   await expect(dialog).toContainText("Read-only")
   await expect(dialog).toContainText("Project: typecheck")
+  await expect(dialog.getByTestId("plan-governance-evidence")).toContainText("READY")
 
   const dialogBox = await dialog.boundingBox()
   const closeBox = await dialog.getByRole("button", { name: "Tutup" }).boundingBox()
@@ -91,4 +103,18 @@ test("Objective Detail can reopen and approve a pending plan after refresh", asy
   await expect(dialog).toHaveCount(0)
   expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/approve-plan")
   expect(mutationPaths).toContain("/api/objectives/e2e-plan-review/materialize")
+})
+
+test("Governance blockers disable approval in task intake and Objective Detail", async ({ page }) => {
+  await page.goto("/tasks?objectiveId=e2e-governance-blocked")
+  let dialog = page.getByRole("dialog", { name: "Plan Review" })
+  await expect(dialog.getByTestId("plan-governance-evidence")).toContainText("BLOCKED")
+  await expect(dialog).toContainText("VERIFICATION_INTENT_UNRESOLVED")
+  await expect(dialog.getByRole("button", { name: "Approval blocked" })).toBeDisabled()
+
+  await page.goto("/objectives/e2e-governance-blocked")
+  await page.getByRole("button", { name: "Review / Approve Plan" }).click()
+  dialog = page.getByRole("dialog", { name: "Plan Review" })
+  await expect(dialog.getByTestId("plan-governance-evidence")).toContainText("BLOCKED")
+  await expect(dialog.getByRole("button", { name: "Approval blocked" })).toBeDisabled()
 })

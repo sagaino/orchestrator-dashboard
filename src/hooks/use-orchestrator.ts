@@ -150,11 +150,11 @@ export function useUpdateSkillEnabled() {
   })
 }
 
-export function useObjectiveEvidence(objectiveId: string | null) {
+export function useObjectiveEvidence(objectiveId: string | null, enabled = true) {
   return useQuery<ObjectiveEvidence>({
     queryKey: queryKeys.objectiveEvidence(objectiveId ?? ""),
     queryFn: () => OrchestratorApi.getObjectiveEvidence(objectiveId!),
-    enabled: Boolean(objectiveId),
+    enabled: Boolean(objectiveId) && enabled,
     refetchInterval: objectiveId ? 3_000 : false,
     staleTime: 1_000,
   })
