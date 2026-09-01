@@ -177,7 +177,7 @@ export const ObjectivePlanGate: React.FC<ObjectivePlanGateProps> = ({ lifecycle 
               <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-200">{message}</p>
             )}
           </div>
-          <DialogFooter className="mx-0 mb-0 shrink-0 flex-row items-center justify-end gap-3 rounded-none rounded-b-2xl border-t border-slate-800 bg-slate-900/90 px-6 py-4 sm:justify-end">
+          <DialogFooter className="mx-0 mb-0 shrink-0 flex-row items-center justify-end gap-3 rounded-none rounded-b-2xl border-t border-slate-800 bg-slate-900/90 px-6 py-5 sm:justify-end">
             <Button
               type="button"
               disabled={busy}
