@@ -127,7 +127,7 @@ export const ObjectivePlanGate: React.FC<ObjectivePlanGateProps> = ({ lifecycle 
               <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4 text-xs">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-slate-200">Verification Intent Coverage</h3>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${plan.verificationIntent.status === "RESOLVED" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-amber-500/30 bg-amber-500/10 text-amber-300"}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${plan.verificationIntent.status === "RESOLVED" || plan.verificationIntent.status === "RESOLVED_WITH_WAIVERS" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-amber-500/30 bg-amber-500/10 text-amber-300"}`}>
                     {plan.verificationIntent.status}
                   </span>
                 </div>
@@ -138,12 +138,12 @@ export const ObjectivePlanGate: React.FC<ObjectivePlanGateProps> = ({ lifecycle 
                       {plan.verificationIntent.resolved.map((item, idx) => (
                         <li key={idx} className="flex items-center gap-1.5 text-[11px] text-emerald-300">
                           <CheckCircle2 className="h-3 w-3 shrink-0" />
-                          <span>{item.projectId}: <strong className="font-mono">{item.script}</strong> ({item.capability})</span>
+                          <span>{item.projectId}: <strong className="font-mono">{item.script || item.runner}</strong> ({item.capability})</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                  {plan.verificationIntent.missing.length > 0 && (
+                  {plan.verificationIntent.missing && plan.verificationIntent.missing.length > 0 && (
                     <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5">
                       <p className="text-[11px] font-medium text-rose-300">Missing / Unresolved</p>
                       <ul className="mt-1 space-y-1">
@@ -151,6 +151,19 @@ export const ObjectivePlanGate: React.FC<ObjectivePlanGateProps> = ({ lifecycle 
                           <li key={idx} className="flex items-center gap-1.5 text-[11px] text-rose-300">
                             <AlertTriangle className="h-3 w-3 shrink-0" />
                             <span>{item.projectId}: <strong>{item.capability}</strong> ({item.reason})</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {plan.verificationIntent.waived && plan.verificationIntent.waived.length > 0 && (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5">
+                      <p className="text-[11px] font-medium text-amber-300">Waived Requirements</p>
+                      <ul className="mt-1 space-y-1">
+                        {plan.verificationIntent.waived.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5 text-[11px] text-amber-300">
+                            <span className="shrink-0 font-medium">⚠️ {item.projectId}: {item.capability}</span>
+                            <span className="text-slate-400">— {item.reason} ({item.waivedBy})</span>
                           </li>
                         ))}
                       </ul>

@@ -1057,7 +1057,10 @@ export interface VerificationIntentItem {
   source?: string
   requestedAs?: string
   script?: string
+  runner?: string
   reason?: string
+  waivedBy?: string
+  waivedAt?: string
 }
 
 export interface VerificationIntent {
@@ -1065,7 +1068,8 @@ export interface VerificationIntent {
   required: VerificationIntentItem[]
   resolved: VerificationIntentItem[]
   missing: VerificationIntentItem[]
-  status: "RESOLVED" | "NEEDS_CLARIFICATION" | string
+  waived?: VerificationIntentItem[]
+  status: "RESOLVED" | "RESOLVED_WITH_WAIVERS" | "NEEDS_CLARIFICATION" | string
 }
 
 export interface BlueprintEvidence {
