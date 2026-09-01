@@ -1077,6 +1077,7 @@ export interface BlueprintEvidence {
   source: "PROJECT_METADATA" | "REGISTRY_METADATA" | "DETECTED" | "UNRESOLVED" | string
   confidence: "EXPLICIT" | "HIGH" | "NONE" | string
   policyVersion: number
+  policyFingerprint?: string | null
   valid: boolean
   error?: string | null
 }

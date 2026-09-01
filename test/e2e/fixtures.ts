@@ -145,7 +145,7 @@ export async function installLifecycleFixtures(page: Page) {
   })
 
   const planReviewPlan = () => ({
-    schemaVersion: 1,
+    schemaVersion: 2,
     revision: planReviewRevision,
     planId: `plan-e2e-plan-review-r${planReviewRevision}`,
     objectiveId: "e2e-plan-review",
@@ -167,7 +167,25 @@ export async function installLifecycleFixtures(page: Page) {
     approvedAt: planReviewState === "APPROVED" ? now : null,
     createdAt: now,
     updatedAt: now,
-    planFingerprint: "fixture-plan-fingerprint",
+    planFingerprint: "f".repeat(64),
+    blueprints: {
+      "e2e-project": { id: "frontend-vite", source: "PROJECT_METADATA", confidence: "EXPLICIT", policyVersion: 2, policyFingerprint: "b".repeat(64), valid: true, error: null },
+    },
+    verificationIntent: {
+      contractVersion: 2,
+      required: [
+        { projectId: "e2e-project", capability: "TYPECHECK", requestedAs: "typecheck", source: "PLAN" },
+        { projectId: "e2e-project", capability: "BUILD", requestedAs: "build", source: "PLAN" },
+        { projectId: "e2e-project", capability: "E2E", requestedAs: "test:e2e", source: "PLAN" },
+      ],
+      resolved: [
+        { projectId: "e2e-project", capability: "TYPECHECK", requestedAs: "typecheck", source: "PLAN", script: "typecheck" },
+        { projectId: "e2e-project", capability: "BUILD", requestedAs: "build", source: "PLAN", script: "build" },
+      ],
+      waived: [{ projectId: "e2e-project", capability: "E2E", requestedAs: "test:e2e", source: "PLAN", reason: "Fixture browser flow is covered by the dashboard suite.", waivedBy: "local:e2e-operator", waivedAt: now }],
+      missing: [],
+      status: "RESOLVED_WITH_WAIVERS",
+    },
   })
 
   const planReviewData = () => ({
@@ -197,6 +215,40 @@ export async function installLifecycleFixtures(page: Page) {
       projectId: index === 0 ? "e2e-project" : "e2e-backend",
     })),
     integration: { required: true, projectVerification: ["typecheck"], crossProjectVerification: ["test:contract"], previewRequired: false },
+    blueprints: {
+      "e2e-project": planReviewPlan().blueprints["e2e-project"],
+      "e2e-backend": { id: "node-service", source: "PROJECT_METADATA", confidence: "EXPLICIT", policyVersion: 2, policyFingerprint: "c".repeat(64), valid: true, error: null },
+    },
+    verificationIntent: {
+      contractVersion: 2,
+      required: [
+        { projectId: "e2e-project", capability: "TYPECHECK", requestedAs: "typecheck", source: "PLAN" },
+        { projectId: "e2e-backend", capability: "CUSTOM_APPROVED", requestedAs: "test:contract", source: "PLAN" },
+      ],
+      resolved: [
+        { projectId: "e2e-project", capability: "TYPECHECK", requestedAs: "typecheck", source: "PLAN", script: "typecheck" },
+        { projectId: "e2e-backend", capability: "CUSTOM_APPROVED", requestedAs: "test:contract", source: "PLAN", script: "test:contract" },
+      ],
+      waived: [],
+      missing: [],
+      status: "RESOLVED",
+    },
+  })
+
+  const blockedPlanReviewData = () => ({
+    ...planReviewData(),
+    objectiveId: "e2e-governance-blocked",
+    activePlanId: "plan-e2e-governance-blocked-r1",
+    plan: {
+      ...planReviewPlan(),
+      objectiveId: "e2e-governance-blocked",
+      planId: "plan-e2e-governance-blocked-r1",
+      verificationIntent: {
+        ...planReviewPlan().verificationIntent,
+        status: "NEEDS_CLARIFICATION",
+        missing: [{ projectId: "e2e-project", capability: "E2E", requestedAs: "test:e2e", source: "PLAN", reason: "No registered E2E script." }],
+      },
+    },
   })
 
   const objectiveDashboardObjective = () => ({
@@ -221,7 +273,7 @@ export async function installLifecycleFixtures(page: Page) {
     objective: objectiveDashboardObjective(),
     plan: { ...planReviewPlan(), planId: "plan-e2e-objective-dashboard-r1", objectiveId: "e2e-objective-dashboard", state: "APPROVED", summary: "Review objective evidence." },
     orchestration: { orchestrationId: "orch-e2e-objective-dashboard", state: "DONE", usage: { totalTokens: 420, agentInvocations: 2, retries: 0 } },
-    nodes: [{ nodeId: "N01", title: "Inspect fixture", purpose: "Inspect the fixture.", projectId: "e2e-project", type: "DIAGNOSTIC", role: "DIAGNOSTIC", dependsOn: [], state: "DONE", runId: "e2e-accept-fixture-run", jobId: "job-e2e-accept", commitHash: "fixture123", changedPaths: ["src/fixture.ts"], allowedPaths: ["src/fixture.ts"], verification: [{ command: "npm run build", status: "PASS" }], verificationStatus: "PASS", links: { evidence: "/api/runs/e2e-accept-fixture-run/evidence", diff: "/api/runs/e2e-accept-fixture-run/diff", preview: "/api/runs/e2e-accept-fixture-run/preview" }, error: null }],
+    nodes: [{ nodeId: "N01", title: "Inspect fixture", purpose: "Inspect the fixture.", projectId: "e2e-project", type: "DIAGNOSTIC", role: "DIAGNOSTIC", dependsOn: [], state: "DONE", runId: "e2e-accept-fixture-run", jobId: "job-e2e-accept", commitHash: "fixture123", changedPaths: ["src/fixture.ts"], allowedPaths: ["src/fixture.ts"], verification: [{ command: "npm run lint", status: "PASS_NO_REGRESSION", baselineEvidence: { script: "lint", mode: "NO_NEW_FINDINGS", adapter: "eslint", baseline: { commit: "baseline123", exitCode: 1, errorCount: 1, warningCount: 0, findingsFingerprint: "baseline-fingerprint" }, candidate: { exitCode: 1, errorCount: 1, warningCount: 0, findingsFingerprint: "candidate-fingerprint" }, delta: { new: 0, resolved: 0, unchanged: 1 }, status: "PASS_NO_REGRESSION" } }], verificationStatus: "PASS", links: { evidence: "/api/runs/e2e-accept-fixture-run/evidence", diff: "/api/runs/e2e-accept-fixture-run/diff", preview: "/api/runs/e2e-accept-fixture-run/preview" }, error: null }],
     integration: null,
     diffs: [{ nodeId: "N01", runId: "e2e-accept-fixture-run", projectId: "e2e-project", href: "/api/runs/e2e-accept-fixture-run/diff", changedPaths: ["src/fixture.ts"] }],
     previews: [{ nodeId: "N01", runId: "e2e-accept-fixture-run", projectId: "e2e-project", href: "/api/runs/e2e-accept-fixture-run/preview" }],
@@ -482,6 +534,7 @@ export async function installLifecycleFixtures(page: Page) {
     }
 
     if (pathname === "/api/objectives/e2e-plan-review" && method === "GET") return json(route, planReviewData())
+    if (pathname === "/api/objectives/e2e-governance-blocked" && method === "GET") return json(route, blockedPlanReviewData())
     if (pathname === "/api/skills" && method === "GET") return json(route, { schemaVersion: 1, mode: "read-only-skill-catalog", registryState: "AVAILABLE", skills: [{ skillId: "diagnostic-review", version: "1.0.0", purpose: "Review bounded diagnostic evidence.", supportedRoles: ["DIAGNOSTIC"], supportedTaskTypes: ["DIAGNOSTIC"], requiredContextTypes: ["PLAN"], requiredCapabilities: ["context.read"], compatibleProjectSignals: [], riskLevel: "LOW", instructionChecksum: "a".repeat(64), verificationRequirements: ["typecheck"], enabled: skillEnabled, provenance: { source: "LOCAL_HUMAN", humanInstaller: "local:e2e-operator", installedAt: now, sourceRef: "fixture" }, usage: { planAssignments: planReviewSkillAssigned ? 1 : 0, runAssignments: 0, lastSeenAt: planReviewSkillAssigned ? now : null } }] })
     if (pathname === "/api/skills/diagnostic-review" && method === "PUT") {
       skillEnabled = Boolean(request.postDataJSON()?.enabled)
@@ -535,17 +588,18 @@ export async function installLifecycleFixtures(page: Page) {
     if (pathname === "/api/objectives/e2e-cross-project-review" && method === "GET") return json(route, { ...crossProjectObjective(), plan: crossProjectEvidence().plan, orchestration: crossProjectEvidence().orchestration, decisions: [], decisionSummary: { open: [], recent: [] } })
     if (pathname === "/api/objectives/e2e-cross-project-review/evidence" && method === "GET") return json(route, crossProjectEvidence())
     if (pathname === "/api/objectives/e2e-cross-project-review/graph" && method === "GET") return json(route, graphForEvidence(crossProjectEvidence()))
+    if (pathname === "/api/objectives/e2e-cross-project-review/delivery-certification" && method === "GET") return json(route, { latest: null, history: [] })
     if (pathname === "/api/objectives/e2e-cross-project-review/final-acceptance" && method === "POST") {
       crossProjectObjectiveAccepted = true
       return json(route, { objective: crossProjectObjective(), decision: { decisionId: "decision-cross-project-review", objectiveId: "e2e-cross-project-review", nodeId: null, runId: null, type: "OBJECTIVE_ACCEPTANCE", state: "RESOLVED", evidence: {}, requestedAction: "Accept objective", allowedChoices: ["ACCEPT"], creator: "SYSTEM", createdAt: now, resolution: { action: "ACCEPT", resolvedBy: "local:e2e-operator", resolvedAt: now } }, evidence: crossProjectEvidence(), alreadyAccepted: false }, 201)
     }
     if (pathname === "/api/objectives/e2e-plan-review/approve-plan" && method === "POST") {
       planReviewState = "APPROVED"
-      return json(route, { objective: planReviewObjective(), plan: planReviewPlan(), decision: { decisionId: "decision-plan-approval-fixture", objectiveId: "e2e-plan-review", nodeId: null, runId: null, type: "PLAN_APPROVAL", state: "RESOLVED", evidence: {}, requestedAction: "Approve plan", allowedChoices: ["APPROVE"], creator: "SYSTEM", createdAt: now, resolution: { action: "APPROVE", resolvedBy: "local:e2e-operator", resolvedAt: now } }, alreadyApproved: false, planFingerprint: "fixture-plan-fingerprint" }, 201)
+      return json(route, { objective: planReviewObjective(), plan: planReviewPlan(), decision: { decisionId: "decision-plan-approval-fixture", objectiveId: "e2e-plan-review", nodeId: null, runId: null, type: "PLAN_APPROVAL", state: "RESOLVED", evidence: {}, requestedAction: "Approve plan", allowedChoices: ["APPROVE"], creator: "SYSTEM", createdAt: now, resolution: { action: "APPROVE", resolvedBy: "local:e2e-operator", resolvedAt: now } }, alreadyApproved: false, planFingerprint: "f".repeat(64) }, 201)
     }
     if (pathname === "/api/objectives/e2e-plan-review/materialize" && method === "POST") {
       if (!jobs.some((job) => job.jobId === "e2e-objective-job")) jobs.push({ jobId: "e2e-objective-job", taskId: "TASK-001", project: "e2e-project", state: "QUEUED", runId: null })
-      return json(route, { action: "TASKS_MATERIALIZED", objective: { ...planReviewObjective(), state: "MATERIALIZING", activeOrchestrationId: "orch-e2e-plan-review" }, plan: planReviewPlan(), orchestration: { orchestrationId: "orch-e2e-plan-review", state: "CREATED" }, tasks: [{ taskId: "TASK-001", nodeId: "N01", projectId: "e2e-project" }, { taskId: "TASK-002", nodeId: "N02", projectId: "e2e-project" }], planFingerprint: "fixture-plan-fingerprint", alreadyMaterialized: false }, 201)
+      return json(route, { action: "TASKS_MATERIALIZED", objective: { ...planReviewObjective(), state: "MATERIALIZING", activeOrchestrationId: "orch-e2e-plan-review" }, plan: planReviewPlan(), orchestration: { orchestrationId: "orch-e2e-plan-review", state: "CREATED" }, tasks: [{ taskId: "TASK-001", nodeId: "N01", projectId: "e2e-project" }, { taskId: "TASK-002", nodeId: "N02", projectId: "e2e-project" }], planFingerprint: "f".repeat(64), alreadyMaterialized: false }, 201)
     }
     if (pathname === "/api/objectives/e2e-plan-review/request-plan-changes" && method === "POST") {
       planReviewState = "PENDING_APPROVAL"

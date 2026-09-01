@@ -6,13 +6,12 @@ export const useObjectivesPage = (): UseObjectivesPageReturn => {
   const { objectiveId } = useParams<{ objectiveId: string }>()
   const summaries = useObjectives()
   const objective = useObjective(objectiveId ?? null)
-  const evidence = useObjectiveEvidence(objectiveId ?? null)
-
   const hasPendingPlan = Boolean(
     objective.data?.plan &&
       ["PENDING_APPROVAL", "APPROVED"].includes(objective.data.plan.state) &&
       !objective.data.activeOrchestrationId
   )
+  const evidence = useObjectiveEvidence(objectiveId ?? null, Boolean(objective.data) && !hasPendingPlan)
 
   return {
     objectiveId,

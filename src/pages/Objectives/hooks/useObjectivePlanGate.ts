@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useApproveObjectivePlan, useMaterializeObjectivePlan } from "@/hooks/use-orchestrator"
+import { evaluatePlanAdmission } from "@/lib/plan-admission"
 import type { ObjectiveLifecycleDetail, UseObjectivePlanGateReturn } from "../types"
 
 export const useObjectivePlanGate = (lifecycle: ObjectiveLifecycleDetail): UseObjectivePlanGateReturn => {
@@ -9,12 +10,17 @@ export const useObjectivePlanGate = (lifecycle: ObjectiveLifecycleDetail): UseOb
   const materialize = useMaterializeObjectivePlan()
 
   const plan = lifecycle.plan ?? null
-  const canApprove = plan?.state === "PENDING_APPROVAL" && !plan.clarificationNeeded
-  const actionLabel = canApprove ? "Approve & Run" : "Materialize & Run"
+  const admission = evaluatePlanAdmission(plan)
+  const canApprove = plan?.state === "PENDING_APPROVAL" && admission.allowed
+  const actionLabel = !admission.allowed ? "Approval blocked" : canApprove ? "Approve & Run" : "Materialize & Run"
   const busy = approve.isPending || materialize.isPending
 
   const run = async () => {
     if (!plan) return
+    if (!admission.allowed) {
+      setMessage(admission.blockers.map((blocker) => blocker.message).join(" "))
+      return
+    }
     try {
       setMessage(null)
       const approved = canApprove
