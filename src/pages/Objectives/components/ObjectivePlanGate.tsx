@@ -102,6 +102,64 @@ export const ObjectivePlanGate: React.FC<ObjectivePlanGateProps> = ({ lifecycle 
                 </article>
               ))}
             </section>
+            {plan.blueprints && Object.keys(plan.blueprints).length > 0 && (
+              <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4 text-xs">
+                <h3 className="font-semibold text-slate-200">Project Blueprint & Rules</h3>
+                <div className="mt-2 space-y-2">
+                  {Object.entries(plan.blueprints).map(([projectId, bp]) => (
+                    <div key={projectId} className="flex items-center justify-between rounded-lg border border-slate-800/80 bg-slate-900/50 p-2.5">
+                      <div>
+                        <p className="font-medium text-white">{projectId}</p>
+                        <p className="text-[11px] text-slate-400">
+                          Blueprint: <span className="font-mono text-indigo-300">{bp.id}</span> ({bp.source}, v{bp.policyVersion})
+                        </p>
+                      </div>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${bp.valid ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-rose-500/30 bg-rose-500/10 text-rose-300"}`}>
+                        {bp.valid ? "VERIFIED" : "UNRESOLVED"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {plan.verificationIntent && (
+              <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4 text-xs">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-slate-200">Verification Intent Coverage</h3>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${plan.verificationIntent.status === "RESOLVED" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-amber-500/30 bg-amber-500/10 text-amber-300"}`}>
+                    {plan.verificationIntent.status}
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-lg border border-slate-800/80 bg-slate-900/50 p-2.5">
+                    <p className="text-[11px] font-medium text-slate-400">Requested / Resolved</p>
+                    <ul className="mt-1 space-y-1">
+                      {plan.verificationIntent.resolved.map((item, idx) => (
+                        <li key={idx} className="flex items-center gap-1.5 text-[11px] text-emerald-300">
+                          <CheckCircle2 className="h-3 w-3 shrink-0" />
+                          <span>{item.projectId}: <strong className="font-mono">{item.script}</strong> ({item.capability})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {plan.verificationIntent.missing.length > 0 && (
+                    <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5">
+                      <p className="text-[11px] font-medium text-rose-300">Missing / Unresolved</p>
+                      <ul className="mt-1 space-y-1">
+                        {plan.verificationIntent.missing.map((item, idx) => (
+                          <li key={idx} className="flex items-center gap-1.5 text-[11px] text-rose-300">
+                            <AlertTriangle className="h-3 w-3 shrink-0" />
+                            <span>{item.projectId}: <strong>{item.capability}</strong> ({item.reason})</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
             <section className="rounded-xl border border-slate-800 bg-slate-950/50 p-4 text-xs">
               <h3 className="font-semibold text-slate-200">Integration verification</h3>
               <p className="mt-2 text-slate-400">
@@ -130,7 +188,7 @@ export const ObjectivePlanGate: React.FC<ObjectivePlanGateProps> = ({ lifecycle 
             </Button>
             <Button
               type="button"
-              disabled={busy || plan.clarificationNeeded}
+              disabled={busy || plan.clarificationNeeded || plan.verificationIntent?.status === "NEEDS_CLARIFICATION"}
               onClick={() => void run()}
               className="h-auto gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white shadow-sm hover:bg-indigo-500"
             >
