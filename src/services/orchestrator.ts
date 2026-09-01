@@ -1051,6 +1051,59 @@ export interface PlanNodeReview {
   skills?: PlanSkillAssignment[]
 }
 
+export interface VerificationIntentItem {
+  projectId: string
+  capability: "TYPECHECK" | "LINT" | "BUILD" | "UNIT" | "INTEGRATION" | "E2E" | "CUSTOM_APPROVED" | string
+  source?: string
+  requestedAs?: string
+  script?: string
+  reason?: string
+}
+
+export interface VerificationIntent {
+  contractVersion: number
+  required: VerificationIntentItem[]
+  resolved: VerificationIntentItem[]
+  missing: VerificationIntentItem[]
+  status: "RESOLVED" | "NEEDS_CLARIFICATION" | string
+}
+
+export interface BlueprintEvidence {
+  id: string
+  source: "PROJECT_METADATA" | "REGISTRY_METADATA" | "DETECTED" | "UNRESOLVED" | string
+  confidence: "EXPLICIT" | "HIGH" | "NONE" | string
+  policyVersion: number
+  valid: boolean
+  error?: string | null
+}
+
+export interface BaselineFindingDelta {
+  new: number
+  resolved: number
+  unchanged: number
+}
+
+export interface VerificationBaselineEvidence {
+  script: string
+  mode: "STRICT" | "NO_NEW_FINDINGS" | string
+  adapter?: string
+  baseline?: {
+    commit: string | null
+    exitCode: number
+    errorCount: number
+    warningCount: number
+    findingsFingerprint: string
+  } | null
+  candidate?: {
+    exitCode: number
+    errorCount: number
+    warningCount: number
+    findingsFingerprint: string
+  } | null
+  delta?: BaselineFindingDelta
+  status: "PASS" | "PASS_NO_REGRESSION" | "PASS_IMPROVED" | "FAIL" | "FAIL_REGRESSION" | "BASELINE_UNAVAILABLE" | string
+}
+
 export interface ObjectivePlanReview {
   schemaVersion: number
   revision: number
@@ -1078,6 +1131,8 @@ export interface ObjectivePlanReview {
   createdAt: string
   updatedAt?: string
   planFingerprint?: string
+  verificationIntent?: VerificationIntent | null
+  blueprints?: Record<string, BlueprintEvidence> | null
 }
 
 export interface ObjectiveDecision {
