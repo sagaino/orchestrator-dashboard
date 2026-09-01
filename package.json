@@ -13,6 +13,7 @@
     "test:security": "node test/security.test.mjs",
     "test:browser": "playwright test",
     "test:browser:cross-project": "ORCHESTRATOR_CROSS_PROJECT=1 playwright test test/e2e/target-modes.spec.ts",
+    "test:e2e:ai-os": "playwright test test/e2e/plan-review.spec.ts test/e2e/lifecycle.spec.ts",
     "test:verify": "npm run typecheck && npm run lint && npm run build && npm run test:security && npm run test:browser"
   },
   "dependencies": {
